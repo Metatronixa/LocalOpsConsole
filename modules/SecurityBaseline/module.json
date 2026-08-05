@@ -1,0 +1,24 @@
+{
+  "id": "securitybaseline",
+  "name": "Security Baseline",
+  "version": "1.0.0",
+  "icon": "shield-check",
+  "description": "Audit Defender, Firewall, BitLocker, TPM, Secure Boot, and related Windows security controls",
+  "order": 61,
+  "tier": 6,
+  "profiles": [
+    "systems_administrator",
+    "network_administrator",
+    "developer",
+    "power_user"
+  ],
+  "depends": [],
+  "diagnostics": ["Audit", "Report"],
+  "actions": [],
+  "requiresAdmin": [],
+  "cacheSeconds": {
+    "Audit": 60,
+    "Report": 60
+  },
+  "capabilities": ["diagnostics", "reporting", "inventory"]
+}

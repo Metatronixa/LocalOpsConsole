@@ -17,7 +17,7 @@ const API = {
             method,
             headers: { 'Content-Type': 'application/json' }
         };
-        if (payload && method === 'POST') {
+        if (payload && (method === 'POST' || method === 'PUT')) {
             reqOptions.body = JSON.stringify(payload);
         }
 

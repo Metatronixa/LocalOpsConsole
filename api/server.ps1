@@ -23,26 +23,24 @@ $ModulesPath = [System.IO.Path]::GetFullPath($ModulesPath)
 $DashboardPath = [System.IO.Path]::GetFullPath($DashboardPath)
 $RootPath = [System.IO.Path]::GetFullPath($RootPath)
 
-# Load core
-. (Join-Path $RootPath "core\Response.ps1")
-. (Join-Path $RootPath "core\Security.ps1")
-. (Join-Path $RootPath "core\Settings.ps1")
-. (Join-Path $RootPath "core\Logger.ps1")
-. (Join-Path $RootPath "core\Cache.ps1")
-. (Join-Path $RootPath "core\Console.ps1")
-. (Join-Path $RootPath "core\ModuleLoader.ps1")
-. (Join-Path $RootPath "core\TaskRunner.ps1")
-. (Join-Path $RootPath "core\Updater.ps1")
-. (Join-Path $RootPath "core\FleetStore.ps1")
-. (Join-Path $RootPath "core\FleetAuth.ps1")
-. (Join-Path $RootPath "core\Fleet.ps1")
+# Load core via Engine facade (dot-source at script scope — required for PS scoping)
+. (Join-Path $RootPath "core\Engine.ps1")
+$coreFiles = @(Get-LocCoreEngineFiles -RootPath $RootPath)
+foreach ($coreFile in $coreFiles) {
+    . $coreFile
+}
 . (Join-Path $PSScriptRoot "router.ps1")
 
 Initialize-LocSettings -RootPath $RootPath
 Initialize-LocLogger -RootPath $RootPath
+Initialize-LocIntegrityManager
 Initialize-LocFleetStore
 Initialize-ModuleLoader -ModulesPath $ModulesPath
 Start-LocTaskRunner
+Initialize-LocEventStore
+if (Test-LocEventIntelEnabled) {
+    Start-LocEventIntelligence
+}
 
 $settings = Get-LocSettings
 if ($Port -le 0) { $Port = [int]$settings.port }
@@ -118,6 +116,9 @@ try {
     while ($listener.IsListening) {
         $async = $listener.BeginGetContext($null, $null)
         while (-not $async.IsCompleted) {
+            if (Get-Command Pulse-LocEventIntelligence -ErrorAction SilentlyContinue) {
+                Pulse-LocEventIntelligence
+            }
             Start-Sleep -Milliseconds 100
         }
         $context = $listener.EndGetContext($async)
@@ -126,7 +127,7 @@ try {
 
         if ($request.HttpMethod -eq "OPTIONS") {
             $context.Response.Headers.Add("Access-Control-Allow-Origin", "*")
-            $context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+            $context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, PUT, OPTIONS")
             $context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, X-Loc-Agent, X-Loc-Timestamp, X-Loc-Signature")
             $context.Response.StatusCode = 204
             $context.Response.Close()
@@ -157,6 +158,9 @@ try {
     }
 }
 finally {
+    if (Get-Command Stop-LocEventIntelligence -ErrorAction SilentlyContinue) {
+        Stop-LocEventIntelligence
+    }
     Stop-LocTaskRunner
     try {
         if ($listener.IsListening) { $listener.Stop() }

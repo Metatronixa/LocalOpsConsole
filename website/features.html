@@ -4,75 +4,70 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Features — LocalOpsConsole</title>
+  <meta name="description" content="Modules, architecture, and capabilities of the LocalOpsConsole Windows Operations Platform." />
+  <link rel="icon" href="assets/img/logo.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="assets/css/site.css" />
 </head>
 <body>
   <header class="site-header">
     <div class="wrap nav">
-      <a class="brand" href="index.html">LocalOps<em>Console</em></a>
+      <a class="brand" href="index.html"><span class="brand-mark"><img src="assets/img/logo.svg" alt="" width="16" height="16" /></span>LocalOps<em>Console</em></a>
+      <button type="button" class="nav-toggle" aria-label="Menu">Menu</button>
       <ul class="nav-links">
         <li><a href="index.html">Home</a></li>
         <li><a class="active" href="features.html">Features</a></li>
-        <li><a href="guide/index.html">Guide</a></li>
+        <li><a href="security.html">Security</a></li>
+        <li><a href="monitoring.html">Monitoring</a></li>
+        <li><a href="docs/index.html">Docs</a></li>
         <li><a href="download.html">Download</a></li>
       </ul>
-      <a class="btn btn-teal" href="download.html">Get app</a>
+      <a class="btn btn-primary" href="download.html">Download</a>
     </div>
   </header>
-
   <main class="wrap">
     <div class="page-hero">
-      <p class="eyebrow">Platform</p>
-      <h1>Features</h1>
-      <p class="lead">Free and open source (MIT). Core engine plus the module set in v2.0 — Internet Health, Computers (fleet agents), Printers, Remote Support, SyncMe, and OS repair.</p>
+      <h1>Platform features</h1>
+      <p>Every module aims for inventory, diagnostics, monitoring, remediation, automation, and reporting — where it makes sense.</p>
     </div>
-
-    <section class="section" style="padding-top:0">
-      <h2>Screenshots</h2>
-      <div class="grid-2" style="margin-top:1rem">
-        <figure class="card" style="padding:0;overflow:hidden">
-          <img src="assets/img/screenshot-system.png" alt="System view" style="width:100%;display:block" />
-        </figure>
-        <figure class="card" style="padding:0;overflow:hidden">
-          <img src="assets/img/screenshot-results.png" alt="Results table view" style="width:100%;display:block" />
-        </figure>
+    <section class="section reveal">
+      <h2>Architecture</h2>
+      <p class="sub">Thin API router · core services · plugin modules · offline SPA dashboard.</p>
+      <div class="grid-2">
+        <article class="card"><h3>Core engine</h3><p>EventEngine, IncidentManager, RuleEngine, HealthMonitor, SecurityManager, IntegrityManager, AutomationEngine, NotificationManager.</p></article>
+        <article class="card"><h3>Dashboard</h3><p>Overview, Operations, Security, Health, Inventory, Incidents, Monitoring, Automation, Settings — enterprise navigation.</p></article>
       </div>
     </section>
-
-    <section class="section">
-      <h2>Core platform</h2>
-      <div class="grid-3" style="margin-top:1.25rem">
-        <article class="card"><h3>Plugin modules</h3><p>Discovered via <code>module.json</code>. Diagnostics and actions stay separated.</p></article>
-        <article class="card"><h3>Readable results</h3><p>Tables and cards for objects (printers, hosts, GPUs) — not raw JSON dumps.</p></article>
-        <article class="card"><h3>Forced elevation</h3><p><code>start.bat</code> / <code>start.ps1</code> request UAC so remediations work by default.</p></article>
-        <article class="card"><h3>Offline UI</h3><p>No CDN. Styling survives broken DNS/VPN.</p></article>
-        <article class="card"><h3>Self-hosted updates</h3><p>Check <code>uploads/update.json</code>, download ZIP, verify SHA-256.</p></article>
-        <article class="card"><h3>Live console</h3><p>Every step streams to the sticky execution log and daily log files.</p></article>
-      </div>
-    </section>
-
-    <section class="section">
+    <section class="section reveal">
       <h2>Modules</h2>
-      <table class="table">
-        <thead><tr><th>Module</th><th>Highlights</th></tr></thead>
-        <tbody>
-          <tr><td>System</td><td>Live CPU/RAM sparklines, bandwidth graph, all disks accordion, GPU, devices</td></tr>
-          <tr><td>Configuration</td><td>Explorer, Privacy, Windows Update, Taskbar, Power, Security — documented apply/restore</td></tr>
-          <tr><td>Network / Remote</td><td>Adapters; discover PCs, shares, open files, remote registry read</td></tr>
-          <tr><td>Graphics</td><td>GPU, driver version/date, vendor update links</td></tr>
-          <tr><td>Printers / VPN / Storage / Services</td><td>Day-to-day desk-side remediations</td></tr>
-          <tr><td>SyncMe</td><td>Open SyncMe console, start SyncMe-Backup.ps1</td></tr>
-          <tr><td>Security / EventLog / Devices / Power / Users / Audio / Startup / Updates</td><td>Full ops coverage</td></tr>
-        </tbody>
-      </table>
+      <div class="grid-3">
+        <article class="card"><h3>Overview</h3><p>Health + security + incidents at a glance.</p></article>
+        <article class="card"><h3>Internet Health</h3><p>DNS, latency, connectivity, repair workflows.</p></article>
+        <article class="card"><h3>Services</h3><p>Dependency maps, failure history, critical profiles.</p></article>
+        <article class="card"><h3>Storage</h3><p>SMART history, capacity trends, cleanup.</p></article>
+        <article class="card"><h3>Printers</h3><p>Queue analytics, drivers, spooler recovery.</p></article>
+        <article class="card"><h3>Updates</h3><p>Health score, failure history, pending reboot.</p></article>
+        <article class="card"><h3>Security Baseline</h3><p>Full control audit with score and recommendations.</p></article>
+        <article class="card"><h3>Incident Center</h3><p>Correlated incidents, timeline, remediation.</p></article>
+        <article class="card"><h3>Fleet</h3><p>Optional agent enroll, heartbeat, scripts.</p></article>
+      </div>
+    </section>
+    <section class="section reveal">
+      <h2>Capability comparison</h2>
+      <div class="card" style="overflow-x:auto">
+        <table class="compare">
+          <thead><tr><th>Capability</th><th>LocalOpsConsole</th><th>Typical script pack</th><th>Cloud RMM</th></tr></thead>
+          <tbody>
+            <tr><td>Offline</td><td>Yes</td><td>Often</td><td>No</td></tr>
+            <tr><td>Incident correlation</td><td>Yes</td><td>Rare</td><td>Yes</td></tr>
+            <tr><td>Module integrity</td><td>Yes</td><td>Rare</td><td>Varies</td></tr>
+            <tr><td>No mandatory telemetry</td><td>Yes</td><td>Yes</td><td>No</td></tr>
+            <tr><td>Local UI ops center</td><td>Yes</td><td>No</td><td>Portal</td></tr>
+          </tbody>
+        </table>
+      </div>
     </section>
   </main>
-
-  <footer class="site-footer">
-    <div class="wrap footer-row">
-      <div>Copyright 2026 Bradford Lotriet · MIT License</div>
-      <div class="footer-links"><a href="guide/modules.html">Module guide</a><a href="download.html">Download</a></div>
-    </div>
-  </footer>
+  <footer class="site-footer"><div class="wrap footer-copy">© 2026 Bradford Lotriet · <a href="index.html">Home</a></div></footer>
+  <script src="assets/js/site.js"></script>
 </body>
 </html>

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FAQ — LocalOpsConsole Docs</title>
+  <link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="../assets/css/site.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap nav"><a class="brand" href="../index.html">LocalOps<em>Console</em></a></div>
+  </header>
+  <main class="wrap docs-layout">
+    <nav class="docs-nav"><a href="index.html">Overview</a><a class="active" href="faq.html">FAQ</a></nav>
+    <article class="docs-content faq">
+      <h1>FAQ</h1>
+      <details open><summary>Port already in use?</summary><p>Change <code>port</code> in <code>settings.json</code> or stop the other listener.</p></details>
+      <details><summary>Integrity failures in development?</summary><p>Set <code>integrityMode</code> to <code>warn</code> (default for source) or regenerate hashes.</p></details>
+      <details><summary>Event Intelligence empty?</summary><p>Ensure <code>eventIntelEnabled</code> is true and wait for watchers/health ticks; Overview should still load scores.</p></details>
+    </article>
+  </main>
+  <script src="../assets/js/site.js"></script>
+</body>
+</html>

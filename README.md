@@ -6,23 +6,23 @@
 [![PowerShell](https://img.shields.io/badge/PowerShell-5.1+-5391FE?style=flat-square&logo=powershell&logoColor=white)](https://github.com/Metatronixa/LocalOpsConsole)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-059669?style=flat-square)](CONTRIBUTING.md)
 
-**Free and open source** Windows diagnostic console for helpdesk and engineers — with a light outbound **LocalOps Agent** fleet (v2.0).
+**Local-first Windows Operations Platform** (v2.1) for IT professionals, MSPs, and power users — diagnostics, Event Intelligence, incidents, security baseline, and safe remediation.
 
-PowerShell HttpListener API + offline SPA. Plugin modules via `module.json`. **Internet Health**, live telemetry, Configuration, Printers, Remote Support (RustDesk), SyncMe, OS repair, and more.
+PowerShell HttpListener API + offline SPA. Plugin modules via `module.json`. **Overview** answers “Is this computer healthy?” using health score, security posture, and active incidents — not raw Event Viewer dumps.
 
 <p align="center">
   <img src="website/assets/img/screenshot-system.png" alt="LocalOpsConsole — live system telemetry" width="860" />
 </p>
-<p align="center"><em>Live telemetry — CPU, RAM, disk, network, GPU, devices</em></p>
+<p align="center"><em>Live telemetry — CPU, RAM, disk, network, GPU</em></p>
 
 <p align="center">
   <img src="website/assets/img/screenshot-results.png" alt="LocalOpsConsole — readable diagnostic results" width="860" />
 </p>
-<p align="center"><em>Readable tables — not raw PowerShell dumps</em></p>
+<p align="center"><em>Readable results — structured diagnostics</em></p>
 
 ## Why free?
 
-Intentionally MIT so techs and small teams can diagnose Windows without buying another agent platform. Use it, fork it, improve it.
+Intentionally MIT so techs and small teams can operate Windows endpoints without buying another cloud agent. Use it, fork it, improve it. The architecture is ready for future commercial offerings without abandoning local-first defaults.
 
 ## Quick start
 
@@ -47,72 +47,70 @@ cd LocalOpsConsole
 .\start.bat
 ```
 
-Opens `http://localhost:8787/`.
+Opens `http://localhost:8787/` on **Overview**.
 
 ## Features
 
 | Area | What you get |
 |------|----------------|
-| **Computers (fleet)** | Outbound LocalOps Agent — heartbeat, command queue, script library, alerts |
-| **Internet Health** | Consolidated Network+VPN: summary, tests, hosts, diagnosis, repairs, opt-in speed test |
-| **Live telemetry** | CPU, RAM, disk I/O, network, GPU (fast path — no PnP inventory on every poll) |
-| **Configuration** | Explorer / Privacy / Update / Taskbar / Power / Security — apply & restore |
-| **Printers** | Detail, spooler, queue jobs, network test, events |
-| **Remote / Remote Support** | Discover→select→shares; RustDesk status/ID/install |
-| **Tools** | Classic IT commands, Nslookup, RouteAdd, SFC / DISM |
-| **Access** | Standard users: most diagnostics · Elevated: remediations |
+| **Overview** | Health + security scores and active incidents at a glance |
+| **Event Intelligence** | Watchers, JSON rules, correlation, incidents, notifications, timeline |
+| **Security Baseline** | Defender, Firewall, BitLocker, TPM, Secure Boot, UAC, SMBv1, RDP, WinRM, logging, … |
+| **Integrity gate** | Manifest + SHA-256 + elevation + path jail before module execution |
+| **Automation** | Opt-in playbooks (restart → verify → notify → close) |
+| **Computers (fleet)** | Optional LocalOps Agent — heartbeat, commands, scripts |
+| **Internet Health** | DNS, latency, connectivity, repairs |
+| **Services / Storage / Printers / Updates** | Inventory, monitoring, remediation, reporting |
+| **Access** | Standard users: diagnostics · Elevated: remediations |
 
 ## Documentation
 
 | Doc | Description |
 |-----|-------------|
-| [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | How to use the console |
-| [website/guide/](website/guide/) | HTML user guide |
-| [SECURITY.md](SECURITY.md) | Security policy & reporting |
+| [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | Operator guide |
+| [docs/modules/](docs/modules/) | Per-module docs |
+| [ROADMAP.md](ROADMAP.md) | Public roadmap |
+| [website/](website/) | Marketing site + [docs](website/docs/) |
+| [SECURITY.md](SECURITY.md) | Security policy |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
 | [LICENSE](LICENSE) | MIT |
 
 ## Architecture
 
-- `api/` — HttpListener + `/api/v1` router
-- `core/` — ModuleLoader, Cache, Logger, Security, Settings, TaskRunner, Updater
-- `modules/*/` — plugins (`diagnostics/`, `actions/`, `lib/`, `module.json`)
-- `dashboard/` — offline SPA
-- `website/` — marketing + `uploads/` update feed
-- `logs/` — daily action logs
+- `api/` — HttpListener + thin `/api/v1` router
+- `core/` — Engine bootstrap, Security/Integrity/Permission managers, Event Intelligence, Fleet, ModuleLoader, TaskRunner
+- `rules/` — detection + optional automation JSON
+- `modules/` — plugin packs (`module.json` + diagnostics/actions)
+- `dashboard/` — offline SPA (Overview, Incidents, Security Center, …)
+- `notifications/` — channel plugins
+- `website/` — marketing + update feed
+- `data/integrity/` — module hash store (generated on build)
 
 ## API (summary)
 
-| Endpoint | Description |
-|----------|-------------|
-| `GET /api/v1/health` | Version, admin, modules |
-| `GET /api/v1/modules` | Module manifests |
-| `GET /api/v1/telemetry` | Live snapshot (`?force=1` to refresh) |
-| `GET /api/v1/logs/tail` | Recent log lines |
-| `GET /api/v1/updates/check` | Compare to `update.json` |
-| `POST /api/v1/updates/apply` | Download & apply update |
-| `GET /api/v1/{module}/diagnostics/{name}` | Diagnostic |
-| `POST /api/v1/{module}/actions/{name}` | Remediation |
+`GET /api/v1/health` · `modules` · `telemetry` · `settings` · `integrity/status` · `automation/status` · `incidents` · `alerts` · `health-score` · `security-score` · `{module}/diagnostics|actions/{name}` · `fleet/*`
 
-## Build & publish
+## Build
 
 ```powershell
-.\build.ps1                 # dist/LocalOpsConsole-x.y.z.zip
-.\build.ps1 -PublishWebsite # also website/uploads/builds + update.json
+.\build.ps1                 # dist ZIP + integrity hashes (enforce in package)
+.\build.ps1 -PublishWebsite # also refresh website/uploads
 ```
 
-Bump SemVer in `VERSION`, then build. Attach the ZIP to a GitHub Release for public downloads.
+## Safety
 
-## Updates
-
-Set `updateUrl` in `settings.json` to your hosted `update.json` (defaults to the GitHub raw manifest). Updates are never silent — the operator must confirm.
-
-## Safety notes
+Privileged actions are listed in each module’s `requiresAdmin`. Automation is off unless a rule enables it. Packaged builds enforce module integrity; source defaults to `integrityMode: warn`.
 
 - Binds to **localhost** only by default.
 - Admin-required actions are blocked without elevation.
 - UI works offline (no CDN).
 - Do not expose the API to the network.
+
+## Updates
+
+Set `updateUrl` in `settings.json` to your hosted `update.json` (defaults to the GitHub raw manifest). Updates are never silent — the operator must confirm.
+
+Bump SemVer in `VERSION`, then build. Attach the ZIP to a GitHub Release for public downloads.
 
 ## License
 

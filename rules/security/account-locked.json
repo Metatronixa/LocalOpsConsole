@@ -1,0 +1,12 @@
+{
+  "id": "account-locked",
+  "eventId": 4740,
+  "source": "Security",
+  "threshold": 1,
+  "windowSeconds": 300,
+  "severity": "Warning",
+  "score": 75,
+  "incident": "Account Locked Out",
+  "category": "security",
+  "notify": true
+}

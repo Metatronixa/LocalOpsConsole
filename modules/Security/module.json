@@ -11,5 +11,6 @@
   "diagnostics": ["GetFirewall", "GetDefender"],
   "actions": ["QuickScan"],
   "requiresAdmin": ["QuickScan"],
-  "cacheSeconds": { "GetFirewall": 20, "GetDefender": 30 }
+  "cacheSeconds": { "GetFirewall": 45, "GetDefender": 45 },
+  "capabilities": ["diagnostics", "monitoring", "remediation"]
 }

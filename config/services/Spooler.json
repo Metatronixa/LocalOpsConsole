@@ -1,0 +1,8 @@
+{
+  "service": "Spooler",
+  "startup": "Automatic",
+  "mustBeRunning": true,
+  "critical": false,
+  "restartOnFailure": false,
+  "notify": true
+}

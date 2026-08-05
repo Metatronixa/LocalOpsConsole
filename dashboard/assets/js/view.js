@@ -23,23 +23,28 @@ const ModuleView = {
             </div>
         ` : '';
 
+        const caps = (mod.capabilities || []).map((c) =>
+            `<span class="badge badge-muted">${c}</span>`
+        ).join(' ');
+
         container.innerHTML = `
             <div class="space-y-6 fade-in">
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-between flex-wrap gap-2">
                     <div>
                         <h2 class="text-lg font-bold text-slate-100">${mod.name}</h2>
                         <p class="text-xs text-slate-400">${mod.description || ''}</p>
+                        ${caps ? `<div class="flex flex-wrap gap-1 mt-2">${caps}</div>` : ''}
                     </div>
                     <span class="badge badge-muted">v${mod.version || '1.0.0'}</span>
                 </div>
                 ${computerBox}
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="p-5 rounded-xl bg-slate-900/60 border border-slate-800 backdrop-blur-md">
+                    <div class="glass-panel p-5">
                         <div class="section-title">Diagnostics</div>
                         <div class="flex flex-wrap gap-2" style="flex-wrap:wrap;display:flex;">${diagButtons || '<span class="text-slate-500 text-xs">None</span>'}</div>
                     </div>
-                    <div class="p-5 rounded-xl bg-slate-900/60 border border-slate-800 backdrop-blur-md">
-                        <div class="section-title">Actions</div>
+                    <div class="glass-panel p-5">
+                        <div class="section-title">Remediation</div>
                         <div class="flex flex-wrap gap-2" style="flex-wrap:wrap;display:flex;">${actionButtons || '<span class="text-slate-500 text-xs">None</span>'}</div>
                     </div>
                 </div>

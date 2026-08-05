@@ -1,0 +1,13 @@
+{
+  "id": "defender-health-disabled",
+  "eventId": 9201,
+  "source": "Defender",
+  "threshold": 1,
+  "windowSeconds": 300,
+  "severity": "Critical",
+  "score": 95,
+  "incident": "Windows Defender Real-Time Protection Off",
+  "category": "security",
+  "suppressSeconds": 600,
+  "notify": true
+}

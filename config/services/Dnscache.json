@@ -1,0 +1,8 @@
+{
+  "service": "Dnscache",
+  "startup": "Automatic",
+  "mustBeRunning": true,
+  "critical": true,
+  "restartOnFailure": true,
+  "notify": true
+}

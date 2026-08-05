@@ -88,5 +88,6 @@
     "RunAutomaticDiagnosis": 0,
     "RunSpeedTest": 0,
     "InternetIsSlow": 0
-  }
+  },
+  "capabilities": ["inventory", "diagnostics", "monitoring", "remediation", "analytics", "reporting"]
 }

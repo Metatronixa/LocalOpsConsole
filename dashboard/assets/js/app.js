@@ -81,8 +81,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             return m.profiles.includes(active);
         });
         renderSidebar(filtered);
-        if (filtered.length > 0) {
-            await Router.loadModuleView(filtered[0].id);
+        const prefer = filtered.find((m) => String(m.id).toLowerCase() === 'overview')
+            || filtered[0];
+        if (prefer) {
+            await Router.loadModuleView(prefer.id);
         } else {
             const viewport = document.getElementById('page-content');
             viewport.innerHTML = `<div class="p-6 text-slate-400">No modules available for this profile.</div>`;
@@ -119,7 +121,92 @@ document.addEventListener('DOMContentLoaded', async () => {
     setInterval(refreshTelemetry, 10000);
 
     checkForUpdates();
+    ensureAlertsBell();
+    refreshAlertsBellCount();
+    setInterval(refreshAlertsBellCount, 15000);
 });
+
+function ensureAlertsBell() {
+    if (document.getElementById('btn-alerts')) return;
+    const adminBadge = document.getElementById('admin-badge');
+    const headerRight = adminBadge ? adminBadge.parentElement : null;
+    if (!headerRight) return;
+
+    const wrap = document.createElement('div');
+    wrap.className = 'relative';
+    wrap.id = 'alerts-bell-wrap';
+    wrap.innerHTML = `
+        <button type="button" id="btn-alerts" class="action-btn slate text-[11px] px-2 py-1 flex items-center gap-1.5" title="Notifications">
+            <i data-lucide="bell" class="w-3.5 h-3.5"></i>
+            <span>Alerts</span>
+        </button>
+        <span id="alerts-bell-badge" class="hidden absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">0</span>
+        <div id="alerts-bell-drop" class="hidden absolute right-0 top-9 w-80 max-h-96 overflow-y-auto rounded-xl border border-slate-700 bg-slate-900 shadow-xl z-50 p-2 space-y-1"></div>
+    `;
+    headerRight.insertBefore(wrap, adminBadge);
+    document.getElementById('btn-alerts').onclick = (e) => {
+        e.stopPropagation();
+        const drop = document.getElementById('alerts-bell-drop');
+        if (!drop) return;
+        const open = !drop.classList.contains('hidden');
+        if (open) {
+            drop.classList.add('hidden');
+        } else {
+            drop.classList.remove('hidden');
+            refreshAlertsBellDropdown();
+        }
+    };
+    document.addEventListener('click', () => {
+        const drop = document.getElementById('alerts-bell-drop');
+        if (drop) drop.classList.add('hidden');
+    });
+    lucide.createIcons();
+}
+
+async function refreshAlertsBellDropdown() {
+    const drop = document.getElementById('alerts-bell-drop');
+    if (!drop) return;
+    const res = await API.request('alerts?unread=1', 'GET', null, 8000, { silent: true });
+    const items = (res.Success && res.Data) ? API.asArray(res.Data.Items || res.Data).slice(0, 8) : [];
+    const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    if (!items.length) {
+        drop.innerHTML = `<p class="text-xs text-slate-500 p-2">No unread alerts</p>
+            <button type="button" class="action-btn cyan w-full text-[11px]" onclick="Router.loadModuleView('alerts')">Open Notification Center</button>`;
+        return;
+    }
+    drop.innerHTML = items.map((a) => {
+        const color = String(a.Severity).toLowerCase() === 'critical' ? 'text-rose-400' :
+            String(a.Severity).toLowerCase() === 'warning' ? 'text-amber-400' : 'text-sky-400';
+        return `<button type="button" class="w-full text-left p-2 rounded-lg hover:bg-slate-800/80" onclick="Router.loadModuleView('alerts')">
+            <div class="text-xs font-semibold ${color}">${esc(a.Severity)} · ${esc(a.Title)}</div>
+            <div class="text-[11px] text-slate-500 truncate">${esc(a.Message || '')}</div>
+        </button>`;
+    }).join('') + `<button type="button" class="action-btn cyan w-full text-[11px] mt-1" onclick="Router.loadModuleView('alerts')">Open Notification Center</button>`;
+}
+
+function refreshAlertsBell(count) {
+    const badge = document.getElementById('alerts-bell-badge');
+    if (!badge) return;
+    const n = Number(count) || 0;
+    if (n > 0) {
+        badge.textContent = n > 99 ? '99+' : String(n);
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
+}
+
+async function refreshAlertsBellCount() {
+    const res = await API.request('alerts', 'GET', null, 8000, { silent: true });
+    if (!res.Success) return;
+    if (res.Data && (res.Data.Unread != null || res.Data.unread != null)) {
+        refreshAlertsBell(res.Data.Unread != null ? res.Data.Unread : res.Data.unread);
+        return;
+    }
+    const alerts = API.asArray(res.Data);
+    const unacked = alerts.filter((a) => !(a.Acknowledged || a.acknowledged)).length;
+    refreshAlertsBell(unacked);
+}
 
 async function checkForUpdates() {
     const res = await API.request('updates/check');
@@ -173,37 +260,47 @@ function renderSidebar(modules) {
     const nav = document.getElementById('sidebar-nav');
     nav.innerHTML = '';
 
-    // Domain mapping (frontend-first; long-term can be moved into module.json metadata).
-    function domainForModule(mod) {
+    // Platform navigation sections (enterprise ops layout).
+    function sectionForModule(mod) {
         const id = (mod && mod.id ? String(mod.id).toLowerCase() : '');
-        if (['system', 'services', 'tools', 'updates', 'startup', 'power', 'users', 'audio', 'configuration'].includes(id)) return 'System';
-        if (['graphics', 'devices'].includes(id)) return 'Hardware';
-        if (['storage', 'printers', 'syncme'].includes(id)) return 'Storage';
-        if (['network', 'vpn', 'internetslow'].includes(id)) return 'Networking';
-        if (['remote', 'remotesupport', 'fleet'].includes(id)) return 'Enterprise';
-        if (['security', 'eventlog'].includes(id)) return 'Security';
-        return 'Developer';
+        if (id === 'overview') return 'Overview';
+        if (['incidents'].includes(id)) return 'Incidents';
+        if (['healthcenter'].includes(id)) return 'Health';
+        if (['securitycenter', 'security', 'securitybaseline', 'eventlog'].includes(id)) return 'Security';
+        if (['alerts', 'timeline'].includes(id)) return 'Monitoring';
+        if (['automation'].includes(id)) return 'Automation';
+        if (['settings', 'locsettings'].includes(id)) return 'Settings';
+        if (['reports'].includes(id)) return 'Reports';
+        if (['system'].includes(id)) return 'Performance';
+        if (['devices', 'users', 'graphics', 'storage', 'startup', 'power'].includes(id)) return 'Inventory';
+        if (['services', 'tools', 'updates', 'configuration', 'audio', 'printers', 'syncme',
+            'network', 'vpn', 'internetslow', 'remote', 'remotesupport', 'fleet'].includes(id)) {
+            return 'Operations';
+        }
+        return 'Operations';
     }
 
-    const domainOrder = ['System', 'Networking', 'Storage', 'Enterprise', 'Security', 'Hardware', 'Developer'];
+    const sectionOrder = [
+        'Overview', 'Operations', 'Security', 'Health', 'Performance',
+        'Inventory', 'Incidents', 'Monitoring', 'Automation', 'Reports', 'Settings'
+    ];
     const grouped = {};
     (modules || []).forEach((mod) => {
-        const d = domainForModule(mod);
+        const d = sectionForModule(mod);
         if (!grouped[d]) grouped[d] = [];
         grouped[d].push(mod);
     });
 
-    domainOrder.forEach((domain) => {
+    sectionOrder.forEach((domain) => {
         const items = grouped[domain];
         if (!items || !items.length) return;
 
         const section = document.createElement('div');
-        section.className = 'mb-4';
+        section.className = 'mb-3';
 
-        // Header should NOT be a button, otherwise Router active highlighting would interfere.
         const header = document.createElement('div');
-        header.className = 'px-3 py-2 text-[11px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer select-none flex items-center justify-between';
-        header.innerText = `${domain}`;
+        header.className = 'nav-section-header px-3 py-1.5 text-[10px] font-semibold text-slate-500 uppercase tracking-wider cursor-pointer select-none flex items-center justify-between';
+        header.innerText = domain;
 
         const badge = document.createElement('span');
         badge.className = 'badge badge-muted';
@@ -211,10 +308,11 @@ function renderSidebar(modules) {
         header.appendChild(badge);
 
         const body = document.createElement('div');
-        body.className = 'space-y-1';
-        body.style.display = '';
+        body.className = 'space-y-0.5';
+        // Collapse secondary sections by default; keep Overview/Incidents/Operations open.
+        const preferOpen = ['Overview', 'Incidents', 'Operations', 'Security', 'Health'].includes(domain);
+        body.style.display = preferOpen ? '' : 'none';
 
-        // Default expanded. Toggled via header click (accordion behavior).
         header.onclick = () => {
             const currentlyHidden = body.style.display === 'none';
             body.style.display = currentlyHidden ? '' : 'none';
@@ -223,7 +321,7 @@ function renderSidebar(modules) {
         items.forEach((mod) => {
             const item = document.createElement('button');
             item.dataset.module = mod.id;
-            item.className = 'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 transition text-left';
+            item.className = 'w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold text-slate-400 hover:text-slate-100 hover:bg-slate-800/60 transition text-left';
             item.onclick = () => Router.loadModuleView(mod.id);
             item.innerHTML = `
                 <i data-lucide="${mod.icon || 'box'}" class="w-4 h-4 text-slate-400"></i>

@@ -1,0 +1,13 @@
+{
+  "id": "high-cpu",
+  "eventId": 9001,
+  "source": "Health",
+  "threshold": 1,
+  "windowSeconds": 300,
+  "severity": "Warning",
+  "score": 55,
+  "incident": "High CPU Usage",
+  "category": "system",
+  "healthMetric": "cpu",
+  "notify": true
+}

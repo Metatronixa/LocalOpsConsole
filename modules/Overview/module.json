@@ -1,0 +1,23 @@
+{
+  "id": "overview",
+  "name": "Overview",
+  "version": "1.0.0",
+  "icon": "layout-dashboard",
+  "description": "Host health at a glance — score, active incidents, and security posture",
+  "order": 1,
+  "tier": 0,
+  "profiles": [
+    "helpdesk",
+    "desktop_support",
+    "systems_administrator",
+    "network_administrator",
+    "developer",
+    "power_user"
+  ],
+  "depends": [],
+  "diagnostics": [],
+  "actions": [],
+  "requiresAdmin": [],
+  "cacheSeconds": {},
+  "capabilities": ["monitoring", "reporting"]
+}

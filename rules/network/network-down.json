@@ -1,0 +1,14 @@
+{
+  "id": "network-down",
+  "eventId": 9300,
+  "source": "Network",
+  "threshold": 1,
+  "windowSeconds": 120,
+  "severity": "Critical",
+  "score": 90,
+  "incident": "No Active Network Adapters",
+  "category": "network",
+  "healthMetric": "networkDown",
+  "suppressSeconds": 600,
+  "notify": true
+}

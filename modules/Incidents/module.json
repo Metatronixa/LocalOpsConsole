@@ -1,0 +1,22 @@
+﻿{
+  "id": "incidents",
+  "name": "Incident Center",
+  "version": "1.0.0",
+  "icon": "siren",
+  "description": "Open incidents and correlation",
+  "order": 63,
+  "tier": 6,
+  "profiles": [
+    "helpdesk",
+    "desktop_support",
+    "systems_administrator",
+    "network_administrator",
+    "developer",
+    "power_user"
+  ],
+  "depends": [],
+  "diagnostics": [],
+  "actions": [],
+  "requiresAdmin": [],
+  "cacheSeconds": {}
+}

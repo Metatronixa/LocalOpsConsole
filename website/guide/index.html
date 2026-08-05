@@ -4,76 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>User Guide — LocalOpsConsole</title>
+  <meta http-equiv="refresh" content="0; url=../docs/index.html" />
+  <link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="../assets/css/site.css" />
 </head>
 <body>
-  <header class="site-header">
-    <div class="wrap nav">
-      <a class="brand" href="../index.html">LocalOps<em>Console</em></a>
-      <ul class="nav-links">
-        <li><a href="../index.html">Home</a></li>
-        <li><a href="../features.html">Features</a></li>
-        <li><a class="active" href="index.html">Guide</a></li>
-        <li><a href="../download.html">Download</a></li>
-      </ul>
-      <a class="btn btn-teal" href="../download.html">Get the app</a>
-    </div>
-  </header>
-
-  <div class="wrap guide-layout">
-    <aside class="guide-nav">
-      <h2>Guide</h2>
-      <ul>
-        <li><a class="active" href="index.html">Overview</a></li>
-        <li><a href="getting-started.html">Getting started</a></li>
-        <li><a href="modules.html">Modules</a></li>
-        <li><a href="updates.html">Updates</a></li>
-        <li><a href="troubleshooting.html">Troubleshooting</a></li>
-      </ul>
-    </aside>
-    <article class="guide-content">
-      <h1>User guide</h1>
-      <p>LocalOpsConsole is a <strong>free, open-source</strong> (MIT) local Windows diagnostic platform: a PowerShell HTTP engine plus an offline single-page dashboard. Use it to inspect the OS, run safe diagnostics, and apply remediations when elevated.</p>
-      <p><a href="https://github.com/Metatronixa/LocalOpsConsole">Source on GitHub</a> · <a href="../download.html">Download</a></p>
-
-      <h2>What you get</h2>
-      <ul>
-        <li>Sidebar of discovered modules (System, Configuration, Graphics, Remote, SyncMe, Printers, Tools, …)</li>
-        <li>Readable result tables and cards (not raw JSON dumps)</li>
-        <li>Sticky live console streaming every command result</li>
-        <li>Header telemetry (CPU, RAM, disk, network, GPU, battery) from the background task runner</li>
-        <li>System live monitor cards plus Configuration (documented Explorer settings)</li>
-        <li>In-app update check against your hosted <code>update.json</code></li>
-      </ul>
-
-      <h2>Diagnostics vs actions</h2>
-      <p><strong>Diagnostics</strong> are read-only or safe probes (status, ping, event errors). <strong>Actions</strong> change the system (flush DNS, restart spooler, SFC/DISM). Actions often require Administrator rights and ask for confirmation in the UI.</p>
-
-      <div class="callout" style="margin-top:1.25rem">
-        <strong>Tip:</strong> Start with <a href="getting-started.html">Getting started</a>, then skim <a href="modules.html">Modules</a> for System telemetry, Configuration, Graphics, Remote, SyncMe, and repair workflows.
-      </div>
-
-      <h2>Profiles &amp; tiers</h2>
-      <p>Use the <strong>profile selector</strong> in the app header to control which modules are shown in the sidebar. This is <strong>UI-only</strong>: backend capabilities are unchanged, and admin-required actions still require elevation.</p>
-      <p>Modules can be tagged with a numeric <strong>tier</strong> (1–10). Higher tiers generally mean deeper, engineer-level workflows.</p>
-      <p>The consolidated <strong>Internet Health</strong> module (Networking) covers gateway/DNS/public checks, hosts/WINS, VPN, repairs, and an automatic diagnosis engine. Summary loads in a couple of seconds; full diagnosis and speed tests are opt-in.</p>
-
-      <h2>Fleet agents (Computers)</h2>
-      <p>v2.0 adds a <strong>Computers</strong> module for managing outbound fleet agents. Install <code>LocalOpsAgent</code> on remote PCs — they connect to your console with an enrollment token and HMAC-signed requests. No agent listener required on desktops.</p>
-      <p>Extract <code>LocalOpsAgent-2.0.0.zip</code> (from <code>dist/</code> after build), run <code>Install-LocalOpsAgent.ps1</code> as Administrator with your console URL and token from the Computers dashboard. For LAN agents, set <code>bindHost</code> or <code>fleetPublicUrl</code> in <code>settings.json</code>.</p>
-
-      <h2>Safety</h2>
-      <ul>
-        <li>The listener binds to <code>localhost</code> only.</li>
-        <li>Admin-required actions fail clearly when not elevated.</li>
-        <li>Remote registry access from this console is read-only.</li>
-        <li>Windows Update and SoftwareDistribution resets are destructive by design — read the warnings first.</li>
-      </ul>
-    </article>
-  </div>
-
-  <footer class="site-footer">
-    <div class="wrap footer-row"><div>Copyright 2026 Bradford Lotriet · MIT License</div></div>
-  </footer>
+  <main class="wrap page-hero">
+    <h1>Documentation moved</h1>
+    <p>The operator guide now lives under the professional docs hub.</p>
+    <p><a class="btn btn-primary" href="../docs/index.html">Open documentation</a></p>
+    <p class="sub" style="margin-top:1rem">Also see <a href="https://github.com/Metatronixa/LocalOpsConsole/blob/main/docs/USER_GUIDE.md">docs/USER_GUIDE.md</a> on GitHub.</p>
+  </main>
 </body>
 </html>

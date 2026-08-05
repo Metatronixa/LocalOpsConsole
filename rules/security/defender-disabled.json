@@ -1,0 +1,12 @@
+{
+  "id": "defender-disabled",
+  "eventId": 5001,
+  "source": "Defender",
+  "threshold": 1,
+  "windowSeconds": 300,
+  "severity": "Critical",
+  "score": 95,
+  "incident": "Windows Defender Disabled",
+  "category": "security",
+  "notify": true
+}

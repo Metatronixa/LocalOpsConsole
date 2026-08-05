@@ -1,0 +1,13 @@
+{
+  "id": "printer-offline",
+  "eventId": 6161,
+  "source": "PrintService",
+  "threshold": 1,
+  "windowSeconds": 300,
+  "severity": "Information",
+  "score": 20,
+  "incident": "Printer Offline",
+  "category": "printers",
+  "suppressSeconds": 3600,
+  "notify": true
+}

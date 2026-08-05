@@ -1,0 +1,13 @@
+{
+  "id": "failed-login",
+  "eventId": 4625,
+  "source": "Security",
+  "threshold": 10,
+  "windowSeconds": 300,
+  "severity": "Warning",
+  "score": 70,
+  "incident": "Possible Brute Force",
+  "category": "security",
+  "suppressSeconds": 600,
+  "notify": true
+}

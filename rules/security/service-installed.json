@@ -1,0 +1,12 @@
+{
+  "id": "service-installed",
+  "eventId": 7045,
+  "source": "System",
+  "threshold": 1,
+  "windowSeconds": 120,
+  "severity": "Warning",
+  "score": 65,
+  "incident": "New Service Installed",
+  "category": "security",
+  "notify": true
+}

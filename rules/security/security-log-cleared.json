@@ -1,0 +1,12 @@
+{
+  "id": "security-log-cleared",
+  "eventId": 1102,
+  "source": "Security",
+  "threshold": 1,
+  "windowSeconds": 60,
+  "severity": "Critical",
+  "score": 100,
+  "incident": "Security Log Cleared",
+  "category": "security",
+  "notify": true
+}

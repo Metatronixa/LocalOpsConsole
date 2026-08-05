@@ -1,0 +1,23 @@
+{
+  "id": "locsettings",
+  "name": "Settings",
+  "version": "1.0.0",
+  "icon": "settings",
+  "description": "Notification preferences, quiet hours, Event Intelligence options",
+  "order": 99,
+  "tier": 9,
+  "profiles": [
+    "helpdesk",
+    "desktop_support",
+    "systems_administrator",
+    "network_administrator",
+    "developer",
+    "power_user"
+  ],
+  "depends": [],
+  "diagnostics": [],
+  "actions": [],
+  "requiresAdmin": [],
+  "cacheSeconds": {},
+  "capabilities": []
+}

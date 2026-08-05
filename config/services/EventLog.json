@@ -1,0 +1,8 @@
+{
+  "service": "EventLog",
+  "startup": "Automatic",
+  "mustBeRunning": true,
+  "critical": true,
+  "restartOnFailure": false,
+  "notify": true
+}

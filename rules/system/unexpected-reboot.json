@@ -1,0 +1,12 @@
+{
+  "id": "unexpected-reboot",
+  "eventId": 41,
+  "source": "System",
+  "threshold": 1,
+  "windowSeconds": 60,
+  "severity": "Critical",
+  "score": 85,
+  "incident": "Unexpected Reboot / Kernel-Power",
+  "category": "system",
+  "notify": true
+}

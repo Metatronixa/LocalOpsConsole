@@ -1,0 +1,19 @@
+{
+  "id": "spooler-crash-7034",
+  "eventId": 7034,
+  "source": "System",
+  "threshold": 1,
+  "windowSeconds": 300,
+  "severity": "Warning",
+  "score": 60,
+  "incident": "Print Spooler Stopped Unexpectedly",
+  "category": "printers",
+  "messageContains": "Spooler",
+  "notify": true,
+  "automation": {
+    "enabled": false,
+    "action": "restart-service",
+    "service": "Spooler",
+    "closeOnSuccess": true
+  }
+}

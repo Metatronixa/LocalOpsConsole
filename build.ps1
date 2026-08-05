@@ -33,7 +33,7 @@ $stage = Join-Path $env:TEMP $stageName
 if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
 New-Item -ItemType Directory -Path $stage | Out-Null
 
-$include = @("api", "core", "modules", "dashboard", "scripts", "VERSION", "version.json", "settings.json", "start.ps1", "start.bat", "README.md", "build.ps1", "docs")
+$include = @("api", "core", "modules", "dashboard", "scripts", "rules", "notifications", "config", "VERSION", "version.json", "settings.json", "start.ps1", "start.bat", "README.md", "build.ps1", "docs", "ROADMAP.md")
 foreach ($item in $include) {
     $src = Join-Path $Root $item
     if (-not (Test-Path $src)) { continue }
@@ -49,6 +49,30 @@ foreach ($item in $include) {
 $logs = Join-Path $stage "logs"
 New-Item -ItemType Directory -Force -Path $logs | Out-Null
 Set-Content (Join-Path $logs ".gitkeep") -Value "" -Encoding UTF8
+
+foreach ($d in @("data\events", "data\incidents\active", "data\incidents\resolved", "data\incidents\archive", "data\fleet", "data\integrity")) {
+    $p = Join-Path $stage $d
+    New-Item -ItemType Directory -Force -Path $p | Out-Null
+    Set-Content (Join-Path $p ".gitkeep") -Value "" -Encoding UTF8
+}
+
+# Generate module integrity hashes into staged package (enforce mode for releases)
+Write-Host "Generating integrity hashes..." -ForegroundColor Cyan
+. (Join-Path $Root "core\Settings.ps1")
+. (Join-Path $Root "core\IntegrityManager.ps1")
+Initialize-LocSettings -RootPath $stage
+$hashPath = New-LocIntegrityStore -ModulesPath (Join-Path $stage "modules") -Version $Version
+# Packaged builds enforce integrity
+$stagedSettings = Join-Path $stage "settings.json"
+if (Test-Path $stagedSettings) {
+    try {
+        $sj = Get-Content $stagedSettings -Raw | ConvertFrom-Json
+        $sj | Add-Member -NotePropertyName integrityMode -NotePropertyValue "enforce" -Force
+        ($sj | ConvertTo-Json -Depth 12) | Set-Content $stagedSettings -Encoding UTF8
+    }
+    catch { }
+}
+Write-Host "Integrity store: $hashPath" -ForegroundColor Green
 
 $zipPath = Join-Path $distDir "$stageName.zip"
 if (Test-Path $zipPath) { Remove-Item $zipPath -Force }

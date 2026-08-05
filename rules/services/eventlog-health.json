@@ -1,0 +1,14 @@
+{
+  "id": "eventlog-health",
+  "eventId": 9101,
+  "source": "Services",
+  "threshold": 1,
+  "windowSeconds": 120,
+  "severity": "Critical",
+  "score": 95,
+  "incident": "Windows Event Log Service Down",
+  "category": "services",
+  "messageContains": "EventLog",
+  "suppressSeconds": 600,
+  "notify": true
+}

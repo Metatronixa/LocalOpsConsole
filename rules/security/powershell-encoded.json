@@ -1,0 +1,13 @@
+{
+  "id": "powershell-encoded",
+  "eventId": 4104,
+  "source": "PowerShell",
+  "threshold": 3,
+  "windowSeconds": 600,
+  "severity": "Warning",
+  "score": 70,
+  "incident": "PowerShell Encoded Command Activity",
+  "category": "security",
+  "messageContains": "EncodedCommand",
+  "notify": true
+}

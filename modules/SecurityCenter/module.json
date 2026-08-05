@@ -1,0 +1,22 @@
+﻿{
+  "id": "securitycenter",
+  "name": "Security Center",
+  "version": "1.0.0",
+  "icon": "shield",
+  "description": "Security score and posture",
+  "order": 62,
+  "tier": 6,
+  "profiles": [
+    "helpdesk",
+    "desktop_support",
+    "systems_administrator",
+    "network_administrator",
+    "developer",
+    "power_user"
+  ],
+  "depends": [],
+  "diagnostics": [],
+  "actions": [],
+  "requiresAdmin": [],
+  "cacheSeconds": {}
+}

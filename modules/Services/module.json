@@ -1,17 +1,21 @@
 {
   "id": "services",
   "name": "Services",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "icon": "cog",
-  "description": "Query and control Windows services",
+  "description": "Inventory, monitor, and recover Windows services with dependency maps and failure history",
   "order": 40,
   "tier": 2,
   "profiles": ["desktop_support", "systems_administrator", "power_user"],
   "depends": [],
-  "diagnostics": ["GetServices"],
+  "diagnostics": ["GetServices", "DependencyMap", "FailureHistory", "CriticalMonitor"],
   "actions": ["StartService", "StopService", "RestartService"],
   "requiresAdmin": ["StartService", "StopService", "RestartService"],
   "cacheSeconds": {
-    "GetServices": 10
-  }
+    "GetServices": 10,
+    "DependencyMap": 30,
+    "FailureHistory": 20,
+    "CriticalMonitor": 15
+  },
+  "capabilities": ["inventory", "diagnostics", "monitoring", "remediation", "automation"]
 }

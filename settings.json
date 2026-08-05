@@ -9,8 +9,38 @@
   "rustDeskInstallerUrl": "",
   "rustDeskInstallerSha256": "",
   "rustDeskSilentArgs": "",
-  "fleetEnabled": true,
-  "fleetEnrollToken": "",
   "fleetOfflineSeconds": 90,
-  "fleetPublicUrl": ""
+  "fleetPublicUrl": "",
+  "integrityMode": "warn",
+  "eventIntelEnabled": true,
+  "eventIntel": {
+    "sysmonOptional": true,
+    "eventRetentionHours": 72,
+    "incidentArchiveDays": 30,
+    "notifyLevel": "Warning",
+    "notifyCategories": ["*"],
+    "quietHours": { "enabled": false, "start": "22:00", "end": "07:00" },
+    "maintenanceWindow": { "enabled": false, "start": null, "end": null },
+    "businessHours": { "enabled": false, "start": "08:00", "end": "18:00", "days": [1, 2, 3, 4, 5] },
+    "channels": {
+      "desktop": true,
+      "dashboard": true,
+      "email": false,
+      "teams": false,
+      "slack": false,
+      "discord": false,
+      "webhook": false,
+      "syslog": false
+    },
+    "channelConfig": {
+      "email": {},
+      "teams": {},
+      "slack": {},
+      "discord": {},
+      "webhook": {},
+      "syslog": {}
+    }
+  },
+  "fleetEnabled": true,
+  "fleetEnrollToken": ""
 }

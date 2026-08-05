@@ -1,0 +1,22 @@
+﻿{
+  "id": "timeline",
+  "name": "Event Timeline",
+  "version": "1.0.0",
+  "icon": "history",
+  "description": "Chronological event and incident activity",
+  "order": 64,
+  "tier": 6,
+  "profiles": [
+    "helpdesk",
+    "desktop_support",
+    "systems_administrator",
+    "network_administrator",
+    "developer",
+    "power_user"
+  ],
+  "depends": [],
+  "diagnostics": [],
+  "actions": [],
+  "requiresAdmin": [],
+  "cacheSeconds": {}
+}

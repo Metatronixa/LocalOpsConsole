@@ -1,15 +1,20 @@
 {
   "id": "updates",
   "name": "Updates",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "icon": "download",
-  "description": "Windows Update status and component reset",
+  "description": "Windows Update health, failure history, pending reboot, and component reset",
   "order": 60,
   "tier": 2,
   "profiles": ["helpdesk", "desktop_support", "systems_administrator", "power_user"],
   "depends": [],
-  "diagnostics": ["GetPending"],
+  "diagnostics": ["GetPending", "UpdateHealth", "PendingReboot"],
   "actions": ["ResetComponents", "ClearSoftwareDistribution"],
   "requiresAdmin": ["ResetComponents", "ClearSoftwareDistribution"],
-  "cacheSeconds": { "GetPending": 30 }
+  "cacheSeconds": {
+    "GetPending": 30,
+    "UpdateHealth": 45,
+    "PendingReboot": 20
+  },
+  "capabilities": ["diagnostics", "monitoring", "remediation", "reporting"]
 }

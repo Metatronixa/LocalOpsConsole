@@ -1,0 +1,21 @@
+{
+  "id": "automation",
+  "name": "Automation",
+  "version": "1.0.0",
+  "icon": "workflow",
+  "description": "Opt-in automation playbooks and run history",
+  "order": 90,
+  "tier": 9,
+  "profiles": [
+    "systems_administrator",
+    "network_administrator",
+    "developer",
+    "power_user"
+  ],
+  "depends": [],
+  "diagnostics": [],
+  "actions": [],
+  "requiresAdmin": [],
+  "cacheSeconds": {},
+  "capabilities": ["automation", "monitoring"]
+}

@@ -1,0 +1,12 @@
+{
+  "id": "shutdown-initiated",
+  "eventId": 1074,
+  "source": "System",
+  "threshold": 1,
+  "windowSeconds": 60,
+  "severity": "Information",
+  "score": 30,
+  "incident": "System Shutdown Initiated",
+  "category": "system",
+  "notify": false
+}

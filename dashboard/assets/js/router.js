@@ -19,6 +19,21 @@ const Router = {
         if (typeof FleetView !== 'undefined' && FleetView.stopPoll) {
             FleetView.stopPoll();
         }
+        if (typeof AlertsView !== 'undefined' && AlertsView.stopPoll) {
+            AlertsView.stopPoll();
+        }
+        if (typeof IncidentsView !== 'undefined' && IncidentsView.stopPoll) {
+            IncidentsView.stopPoll();
+        }
+        if (typeof OverviewView !== 'undefined' && OverviewView.stopPoll) {
+            OverviewView.stopPoll();
+        }
+        if (typeof HealthCenterView !== 'undefined' && HealthCenterView.stopPoll) {
+            HealthCenterView.stopPoll();
+        }
+        if (typeof SecurityCenterView !== 'undefined' && SecurityCenterView.stopPoll) {
+            SecurityCenterView.stopPoll();
+        }
 
         document.querySelectorAll('#sidebar-nav button').forEach((btn) => {
             btn.classList.toggle('active', btn.dataset.module === (mod ? mod.id : moduleId));
@@ -41,7 +56,18 @@ const Router = {
             remotesupport: typeof RemoteSupportView !== 'undefined' ? RemoteSupportView : null,
             remote: typeof RemoteView !== 'undefined' ? RemoteView : null,
             internetslow: typeof InternetHealthView !== 'undefined' ? InternetHealthView : null,
-            fleet: typeof FleetView !== 'undefined' ? FleetView : null
+            fleet: typeof FleetView !== 'undefined' ? FleetView : null,
+            security: typeof SecurityToolsView !== 'undefined' ? SecurityToolsView : null,
+            eventlog: typeof EventLogView !== 'undefined' ? EventLogView : null,
+            overview: typeof OverviewView !== 'undefined' ? OverviewView : null,
+            alerts: typeof AlertsView !== 'undefined' ? AlertsView : null,
+            securitycenter: typeof SecurityCenterView !== 'undefined' ? SecurityCenterView : null,
+            healthcenter: typeof HealthCenterView !== 'undefined' ? HealthCenterView : null,
+            incidents: typeof IncidentsView !== 'undefined' ? IncidentsView : null,
+            timeline: typeof EventTimelineView !== 'undefined' ? EventTimelineView : null,
+            automation: typeof AutomationView !== 'undefined' ? AutomationView : null,
+            locsettings: typeof SettingsView !== 'undefined' ? SettingsView : null,
+            securitybaseline: typeof SecurityBaselineView !== 'undefined' ? SecurityBaselineView : null
         };
 
         const key = mod.id.toLowerCase();

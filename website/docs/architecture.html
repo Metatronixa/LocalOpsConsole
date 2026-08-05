@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Architecture — LocalOpsConsole Docs</title>
+  <link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="../assets/css/site.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap nav">
+      <a class="brand" href="../index.html">LocalOps<em>Console</em></a>
+      <ul class="nav-links"><li><a href="index.html">Docs</a></li></ul>
+    </div>
+  </header>
+  <main class="wrap docs-layout">
+    <nav class="docs-nav">
+      <a href="index.html">Overview</a>
+      <a href="installation.html">Installation</a>
+      <a class="active" href="architecture.html">Architecture</a>
+      <a href="modules.html">Modules</a>
+      <a href="api.html">API</a>
+      <a href="build.html">Build</a>
+      <a href="faq.html">FAQ</a>
+      <a href="troubleshooting.html">Troubleshooting</a>
+    </nav>
+    <article class="docs-content">
+      <h1>Architecture</h1>
+      <p>Browser SPA (<code>dashboard/</code>) ↔ HttpListener (<code>api/server.ps1</code>) ↔ thin <code>router.ps1</code> ↔ core services ↔ plugin modules.</p>
+      <h2>Core services</h2>
+      <ul>
+        <li><code>Engine.ps1</code> — ordered bootstrap</li>
+        <li><code>SecurityManager</code> / <code>IntegrityManager</code> / <code>PermissionManager</code> — execution gate</li>
+        <li><code>EventEngine</code> + Watch / Rule / Correlation / Incident / Notification / Automation</li>
+        <li><code>ModuleLoader</code> — manifests, depends, invoke</li>
+        <li><code>TaskRunner</code> — live telemetry</li>
+      </ul>
+      <h2>Event pipeline</h2>
+      <p>Observe → Normalize → Rule Engine → Correlation → Incident → Notification → Timeline → Dashboard (Overview / Incidents).</p>
+    </article>
+  </main>
+  <script src="../assets/js/site.js"></script>
+</body>
+</html>

@@ -17,5 +17,14 @@ Thumbs.db
 LocalOpsConsole-server-*.log
 data/fleet/*.json
 data/fleet/*.jsonl
+data/events/*.json
+data/events/*.jsonl
+data/incidents/**/*.json
+data/storage/*.jsonl
+data/integrity/module-hashes.json
 !data/.gitkeep
 !data/fleet/.gitkeep
+!data/events/.gitkeep
+!data/incidents/.gitkeep
+!data/storage/.gitkeep
+!data/integrity/.gitkeep

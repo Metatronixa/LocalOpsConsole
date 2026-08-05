@@ -1,0 +1,21 @@
+{
+  "id": "spooler-crash",
+  "eventId": 7031,
+  "source": "System",
+  "threshold": 1,
+  "windowSeconds": 300,
+  "severity": "Warning",
+  "score": 60,
+  "incident": "Print Spooler Crashed",
+  "category": "printers",
+  "messageContains": "Spooler",
+  "notify": true,
+  "automation": {
+    "enabled": false,
+    "action": "restart-service",
+    "service": "Spooler",
+    "verify": "service",
+    "closeOnSuccess": true,
+    "description": "Restart Spooler → verify Running → notify → close incident (opt-in)"
+  }
+}

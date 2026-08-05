@@ -1,0 +1,12 @@
+{
+  "id": "disk-errors",
+  "eventId": 7,
+  "source": "System",
+  "threshold": 3,
+  "windowSeconds": 600,
+  "severity": "Warning",
+  "score": 65,
+  "incident": "Disk Errors Detected",
+  "category": "storage",
+  "notify": true
+}

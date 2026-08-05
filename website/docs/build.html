@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Build — LocalOpsConsole Docs</title>
+  <link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="../assets/css/site.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap nav"><a class="brand" href="../index.html">LocalOps<em>Console</em></a></div>
+  </header>
+  <main class="wrap docs-layout">
+    <nav class="docs-nav"><a href="index.html">Overview</a><a class="active" href="build.html">Build</a></nav>
+    <article class="docs-content">
+      <h1>Build</h1>
+      <p>Run <code>.\build.ps1</code> to stamp <code>VERSION</code>, produce <code>dist/LocalOpsConsole-x.y.z.zip</code>, and generate <code>data/integrity/module-hashes.json</code> inside the package (integrity mode <code>enforce</code>).</p>
+      <p>Use <code>.\build.ps1 -PublishWebsite</code> to copy the ZIP into <code>website/uploads/builds/</code> and refresh <code>update.json</code> with SHA-256.</p>
+    </article>
+  </main>
+  <script src="../assets/js/site.js"></script>
+</body>
+</html>

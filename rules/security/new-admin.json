@@ -1,0 +1,12 @@
+{
+  "id": "new-admin",
+  "eventId": 4720,
+  "source": "Security",
+  "threshold": 1,
+  "windowSeconds": 60,
+  "severity": "Critical",
+  "score": 90,
+  "incident": "New admin/account created",
+  "category": "security",
+  "notify": true
+}

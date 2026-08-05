@@ -1,9 +1,9 @@
 {
   "id": "printers",
   "name": "Printers",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "icon": "printer",
-  "description": "Printers, queues, spooler remediation, and network diagnostics",
+  "description": "Queue analytics, driver validation, port diagnostics, and spooler recovery",
   "order": 50,
   "tier": 2,
   "profiles": ["helpdesk", "desktop_support", "systems_administrator", "power_user"],
@@ -16,7 +16,9 @@
     "GetQueueJobs",
     "GetPortDetail",
     "TestPrinterNetwork",
-    "GetPrintEvents"
+    "GetPrintEvents",
+    "QueueAnalytics",
+    "DriverValidation"
   ],
   "actions": [
     "RestartSpooler",
@@ -50,6 +52,9 @@
     "GetQueueJobs": 5,
     "GetPortDetail": 15,
     "TestPrinterNetwork": 0,
-    "GetPrintEvents": 20
-  }
+    "GetPrintEvents": 20,
+    "QueueAnalytics": 15,
+    "DriverValidation": 30
+  },
+  "capabilities": ["inventory", "diagnostics", "monitoring", "remediation", "automation", "reporting"]
 }

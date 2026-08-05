@@ -1,0 +1,18 @@
+{
+  "id": "low-disk",
+  "eventId": 9003,
+  "source": "Health",
+  "threshold": 1,
+  "windowSeconds": 600,
+  "severity": "Warning",
+  "score": 70,
+  "incident": "Low Disk Space",
+  "category": "storage",
+  "suppressSeconds": 3600,
+  "notify": true,
+  "automation": {
+    "enabled": false,
+    "action": "disk-cleanup",
+    "closeOnSuccess": false
+  }
+}

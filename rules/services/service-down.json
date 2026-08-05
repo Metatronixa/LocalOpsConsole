@@ -1,0 +1,18 @@
+{
+  "id": "service-down",
+  "eventId": 9101,
+  "source": "Services",
+  "threshold": 1,
+  "windowSeconds": 120,
+  "severity": "Warning",
+  "score": 70,
+  "incident": "Monitored Service Down",
+  "category": "services",
+  "suppressSeconds": 600,
+  "notify": true,
+  "automation": {
+    "enabled": false,
+    "action": "restart-service",
+    "closeOnSuccess": false
+  }
+}

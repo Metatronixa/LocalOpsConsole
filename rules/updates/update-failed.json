@@ -1,0 +1,12 @@
+{
+  "id": "update-failed",
+  "eventId": 20,
+  "source": "WindowsUpdate",
+  "threshold": 1,
+  "windowSeconds": 600,
+  "severity": "Warning",
+  "score": 55,
+  "incident": "Windows Update Installation Failed",
+  "category": "updates",
+  "notify": true
+}

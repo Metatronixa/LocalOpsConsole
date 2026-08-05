@@ -4,79 +4,65 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Download — LocalOpsConsole</title>
+  <meta name="description" content="Download LocalOpsConsole — latest release, checksums, system requirements, release notes." />
+  <link rel="icon" href="assets/img/logo.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="assets/css/site.css" />
 </head>
 <body>
   <header class="site-header">
     <div class="wrap nav">
-      <a class="brand" href="index.html">LocalOps<em>Console</em></a>
+      <a class="brand" href="index.html"><span class="brand-mark"><img src="assets/img/logo.svg" alt="" width="16" height="16" /></span>LocalOps<em>Console</em></a>
+      <button type="button" class="nav-toggle" aria-label="Menu">Menu</button>
       <ul class="nav-links">
         <li><a href="index.html">Home</a></li>
         <li><a href="features.html">Features</a></li>
-        <li><a href="guide/index.html">Guide</a></li>
+        <li><a href="docs/index.html">Docs</a></li>
         <li><a class="active" href="download.html">Download</a></li>
       </ul>
-      <a class="btn btn-primary" href="#latest">Get the app</a>
+      <a class="btn btn-primary" href="#latest">Get latest</a>
     </div>
   </header>
-
   <main class="wrap">
-    <div class="page-hero">
-      <p class="eyebrow">Free · MIT · Releases</p>
+    <div class="page-hero" id="latest">
       <h1>Download</h1>
-      <p class="lead">LocalOpsConsole is free and open source. Grab the ZIP, use the bootstrap script, or clone from GitHub.</p>
+      <p>Portable ZIP for Windows. Elevate with UAC when remediations need admin.</p>
     </div>
-
-    <section class="section" style="padding-top:0" id="latest">
-      <div class="card" style="padding:1.75rem">
-        <span class="badge">stable · free</span>
-        <h2 style="margin:0.75rem 0 0.35rem">LocalOpsConsole 2.0.0</h2>
-        <p style="color:var(--muted);margin:0 0 1.25rem">Internet Health + LocalOps Agent fleet (outbound RMM foundation). Requires Windows PowerShell 5.1+.</p>
-        <div class="cta-row">
-          <a class="btn btn-teal" href="https://github.com/Metatronixa/LocalOpsConsole/releases/latest">GitHub Releases</a>
-          <a class="btn btn-teal" href="uploads/builds/LocalOpsConsole-2.0.0.zip">Download ZIP (local mirror)</a>
-          <a class="btn btn-ghost" href="https://github.com/Metatronixa/LocalOpsConsole">Source</a>
-          <a class="btn btn-ghost" href="guide/getting-started.html">Install guide</a>
+    <section class="section reveal grid-2">
+      <article class="card">
+        <h3>Latest release</h3>
+        <p>Version <strong>2.1.0</strong> — LocalOpsConsole Windows Operations Platform.</p>
+        <div class="cta-row" style="margin-top:1rem">
+          <a class="btn btn-primary" href="https://github.com/Metatronixa/LocalOpsConsole/releases/latest">GitHub Releases</a>
+          <a class="btn btn-ghost" href="uploads/update.json">update.json</a>
         </div>
-      </div>
+        <p style="margin-top:1rem;font-size:0.85rem;color:var(--muted)">Checksums are published in <code>uploads/update.json</code> (SHA-256) and on GitHub release assets.</p>
+      </article>
+      <article class="card">
+        <h3>System requirements</h3>
+        <ul style="margin:0;padding-left:1.1rem;color:var(--muted)">
+          <li>Windows 10 or 11</li>
+          <li>PowerShell 5.1+</li>
+          <li>Modern browser for the dashboard</li>
+          <li>Administrator elevation for remediations</li>
+        </ul>
+      </article>
     </section>
-
-    <section class="section">
-      <h2>Bootstrap script</h2>
-      <p style="color:var(--muted)">Give this to a colleague — downloads the latest release, verifies SHA-256 when present, extracts under <code>%LOCALAPPDATA%\LocalOpsConsole</code>.</p>
-      <pre style="overflow:auto;padding:1rem;border-radius:0.75rem;background:#0f172a;color:#e2e8f0;font-size:0.8rem">iwr https://raw.githubusercontent.com/Metatronixa/LocalOpsConsole/main/website/uploads/Install-LocalOpsConsole.ps1 -OutFile "$env:TEMP\Install-LOC.ps1"
-powershell -ExecutionPolicy Bypass -File "$env:TEMP\Install-LOC.ps1" -Launch</pre>
-      <p style="margin-top:0.75rem"><a href="uploads/Install-LocalOpsConsole.ps1">Install-LocalOpsConsole.ps1</a> · <a href="uploads/update.json">update.json</a></p>
-    </section>
-
-    <section class="section">
+    <section class="section reveal">
       <h2>Install</h2>
-      <ol>
-        <li>Extract the ZIP to a folder you can write to (e.g. <code>C:\Tools\LocalOpsConsole</code>).</li>
-        <li>Right-click <code>start.bat</code> → <strong>Run as administrator</strong> (recommended), or double-click it. Do not open <code>start.ps1</code> with Notepad.</li>
-        <li>Open <code>http://localhost:8787/</code> (default port in <code>settings.json</code>).</li>
-      </ol>
-      <div class="callout warn" style="margin-top:1.25rem">
-        <strong>Elevation:</strong> Standard users can navigate and run most diagnostics. Remediations need Administrator.
+      <div class="card">
+        <pre class="mono" style="margin:0;white-space:pre-wrap;color:#cbd5e1;font-size:0.85rem"># From source
+start.bat
+
+# Or bootstrap from published update feed
+# See uploads/Install-LocalOpsConsole.ps1</pre>
       </div>
     </section>
-
-    <section class="section">
-      <h2>Publish your own updates</h2>
-      <p style="color:var(--muted)">Copy a new build into <code>website/uploads/builds/</code>, update <code>website/uploads/update.json</code>, and set the app’s <code>updateUrl</code> to that JSON. Or point at GitHub Releases assets.</p>
-      <pre style="margin-top:1rem">{
-  "latest": "2.0.0",
-  "builds": [{ "version": "2.0.0", "url": "uploads/builds/LocalOpsConsole-2.0.0.zip", "sha256": "..." }]
-}</pre>
-      <p style="margin-top:1rem"><a href="guide/updates.html">Full update documentation →</a></p>
+    <section class="section reveal">
+      <h2>Previous releases</h2>
+      <p class="sub">Historical builds may be mirrored under <code>uploads/builds/</code> when published with <code>build.ps1 -PublishWebsite</code>.</p>
     </section>
   </main>
-
-  <footer class="site-footer">
-    <div class="wrap footer-row">
-      <div>Copyright 2026 Bradford Lotriet · MIT License</div>
-      <div class="footer-links"><a href="https://github.com/Metatronixa/LocalOpsConsole">GitHub</a><a href="guide/index.html">Guide</a></div>
-    </div>
-  </footer>
+  <footer class="site-footer"><div class="wrap footer-copy">© 2026 Bradford Lotriet · <a href="index.html">Home</a></div></footer>
+  <script src="assets/js/site.js"></script>
 </body>
 </html>

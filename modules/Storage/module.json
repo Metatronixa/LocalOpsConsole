@@ -1,18 +1,21 @@
 {
   "id": "storage",
   "name": "Storage",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "icon": "hard-drive",
-  "description": "Volumes, SMART health, and temp cleanup",
+  "description": "Volumes, SMART history, capacity trends, and temp cleanup",
   "order": 30,
   "tier": 2,
   "profiles": ["desktop_support", "systems_administrator", "power_user"],
   "depends": [],
-  "diagnostics": ["GetDisks", "SmartStatus"],
+  "diagnostics": ["GetDisks", "SmartStatus", "CapacityTrend", "SmartHistory"],
   "actions": ["ClearTemp"],
   "requiresAdmin": ["ClearTemp"],
   "cacheSeconds": {
     "GetDisks": 20,
-    "SmartStatus": 30
-  }
+    "SmartStatus": 30,
+    "CapacityTrend": 60,
+    "SmartHistory": 60
+  },
+  "capabilities": ["inventory", "diagnostics", "monitoring", "remediation", "automation", "reporting"]
 }

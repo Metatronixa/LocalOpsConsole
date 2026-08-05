@@ -38,6 +38,7 @@ function Initialize-ModuleLoader {
                 RequiresAdmin  = @($json.requiresAdmin | ForEach-Object { [string]$_ })
                 Hidden         = if ($null -ne $json.hidden) { [bool]$json.hidden } else { $false }
                 CacheSeconds   = @{}
+                Capabilities   = if ($null -ne $json.capabilities) { @($json.capabilities | ForEach-Object { [string]$_ }) } else { @() }
                 Path           = $moduleDir
                 ManifestPath   = $file.FullName
             }
@@ -182,14 +183,11 @@ function Invoke-LocModuleAction {
         return New-ApiResult -Success $false -Message "Script for '$ModuleId/$Kind/$ActionName' not found" -StatusCode 404
     }
 
-    # Admin gate
-    $needsAdmin = $mod.RequiresAdmin | Where-Object { $_.ToLower() -eq $canonical.ToLower() }
-    if ($needsAdmin) {
-        $denied = Require-Admin -ActionName "$($mod.Name)/$canonical"
-        if ($denied) {
-            Write-LocLog -Module $mod.Id -Action $canonical -Level "ERROR" -Message "Access Denied (requires admin)"
-            return $denied
-        }
+    # Security gate: manifest, integrity, elevation, deps, params, path jail
+    $gate = Invoke-LocSecurityGate -Module $mod -Kind $Kind -ActionName $canonical -ScriptPath $scriptPath -Params $Params
+    if (-not $gate.Ok) {
+        Write-LocLog -Module $mod.Id -Action $canonical -Level "ERROR" -Message $gate.Message
+        return New-ApiResult -Success $false -Message $gate.Message -StatusCode $gate.StatusCode -Data $gate.Data
     }
 
     # Cache (diagnostics only)
@@ -237,19 +235,7 @@ function Invoke-LocModuleAction {
             }
         }
 
-        # Bound splat: only params defined on script (AST parse — reliable for .ps1 files)
-        $splat = @{}
-        $tokens = $null
-        $errors = $null
-        $ast = [System.Management.Automation.Language.Parser]::ParseFile($scriptPath, [ref]$tokens, [ref]$errors)
-        $scriptParams = @()
-        if ($ast -and $ast.ParamBlock) {
-            $scriptParams = @($ast.ParamBlock.Parameters | ForEach-Object { $_.Name.VariablePath.UserPath })
-        }
-        foreach ($key in @($Params.Keys)) {
-            $match = $scriptParams | Where-Object { $_.ToLower() -eq $key.ToLower() } | Select-Object -First 1
-            if ($match) { $splat[$match] = $Params[$key] }
-        }
+        $splat = if ($gate.Splat) { $gate.Splat } else { @{} }
 
         # Dot-source so the script can call helpers loaded above (& would hide them)
         $rawOutput = @(. $scriptPath @splat)

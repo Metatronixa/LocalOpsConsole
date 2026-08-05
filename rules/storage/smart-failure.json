@@ -1,0 +1,13 @@
+{
+  "id": "smart-failure",
+  "eventId": 9700,
+  "source": "SMART",
+  "threshold": 1,
+  "windowSeconds": 3600,
+  "severity": "Critical",
+  "score": 95,
+  "incident": "Disk SMART Failure Predicted",
+  "category": "storage",
+  "healthMetric": "smartFail",
+  "notify": true
+}

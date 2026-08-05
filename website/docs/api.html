@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>API — LocalOpsConsole Docs</title>
+  <link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="../assets/css/site.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap nav"><a class="brand" href="../index.html">LocalOps<em>Console</em></a></div>
+  </header>
+  <main class="wrap docs-layout">
+    <nav class="docs-nav">
+      <a href="index.html">Overview</a>
+      <a class="active" href="api.html">API</a>
+    </nav>
+    <article class="docs-content">
+      <h1>API</h1>
+      <p>Base path: <code>/api/v1/</code></p>
+      <ul>
+        <li><code>GET health</code>, <code>GET modules</code>, <code>GET telemetry</code>, <code>GET logs</code></li>
+        <li><code>GET/POST settings</code>, <code>GET integrity/status</code>, <code>GET automation/status</code></li>
+        <li><code>GET incidents</code>, <code>GET alerts</code>, <code>GET timeline</code>, <code>GET health-score</code>, <code>GET security-score</code></li>
+        <li><code>GET {module}/diagnostics/{name}</code>, <code>POST {module}/actions/{name}</code></li>
+        <li><code>fleet/*</code> — agent enroll/heartbeat (HMAC)</li>
+      </ul>
+      <p>Business logic lives in core services — the router only dispatches.</p>
+    </article>
+  </main>
+  <script src="../assets/js/site.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+  "id": "firewall-disabled",
+  "eventId": 2003,
+  "source": "Firewall",
+  "threshold": 1,
+  "windowSeconds": 300,
+  "severity": "Critical",
+  "score": 85,
+  "incident": "Firewall Disabled",
+  "category": "security",
+  "notify": true
+}

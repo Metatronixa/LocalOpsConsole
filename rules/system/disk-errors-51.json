@@ -1,0 +1,12 @@
+{
+  "id": "disk-errors-51",
+  "eventId": 51,
+  "source": "System",
+  "threshold": 3,
+  "windowSeconds": 600,
+  "severity": "Warning",
+  "score": 65,
+  "incident": "Disk Paging Errors Detected",
+  "category": "storage",
+  "notify": true
+}
