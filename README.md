@@ -11,14 +11,21 @@
 PowerShell HttpListener API + offline SPA. Plugin modules via `module.json`. **Overview** answers “Is this computer healthy?” using health score, security posture, and active incidents — not raw Event Viewer dumps.
 
 <p align="center">
+  <img src="website/assets/img/screenshot-overview.png" alt="LocalOpsConsole — Overview health, security, and incidents" width="860" />
+</p>
+<p align="center"><em>Overview — health score, security posture, and active incidents</em></p>
+
+<p align="center">
+  <img src="website/assets/img/screenshots/security-center.png" alt="LocalOpsConsole — Security Center" width="860" />
+</p>
+<p align="center"><em>Security Center — posture score and control status</em></p>
+
+<p align="center">
   <img src="website/assets/img/screenshot-system.png" alt="LocalOpsConsole — live system telemetry" width="860" />
 </p>
 <p align="center"><em>Live telemetry — CPU, RAM, disk, network, GPU</em></p>
 
-<p align="center">
-  <img src="website/assets/img/screenshot-results.png" alt="LocalOpsConsole — readable diagnostic results" width="860" />
-</p>
-<p align="center"><em>Readable results — structured diagnostics</em></p>
+<p align="center"><a href="website/screenshots.html">More screenshots by category →</a></p>
 
 ## Why free?
 

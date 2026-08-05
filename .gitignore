@@ -10,6 +10,7 @@ Thumbs.db
 *.bak.loc
 .vscode/
 .idea/
+tools/.chrome-capture-profile/
 *.user
 .env
 *.pfx
