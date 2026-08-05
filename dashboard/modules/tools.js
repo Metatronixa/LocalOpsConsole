@@ -2,16 +2,17 @@ const ToolsView = {
     _busy: false,
 
     async render(container, mod) {
-        const tools = (mod.diagnostics || []);
-        const actions = (mod.actions || []);
+        const tools = API.asArray(mod.diagnostics);
+        const actions = API.asArray(mod.actions);
+        const requiresAdmin = API.asArray(mod.requiresAdmin).map((a) => String(a).toLowerCase());
         const admin = window.__LOC_ADMIN;
         const buttons = tools.map((name) => {
-            const needsAdmin = (mod.requiresAdmin || []).some((a) => a.toLowerCase() === name.toLowerCase());
+            const needsAdmin = requiresAdmin.includes(String(name).toLowerCase());
             const disabled = needsAdmin && !admin ? 'disabled' : '';
             return `<button class="action-btn cyan tools-run-btn" data-tool="${name}" ${disabled} onclick="ToolsView.run('${name}')">${name}</button>`;
         }).join('');
         const actionBtns = actions.map((name) => {
-            const needsAdmin = (mod.requiresAdmin || []).some((a) => a.toLowerCase() === name.toLowerCase());
+            const needsAdmin = requiresAdmin.includes(String(name).toLowerCase());
             const disabled = needsAdmin && !admin ? 'disabled' : '';
             return `<button class="action-btn amber tools-run-btn" data-tool="${name}" ${disabled} onclick="ToolsView.runAction('${name}')">${name}</button>`;
         }).join('');

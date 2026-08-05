@@ -14,6 +14,7 @@ Public roadmap for the Windows Operations Platform. Dates are directional, not c
 - Opt-in automation playbooks + Settings notification prefs UI
 - Dark ops-center UI contrast pass
 - Marketing website rebuild (static) + professional docs hub
+- v2.1.1: Settings API fix, generic module views, fleet LAN URL hints, install docs
 
 ## Next
 

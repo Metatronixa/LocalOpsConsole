@@ -77,8 +77,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const active = getActiveProfile();
         const filtered = (allModules || []).filter((m) => {
             if (m.hidden) return false;
-            if (!m.profiles || !Array.isArray(m.profiles) || m.profiles.length === 0) return true;
-            return m.profiles.includes(active);
+            const profiles = API.asArray(m.profiles);
+            if (!profiles.length) return true;
+            return profiles.includes(active);
         });
         renderSidebar(filtered);
         const prefer = filtered.find((m) => String(m.id).toLowerCase() === 'overview')
@@ -109,7 +110,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const response = await API.request('modules');
     if (response.Success) {
-        const mods = Array.isArray(response.Data) ? response.Data : [];
+        const mods = API.asArray(response.Data).map((m) => ({
+            ...m,
+            profiles: API.asArray(m.profiles),
+            depends: API.asArray(m.depends),
+            diagnostics: API.asArray(m.diagnostics),
+            actions: API.asArray(m.actions),
+            requiresAdmin: API.asArray(m.requiresAdmin),
+            capabilities: API.asArray(m.capabilities)
+        }));
         Router.setModules(mods);
         allModules = mods;
         ensureProfileUi();
@@ -309,8 +318,8 @@ function renderSidebar(modules) {
 
         const body = document.createElement('div');
         body.className = 'space-y-0.5';
-        // Collapse secondary sections by default; keep Overview/Incidents/Operations open.
-        const preferOpen = ['Overview', 'Incidents', 'Operations', 'Security', 'Health'].includes(domain);
+        // Collapse secondary sections by default; keep primary ops sections open.
+        const preferOpen = ['Overview', 'Incidents', 'Operations', 'Security', 'Health', 'Inventory'].includes(domain);
         body.style.display = preferOpen ? '' : 'none';
 
         header.onclick = () => {

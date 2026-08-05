@@ -16,6 +16,7 @@
     <article class="docs-content faq">
       <h1>FAQ</h1>
       <details open><summary>Port already in use?</summary><p>Change <code>port</code> in <code>settings.json</code> or stop the other listener.</p></details>
+      <details><summary>Why not 127.0.0.1 for agents?</summary><p>On another PC, <code>127.0.0.1</code> means that PC — not the console. Use the console’s LAN IP (or <code>fleetPublicUrl</code>) and set <code>bindHost</code> to <code>0.0.0.0</code>. See <a href="installation.html">Installation</a>.</p></details>
       <details><summary>Integrity failures in development?</summary><p>Set <code>integrityMode</code> to <code>warn</code> (default for source) or regenerate hashes.</p></details>
       <details><summary>Event Intelligence empty?</summary><p>Ensure <code>eventIntelEnabled</code> is true and wait for watchers/health ticks; Overview should still load scores.</p></details>
     </article>

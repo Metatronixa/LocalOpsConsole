@@ -33,6 +33,9 @@ const ResultRenderer = {
             return `<span class="badge ${val ? 'badge-ok' : 'badge-muted'}">${val ? 'Yes' : 'No'}</span>`;
         }
         const name = String(val);
+        if (/^https?:\/\//i.test(name)) {
+            return `<a class="text-cyan-400 hover:underline break-all" href="${this.escape(name)}" target="_blank" rel="noopener noreferrer">${this.escape(name)}</a>`;
+        }
         if (['Running', 'Stopped', 'Online', 'Offline', 'OK', 'Error', 'Up', 'Down'].includes(name) || /status|state|health/i.test(name)) {
             return `<span class="badge ${this.statusClass(name)}">${this.escape(name)}</span>`;
         }

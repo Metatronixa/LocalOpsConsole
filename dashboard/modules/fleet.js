@@ -105,9 +105,17 @@ const FleetView = {
         const cmd = `powershell -ExecutionPolicy Bypass -File .\\Install-LocalOpsAgent.ps1 -ServerUrl "${url}" -EnrollToken "${res.Data.Token || ''}"`;
         if (cmdEl) cmdEl.value = cmd;
         if (hint) {
-            hint.textContent = res.Data.PublicUrl
-                ? `Public URL: ${res.Data.PublicUrl}. Remote agents must reach this URL (set bindHost or fleetPublicUrl in settings.json).`
-                : 'Remote agents need bindHost or fleetPublicUrl in settings.json if not on this PC.';
+            const bind = res.Data.BindHost || 'localhost';
+            const lan = res.Data.DetectedLanIp || '';
+            if (res.Data.PublicUrl) {
+                hint.textContent = `Install uses fleetPublicUrl (${res.Data.PublicUrl}). Agents must reach that host; bindHost is currently "${bind}".`;
+            } else if (res.Data.AllowsRemote) {
+                hint.textContent = `Install uses a reachable console URL (${url}). bindHost="${bind}" accepts remote agents.`;
+            } else if (lan) {
+                hint.textContent = `Install uses this PC's LAN IP (${lan}) so other PCs can enroll. Also set bindHost to 0.0.0.0 (or ${lan}) in settings.json — localhost-only bind blocks remote agents.`;
+            } else {
+                hint.textContent = 'Could not detect a LAN IP. Set fleetPublicUrl (e.g. http://192.168.1.10:8787) and bindHost to 0.0.0.0 for remote agents.';
+            }
         }
     },
 

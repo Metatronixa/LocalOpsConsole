@@ -30,7 +30,7 @@
     <section class="section reveal grid-2">
       <article class="card">
         <h3>Latest release</h3>
-        <p>Version <strong>2.1.0</strong> — LocalOpsConsole Windows Operations Platform.</p>
+        <p>Version <strong>2.1.1</strong> — LocalOpsConsole Windows Operations Platform.</p>
         <div class="cta-row" style="margin-top:1rem">
           <a class="btn btn-primary" href="https://github.com/Metatronixa/LocalOpsConsole/releases/latest">GitHub Releases</a>
           <a class="btn btn-ghost" href="uploads/update.json">update.json</a>
@@ -50,12 +50,17 @@
     <section class="section reveal">
       <h2>Install</h2>
       <div class="card">
-        <pre class="mono" style="margin:0;white-space:pre-wrap;color:#cbd5e1;font-size:0.85rem"># From source
+        <pre class="mono" style="margin:0;white-space:pre-wrap;color:#cbd5e1;font-size:0.85rem"># Console on this PC
 start.bat
+# Browser: http://localhost:8787/
 
-# Or bootstrap from published update feed
-# See uploads/Install-LocalOpsConsole.ps1</pre>
+# Agent on another PC — use console LAN IP, not 127.0.0.1
+# 1) Console settings.json: "bindHost": "0.0.0.0"
+# 2) Computers → copy install command
+# 3) On remote PC (Admin):
+.\Install-LocalOpsAgent.ps1 -ServerUrl "http://192.168.1.10:8787" -EnrollToken "TOKEN"</pre>
       </div>
+      <p style="margin-top:1rem"><a href="docs/installation.html">Full installation guide</a> · <a href="uploads/Install-LocalOpsConsole.ps1">Bootstrap script</a></p>
     </section>
     <section class="section reveal">
       <h2>Previous releases</h2>

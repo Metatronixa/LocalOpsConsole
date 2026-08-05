@@ -64,6 +64,13 @@
         <li>If SHA-256 is set, it must match the ZIP or apply will abort.</li>
       </ul>
 
+      <h2>Remote agent cannot enroll</h2>
+      <ul>
+        <li><code>-ServerUrl</code> must be the console’s LAN IP or <code>fleetPublicUrl</code> — not <code>127.0.0.1</code>.</li>
+        <li>Set console <code>bindHost</code> to <code>0.0.0.0</code> and restart; allow firewall TCP on the port.</li>
+        <li>See <a href="../docs/installation.html">Installation — LocalOps Agent</a>.</li>
+      </ul>
+
       <h2>Module missing</h2>
       <p>Ensure <code>modules/*/module.json</code> is valid JSON. Health reports module load errors.</p>
 

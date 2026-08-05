@@ -96,6 +96,18 @@ Use the in-app update banner or `GET /api/v1/updates/check`. Release checksums l
 
 LocalOps Agent can enroll with HMAC auth for heartbeat and command polling. Fleet is optional — the console remains useful fully offline. Leave `fleetEnrollToken` empty in committed settings; generate a token locally when enabling fleet.
 
+### Install agent on another PC
+
+1. On the **console** PC, set `bindHost` to `0.0.0.0` (or the LAN IP) so HttpListener accepts remote connections. Optionally set `fleetPublicUrl` to `http://<console-LAN-IP>:8787`.
+2. Restart the console. Open **Computers** and copy the install one-liner.
+3. On the **remote** PC, extract `LocalOpsAgent-x.y.z.zip` and run as Administrator:
+
+```powershell
+.\Install-LocalOpsAgent.ps1 -ServerUrl "http://192.168.1.10:8787" -EnrollToken "YOUR_TOKEN"
+```
+
+Use the console’s LAN IP (or `fleetPublicUrl`) — **not** `127.0.0.1` / `localhost`. Those only work on the console host itself. The Computers UI suggests the detected LAN IP when `fleetPublicUrl` is empty.
+
 ## Troubleshooting
 
 - Check `logs/YYYY-MM-DD.log`
@@ -104,3 +116,4 @@ LocalOps Agent can enroll with HMAC auth for heartbeat and command polling. Flee
 - Set `integrityMode` to `warn` during local module development
 - If Security/Event Log feel stuck, hard-refresh the UI and confirm the server was restarted after pulling updates
 - Event Log “Access denied” on the Security channel is normal without elevation
+- Remote agents: use console LAN IP / `fleetPublicUrl` for `-ServerUrl`; set `bindHost` to `0.0.0.0`

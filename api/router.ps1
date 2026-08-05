@@ -435,6 +435,7 @@ function Invoke-LocRouter {
     )
 
     $request = $Context.Request
+    $method = $request.HttpMethod.ToUpperInvariant()
     $segments = @($request.Url.AbsolutePath.Trim('/').Split('/') | Where-Object { $_ })
 
     # Expect api / v1 / ...
@@ -478,13 +479,14 @@ function Invoke-LocRouter {
                 description   = $_.Description
                 order         = $_.Order
                 tier          = $_.Tier
-                profiles      = $_.Profiles
-                depends       = $_.Depends
-                diagnostics   = $_.Diagnostics
-                actions       = $_.Actions
-                requiresAdmin = $_.RequiresAdmin
+                # Wrap as ArrayList so ConvertTo-Json keeps single-item arrays as JSON arrays
+                profiles      = [System.Collections.ArrayList]@($_.Profiles)
+                depends       = [System.Collections.ArrayList]@($_.Depends)
+                diagnostics   = [System.Collections.ArrayList]@($_.Diagnostics)
+                actions       = [System.Collections.ArrayList]@($_.Actions)
+                requiresAdmin = [System.Collections.ArrayList]@($_.RequiresAdmin)
                 hidden        = $_.Hidden
-                capabilities  = if ($_.Capabilities) { $_.Capabilities } else { @() }
+                capabilities  = [System.Collections.ArrayList]@(if ($_.Capabilities) { $_.Capabilities } else { @() })
             }
         }
         Send-JsonResponse -Context $Context -Success $true -Message "Modules loaded" -Data @($mods)
@@ -515,7 +517,7 @@ function Invoke-LocRouter {
 
     # Built-in: shutdown (stops HttpListener; launcher Wait-Process then exits)
     if ($resource -eq "shutdown") {
-        if ($request.HttpMethod -ne "POST") {
+        if ($method -ne "POST") {
             Send-JsonResponse -Context $Context -Success $false -Message "Shutdown requires POST" -StatusCode 405
             return
         }
@@ -538,7 +540,7 @@ function Invoke-LocRouter {
             return
         }
         if ($sub -eq "apply") {
-            if ($request.HttpMethod -ne "POST") {
+            if ($method -ne "POST") {
                 Send-JsonResponse -Context $Context -Success $false -Message "Apply requires POST" -StatusCode 405
                 return
             }

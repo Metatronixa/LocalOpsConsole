@@ -1,13 +1,24 @@
 /** Manifest-driven Diagnostics / Actions view */
 const ModuleView = {
+    list(mod, key) {
+        return (typeof API !== 'undefined' && API.asArray)
+            ? API.asArray(mod && mod[key])
+            : (Array.isArray(mod && mod[key]) ? mod[key] : (mod && mod[key] != null ? [mod[key]] : []));
+    },
+
     async render(container, mod) {
         const isAdmin = window.__LOC_ADMIN === true;
-        const diagButtons = (mod.diagnostics || []).map((name) => `
+        const diagnostics = this.list(mod, 'diagnostics');
+        const actions = this.list(mod, 'actions');
+        const requiresAdmin = this.list(mod, 'requiresAdmin').map((a) => String(a).toLowerCase());
+        const capabilities = this.list(mod, 'capabilities');
+
+        const diagButtons = diagnostics.map((name) => `
             <button class="action-btn cyan" onclick="ModuleView.runDiag('${mod.id}', '${name}')">${name}</button>
         `).join('');
 
-        const actionButtons = (mod.actions || []).map((name) => {
-            const needsAdmin = (mod.requiresAdmin || []).some((a) => a.toLowerCase() === name.toLowerCase());
+        const actionButtons = actions.map((name) => {
+            const needsAdmin = requiresAdmin.includes(String(name).toLowerCase());
             const disabled = needsAdmin && !isAdmin ? 'disabled title="Requires Administrator"' : '';
             return `<button class="action-btn amber" ${disabled} onclick="ModuleView.runAction('${mod.id}', '${name}')">${name}${needsAdmin ? ' 🔒' : ''}</button>`;
         }).join('');
@@ -23,7 +34,7 @@ const ModuleView = {
             </div>
         ` : '';
 
-        const caps = (mod.capabilities || []).map((c) =>
+        const caps = capabilities.map((c) =>
             `<span class="badge badge-muted">${c}</span>`
         ).join(' ');
 
@@ -111,8 +122,10 @@ const ModuleView = {
         const res = await API.action(moduleId, name, params, longRunning ? 600000 : undefined);
         if (res.Success) {
             LiveConsole.log(res.Message || 'OK', 'SUCCESS');
-            if (res.Data && res.Data.Url) {
-                window.open(res.Data.Url, '_blank');
+            const url = (res.Data && (res.Data.Url || res.Data.url))
+                || (res.Data && res.Data.Output && (res.Data.Output.Url || res.Data.Output.url));
+            if (url) {
+                window.open(url, '_blank', 'noopener,noreferrer');
             }
             this.showResult(res.Message, res.Data && res.Data.Output ? res.Data.Output : res.Data);
         } else {

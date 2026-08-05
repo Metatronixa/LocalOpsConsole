@@ -1,8 +1,9 @@
 try {
-    $url = "https://www.syncme.co.za/updates/SyncMe-Setup-1.4.2.zip"
-    return New-ApiResult -Success $true -Message "Opening SyncMe download page" -Data ([PSCustomObject]@{
+    $url = "https://www.syncme.co.za/"
+    return New-ApiResult -Success $true -Message "Opening SyncMe website" -Data ([PSCustomObject]@{
         Url  = $url
-        Note = "Install SyncMe, then set syncMePath in settings.json if needed."
+        Note = "Download SyncMe from the site, install it, then set syncMePath in settings.json if needed."
+        Zip  = "https://www.syncme.co.za/updates/SyncMe-Setup-1.4.2.zip"
     })
 }
 catch {

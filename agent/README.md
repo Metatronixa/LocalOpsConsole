@@ -28,10 +28,12 @@ The installer:
 
 ## Remote agents and bindHost
 
-By default the console binds to `localhost`. Remote agents need a URL they can reach:
+By default the console binds to `localhost` (this PC only). Agents on other PCs need:
 
-- Set `bindHost` in `settings.json` to `0.0.0.0` or your LAN IP, **or**
-- Set optional `fleetPublicUrl` (e.g. `http://192.168.1.10:8787`) for the dashboard install hint
+1. **A reachable ServerUrl** — the PC's LAN IP (e.g. `http://192.168.1.10:8787`), not `127.0.0.1` / `localhost`
+2. **HttpListener open to the network** — set `bindHost` in `settings.json` to `0.0.0.0` or that LAN IP
+
+Optional: set `fleetPublicUrl` (e.g. `http://192.168.1.10:8787`) to pin the dashboard install one-liner. If unset, Computers uses the detected LAN IPv4 for the suggested `-ServerUrl`.
 
 ## Behavior
 
