@@ -1,0 +1,17 @@
+{
+  "id": "services",
+  "name": "Services",
+  "version": "1.0.0",
+  "icon": "cog",
+  "description": "Query and control Windows services",
+  "order": 40,
+  "tier": 2,
+  "profiles": ["desktop_support", "systems_administrator", "power_user"],
+  "depends": [],
+  "diagnostics": ["GetServices"],
+  "actions": ["StartService", "StopService", "RestartService"],
+  "requiresAdmin": ["StartService", "StopService", "RestartService"],
+  "cacheSeconds": {
+    "GetServices": 10
+  }
+}

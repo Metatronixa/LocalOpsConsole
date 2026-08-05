@@ -1,0 +1,20 @@
+{
+  "id": "system",
+  "name": "System",
+  "version": "1.0.0",
+  "icon": "cpu",
+  "description": "Processor, memory, uptime, and privilege telemetry",
+  "order": 10,
+  "tier": 1,
+  "profiles": ["helpdesk", "desktop_support", "systems_administrator", "developer", "power_user"],
+  "depends": [],
+  "diagnostics": ["GetCpu", "GetMemory", "GetUptime", "GetPrivileges"],
+  "actions": [],
+  "requiresAdmin": [],
+  "cacheSeconds": {
+    "GetCpu": 5,
+    "GetMemory": 5,
+    "GetUptime": 30,
+    "GetPrivileges": 60
+  }
+}

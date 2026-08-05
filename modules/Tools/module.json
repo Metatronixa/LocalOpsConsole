@@ -1,0 +1,25 @@
+{
+  "id": "tools",
+  "name": "Tools",
+  "version": "1.1.0",
+  "icon": "wrench",
+  "description": "Classic IT support command toolbox and OS repair",
+  "order": 15,
+  "tier": 2,
+  "profiles": ["helpdesk", "desktop_support", "systems_administrator", "developer", "power_user"],
+  "depends": [],
+  "diagnostics": ["IpConfig", "Netstat", "RoutePrint", "Arp", "Nslookup", "Whoami", "Hostname", "SystemInfo", "PowerCfg", "DismGetHealth", "SfcVerifyOnly", "ChkdskStatus", "GpResult"],
+  "actions": ["GpUpdate", "SfcScanNow", "DismRestoreHealth", "RouteAdd"],
+  "requiresAdmin": ["DismGetHealth", "SfcVerifyOnly", "ChkdskStatus", "GpUpdate", "SfcScanNow", "DismRestoreHealth", "RouteAdd"],
+  "cacheSeconds": {
+    "IpConfig": 10,
+    "Netstat": 5,
+    "RoutePrint": 15,
+    "Arp": 15,
+    "SystemInfo": 30,
+    "PowerCfg": 20,
+    "DismGetHealth": 60,
+    "Hostname": 120,
+    "Whoami": 60
+  }
+}

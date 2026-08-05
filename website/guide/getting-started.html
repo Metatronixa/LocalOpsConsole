@@ -1,0 +1,81 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Getting started — LocalOpsConsole</title>
+  <link rel="stylesheet" href="../assets/css/site.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap nav">
+      <a class="brand" href="../index.html">LocalOps<em>Console</em></a>
+      <ul class="nav-links">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../features.html">Features</a></li>
+        <li><a class="active" href="index.html">Guide</a></li>
+        <li><a href="../download.html">Download</a></li>
+      </ul>
+      <a class="btn btn-teal" href="../download.html">Get the app</a>
+    </div>
+  </header>
+
+  <div class="wrap guide-layout">
+    <aside class="guide-nav">
+      <h2>Guide</h2>
+      <ul>
+        <li><a href="index.html">Overview</a></li>
+        <li><a class="active" href="getting-started.html">Getting started</a></li>
+        <li><a href="modules.html">Modules</a></li>
+        <li><a href="updates.html">Updates</a></li>
+        <li><a href="troubleshooting.html">Troubleshooting</a></li>
+      </ul>
+    </aside>
+    <article class="guide-content">
+      <h1>Getting started</h1>
+      <p>LocalOpsConsole is <strong>free and open source</strong> (MIT). Grab a release, run the bootstrap script, or clone from <a href="https://github.com/Metatronixa/LocalOpsConsole">GitHub</a>.</p>
+
+      <h2>Install</h2>
+      <ol>
+        <li>Download <code>LocalOpsConsole-x.y.z.zip</code> from <a href="https://github.com/Metatronixa/LocalOpsConsole/releases/latest">GitHub Releases</a> or the <a href="../download.html">Download</a> page.</li>
+        <li>Extract to a writable folder (example: <code>C:\Tools\LocalOpsConsole</code>).</li>
+      </ol>
+      <p>Or use the <a href="../download.html">bootstrap script</a> to download and extract under <code>%LOCALAPPDATA%\LocalOpsConsole</code>.</p>
+
+      <h2>Launch</h2>
+      <p>Double-click <code>start.bat</code> (do not double-click <code>start.ps1</code> — Windows may open it in Notepad instead of running it).</p>
+      <pre>start.bat</pre>
+      <p>The launcher requests <strong>UAC elevation</strong> by default so remediations work. It starts the API and opens <code>http://localhost:8787/</code>. Standard users can still run most diagnostics without elevation.</p>
+
+      <h2>UI tour</h2>
+      <ul>
+        <li><strong>Header</strong> — product name, version chip, elevation badge, CPU/RAM strip.</li>
+        <li><strong>Profile selector</strong> — choose operator profile; this only changes which modules are shown in the sidebar.</li>
+        <li><strong>Sidebar</strong> — modules from <code>GET /api/v1/modules</code>.</li>
+        <li><strong>Main pane</strong> — module view; results render as tables/cards when data is tabular.</li>
+        <li><strong>Live console</strong> — docked stream of INFO / SUCCESS / WARN / ERROR lines.</li>
+      </ul>
+
+      <h2>settings.json</h2>
+      <pre>{
+  "port": 8787,
+  "cacheTtlSeconds": 20,
+  "taskIntervalSeconds": 30,
+  "logRetentionDays": 14,
+  "bindHost": "localhost",
+  "updateUrl": "https://raw.githubusercontent.com/Metatronixa/LocalOpsConsole/main/website/uploads/update.json",
+  "syncMePath": ""
+}</pre>
+      <p>Change <code>port</code> if 8787 is busy. Leave <code>updateUrl</code> blank to skip update checks, or point it at the GitHub manifest / your own host (see <a href="updates.html">Updates</a>). Set <code>syncMePath</code> only if SyncMe is installed locally.</p>
+
+      <div class="callout warn" style="margin-top:1.25rem">
+        <strong>Elevation badge:</strong> STANDARD USER means remediations may be blocked. Approve the UAC prompt from <code>start.bat</code>, or right-click → Run as administrator.
+      </div>
+    </article>
+  </div>
+
+  <footer class="site-footer">
+    <div class="wrap footer-row"><div>Copyright 2026 Bradford Lotriet · MIT License</div><div class="footer-links"><a href="https://github.com/Metatronixa/LocalOpsConsole">GitHub</a></div></div>
+  </footer>
+</body>
+</html>

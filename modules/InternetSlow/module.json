@@ -1,0 +1,16 @@
+{
+  "id": "internetSlow",
+  "name": "Internet Troubleshooter",
+  "version": "1.0.0",
+  "icon": "network",
+  "description": "Engineer-focused diagnostic engine for investigating slow or flaky internet connectivity.",
+  "order": 22,
+  "tier": 3,
+  "profiles": ["systems_administrator", "network_administrator", "power_user"],
+  "depends": ["network", "tools"],
+  "diagnostics": ["InternetIsSlow"],
+  "actions": [],
+  "requiresAdmin": [],
+  "cacheSeconds": { "InternetIsSlow": 0 }
+}
+

@@ -1,0 +1,12 @@
+{
+  "port": 8787,
+  "cacheTtlSeconds": 20,
+  "taskIntervalSeconds": 30,
+  "logRetentionDays": 14,
+  "bindHost": "localhost",
+  "updateUrl": "https://raw.githubusercontent.com/Metatronixa/LocalOpsConsole/main/website/uploads/update.json",
+  "syncMePath": "",
+  "rustDeskInstallerUrl": "",
+  "rustDeskInstallerSha256": "",
+  "rustDeskSilentArgs": ""
+}

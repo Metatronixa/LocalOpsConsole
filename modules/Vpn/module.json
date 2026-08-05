@@ -1,0 +1,15 @@
+{
+  "id": "vpn",
+  "name": "VPN",
+  "version": "1.0.0",
+  "icon": "shield",
+  "description": "VPN connections and tunnel diagnostics",
+  "order": 55,
+  "tier": 3,
+  "profiles": ["helpdesk", "desktop_support", "systems_administrator", "network_administrator", "power_user"],
+  "depends": ["network"],
+  "diagnostics": ["GetConnections", "Diagnose"],
+  "actions": ["Disconnect", "ResetWanMiniport"],
+  "requiresAdmin": ["ResetWanMiniport"],
+  "cacheSeconds": { "GetConnections": 10, "Diagnose": 20 }
+}

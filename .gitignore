@@ -1,0 +1,17 @@
+logs/*.log
+logs/*
+!logs/.gitkeep
+dist/
+*.zip
+!website/uploads/builds/.gitkeep
+.DS_Store
+Thumbs.db
+*.bak
+*.bak.loc
+.vscode/
+.idea/
+*.user
+.env
+*.pfx
+*.pem
+LocalOpsConsole-server-*.log

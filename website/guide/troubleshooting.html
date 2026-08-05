@@ -1,0 +1,79 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Troubleshooting — LocalOpsConsole</title>
+  <link rel="stylesheet" href="../assets/css/site.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap nav">
+      <a class="brand" href="../index.html">LocalOps<em>Console</em></a>
+      <ul class="nav-links">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../features.html">Features</a></li>
+        <li><a class="active" href="index.html">Guide</a></li>
+        <li><a href="../download.html">Download</a></li>
+      </ul>
+      <a class="btn btn-teal" href="../download.html">Get the app</a>
+    </div>
+  </header>
+
+  <div class="wrap guide-layout">
+    <aside class="guide-nav">
+      <h2>Guide</h2>
+      <ul>
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="getting-started.html">Getting started</a></li>
+        <li><a href="modules.html">Modules</a></li>
+        <li><a href="updates.html">Updates</a></li>
+        <li><a class="active" href="troubleshooting.html">Troubleshooting</a></li>
+      </ul>
+    </aside>
+    <article class="guide-content">
+      <h1>Troubleshooting</h1>
+
+      <h2>Port already in use</h2>
+      <p>Change <code>port</code> in <code>settings.json</code> (default <code>8787</code>) and relaunch. Another app may already own 8080 on some machines.</p>
+
+      <h2>Server fails to start</h2>
+      <ul>
+        <li>Run <code>api\server.ps1</code> directly to see errors.</li>
+        <li>Check <code>logs\yyyy-MM-dd.log</code>.</li>
+        <li>Ensure you launch via <code>start.bat</code> (handles paths with spaces).</li>
+      </ul>
+
+      <h2>Actions return Access Denied</h2>
+      <p>Approve the UAC prompt from <code>start.bat</code>. Confirm the header badge shows <strong>ELEVATED</strong>.</p>
+
+      <h2>Tools: Invoke-ToolCommand not recognized</h2>
+      <p>Restart the server after updating. Module libs must load before each action (fixed in 1.2).</p>
+
+      <h2>SyncMe not found</h2>
+      <p>Run the <strong>OpenDownloadPage</strong> action to open SyncMe setup, install it, then set <code>syncMePath</code> in <code>settings.json</code> to your install folder and restart.</p>
+
+      <h2>Remote open files / sessions fail</h2>
+      <p>Need elevation and SMB admin rights on the target PC. Registry reads require Remote Registry enabled on the target.</p>
+      <p>If <strong>ListShares</strong>, <strong>ListOpenFiles</strong>, or <strong>ListSessions</strong> times out, verify target firewall rules and RPC/WMI/SMB reachability, then retry.</p>
+
+      <h2>Update check fails</h2>
+      <ul>
+        <li>Verify <code>updateUrl</code> is reachable from the PC (browser test).</li>
+        <li>Confirm JSON is valid and <code>builds[].url</code> resolves.</li>
+        <li>If SHA-256 is set, it must match the ZIP or apply will abort.</li>
+      </ul>
+
+      <h2>Module missing</h2>
+      <p>Ensure <code>modules/*/module.json</code> is valid JSON. Health reports module load errors.</p>
+
+      <h2>UI looks unstyled</h2>
+      <p>Assets are local under <code>dashboard/assets</code>. If you only opened <code>index.html</code> from disk without the server, API calls will fail — always use the HttpListener URL.</p>
+    </article>
+  </div>
+
+  <footer class="site-footer">
+    <div class="wrap footer-row"><div>Copyright 2026 Bradford Lotriet · MIT License</div></div>
+  </footer>
+</body>
+</html>

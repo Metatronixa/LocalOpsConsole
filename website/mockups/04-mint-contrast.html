@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LocalOpsConsole — Mockup 04 Mint Contrast</title>
+  <style>
+    :root {
+      --bg: #eefaf5;
+      --surface: #ffffff;
+      --ink: #10231c;
+      --muted: #4d6a5e;
+      --teal: #0f766e;
+      --teal-bright: #14b8a6;
+      --dark: #0f172a;
+      --line: #c5e5d8;
+      --font: "Segoe UI", system-ui, sans-serif;
+      --mono: Consolas, monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font); background: var(--bg); color: var(--ink); }
+    a { color: inherit; text-decoration: none; }
+    .wrap { width: min(1120px, calc(100% - 2rem)); margin: 0 auto; }
+    header { padding: 1rem 0; }
+    .nav { display: flex; align-items: center; justify-content: space-between; }
+    .brand { font-weight: 800; font-size: 1.1rem; }
+    .brand em { font-style: normal; color: var(--teal); }
+    .pill-nav { display: flex; gap: .5rem; }
+    .pill-nav a {
+      padding: .45rem .85rem; border-radius: 999px; font-size: .82rem; color: var(--muted);
+      background: rgba(255,255,255,.65); border: 1px solid var(--line);
+    }
+    .btn {
+      display: inline-flex; padding: .75rem 1.2rem; border-radius: .75rem; font-weight: 700; font-size: .9rem;
+    }
+    .btn-teal { background: var(--teal); color: #fff; }
+    .btn-dark { background: var(--dark); color: #fff; }
+    .hero {
+      display: grid; grid-template-columns: 1.05fr .95fr; gap: 1.5rem; padding: 2.5rem 0 3rem; align-items: stretch;
+    }
+    .hero-copy {
+      background: var(--surface); border: 1px solid var(--line); border-radius: 1.25rem; padding: 2rem;
+    }
+    .tag { font-family: var(--mono); font-size: .68rem; color: var(--teal); margin-bottom: .75rem; }
+    h1 { font-size: clamp(2.3rem, 4.5vw, 3.3rem); letter-spacing: -0.03em; line-height: 1.05; margin-bottom: .9rem; }
+    .lead { color: var(--muted); margin-bottom: 1.5rem; font-size: 1.05rem; }
+    .hero-dark {
+      background: var(--dark); color: #e2e8f0; border-radius: 1.25rem; padding: 1.75rem;
+      display: flex; flex-direction: column; justify-content: space-between;
+    }
+    .hero-dark h2 { font-size: 1.35rem; letter-spacing: -0.02em; }
+    .hero-dark p { color: #94a3b8; margin: .75rem 0 1.25rem; }
+    .chips { display: flex; flex-wrap: wrap; gap: .4rem; }
+    .chip { font-family: var(--mono); font-size: .68rem; padding: .35rem .55rem; border-radius: .4rem; background: #1e293b; color: #99f6e4; }
+    .features { padding: 1rem 0 3rem; }
+    .features h2 { font-size: 1.6rem; margin-bottom: .35rem; }
+    .sub { color: var(--muted); margin-bottom: 1.25rem; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    .card {
+      background: var(--surface); border: 1px solid var(--line); border-radius: 1rem; padding: 1.2rem;
+    }
+    .card.dark {
+      background: var(--dark); color: #f1f5f9; border-color: #1e293b;
+    }
+    .card.dark p { color: #94a3b8; }
+    .card h3 { margin-bottom: .4rem; font-size: 1rem; }
+    .card p { color: var(--muted); font-size: .9rem; }
+    .band {
+      background: #fff; border: 1px solid var(--line); border-radius: 1.25rem; padding: 1.75rem;
+      display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;
+      margin-bottom: 3rem;
+    }
+    footer { padding: 1.5rem 0 2.5rem; color: var(--muted); font-size: .82rem; }
+    @media (max-width: 860px) {
+      .hero, .grid { grid-template-columns: 1fr; }
+      .pill-nav { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap nav">
+      <div class="brand">LocalOps<em>Console</em></div>
+      <nav class="pill-nav">
+        <a href="#features">Features</a>
+        <a href="#guide">Guide</a>
+        <a href="#download">Download</a>
+      </nav>
+      <a class="btn btn-teal" href="#download">Get app</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="tag">MOCKUP 04 · MINT CONTRAST</p>
+        <h1>LocalOpsConsole</h1>
+        <p class="lead">Bright workspace energy with dark highlight panels — the product feels approachable, the ops bits stay serious.</p>
+        <a class="btn btn-teal" href="#download">Download latest</a>
+        <a class="btn btn-dark" href="#guide" style="margin-left:.4rem;">User guide</a>
+      </div>
+      <aside class="hero-dark">
+        <div>
+          <h2>Dark highlight panel</h2>
+          <p>Use contrast blocks for telemetry, update status, and command previews without turning the whole site dark.</p>
+        </div>
+        <div class="chips">
+          <span class="chip">system</span>
+          <span class="chip">printers</span>
+          <span class="chip">vpn</span>
+          <span class="chip">tools</span>
+          <span class="chip">updates</span>
+        </div>
+      </aside>
+    </section>
+
+    <section class="features" id="features">
+      <h2>Everything desk-side</h2>
+      <p class="sub">Mint canvas, teal actions, slate-900 feature callouts.</p>
+      <div class="grid">
+        <article class="card"><h3>Live console</h3><p>Every diagnostic and action streams into a sticky execution log.</p></article>
+        <article class="card dark"><h3>Admin-aware</h3><p>Remediations declare requiresAdmin — the UI disables them when you are not elevated.</p></article>
+        <article class="card"><h3>Own your updates</h3><p>Publish builds under uploads/ and let the app check update.json.</p></article>
+      </div>
+    </section>
+
+    <section class="band" id="download">
+      <div>
+        <h2 style="font-size:1.35rem;">Install in one script</h2>
+        <p id="guide" style="color:var(--muted);margin-top:.25rem;">Unzip, run start.ps1, open localhost:8787.</p>
+      </div>
+      <a class="btn btn-teal" href="#">Download ZIP</a>
+    </section>
+  </main>
+  <footer><div class="wrap">LocalOpsConsole · Mockup 04 Mint Contrast</div></footer>
+</body>
+</html>

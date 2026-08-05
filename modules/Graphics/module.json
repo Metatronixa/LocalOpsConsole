@@ -1,0 +1,15 @@
+{
+  "id": "graphics",
+  "name": "Graphics",
+  "version": "1.0.0",
+  "icon": "monitor",
+  "description": "GPU adapters, driver versions, and vendor update links",
+  "order": 45,
+  "tier": 2,
+  "profiles": ["desktop_support", "systems_administrator", "developer", "power_user"],
+  "depends": [],
+  "diagnostics": ["GetAdapters"],
+  "actions": ["OpenVendorUpdatePage"],
+  "requiresAdmin": [],
+  "cacheSeconds": { "GetAdapters": 30 }
+}

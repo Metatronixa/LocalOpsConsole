@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Download — LocalOpsConsole</title>
+  <link rel="stylesheet" href="assets/css/site.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap nav">
+      <a class="brand" href="index.html">LocalOps<em>Console</em></a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="features.html">Features</a></li>
+        <li><a href="guide/index.html">Guide</a></li>
+        <li><a class="active" href="download.html">Download</a></li>
+      </ul>
+      <a class="btn btn-primary" href="#latest">Get the app</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="page-hero">
+      <p class="eyebrow">Free · MIT · Releases</p>
+      <h1>Download</h1>
+      <p class="lead">LocalOpsConsole is free and open source. Grab the ZIP, use the bootstrap script, or clone from GitHub.</p>
+    </div>
+
+    <section class="section" style="padding-top:0" id="latest">
+      <div class="card" style="padding:1.75rem">
+        <span class="badge">stable · free</span>
+        <h2 style="margin:0.75rem 0 0.35rem">LocalOpsConsole 1.2.0</h2>
+        <p style="color:var(--muted);margin:0 0 1.25rem">Live telemetry, Configuration, Tools, Graphics, Remote, SyncMe, OS repair. Requires Windows PowerShell 5.1+.</p>
+        <div class="cta-row">
+          <a class="btn btn-teal" href="https://github.com/Metatronixa/LocalOpsConsole/releases/latest">GitHub Releases</a>
+          <a class="btn btn-teal" href="uploads/builds/LocalOpsConsole-1.2.0.zip">Download ZIP (local mirror)</a>
+          <a class="btn btn-ghost" href="https://github.com/Metatronixa/LocalOpsConsole">Source</a>
+          <a class="btn btn-ghost" href="guide/getting-started.html">Install guide</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Bootstrap script</h2>
+      <p style="color:var(--muted)">Give this to a colleague — downloads the latest release, verifies SHA-256 when present, extracts under <code>%LOCALAPPDATA%\LocalOpsConsole</code>.</p>
+      <pre style="overflow:auto;padding:1rem;border-radius:0.75rem;background:#0f172a;color:#e2e8f0;font-size:0.8rem">iwr https://raw.githubusercontent.com/Metatronixa/LocalOpsConsole/main/website/uploads/Install-LocalOpsConsole.ps1 -OutFile "$env:TEMP\Install-LOC.ps1"
+powershell -ExecutionPolicy Bypass -File "$env:TEMP\Install-LOC.ps1" -Launch</pre>
+      <p style="margin-top:0.75rem"><a href="uploads/Install-LocalOpsConsole.ps1">Install-LocalOpsConsole.ps1</a> · <a href="uploads/update.json">update.json</a></p>
+    </section>
+
+    <section class="section">
+      <h2>Install</h2>
+      <ol>
+        <li>Extract the ZIP to a folder you can write to (e.g. <code>C:\Tools\LocalOpsConsole</code>).</li>
+        <li>Right-click <code>start.bat</code> → <strong>Run as administrator</strong> (recommended), or double-click it. Do not open <code>start.ps1</code> with Notepad.</li>
+        <li>Open <code>http://localhost:8787/</code> (default port in <code>settings.json</code>).</li>
+      </ol>
+      <div class="callout warn" style="margin-top:1.25rem">
+        <strong>Elevation:</strong> Standard users can navigate and run most diagnostics. Remediations need Administrator.
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Publish your own updates</h2>
+      <p style="color:var(--muted)">Copy a new build into <code>website/uploads/builds/</code>, update <code>website/uploads/update.json</code>, and set the app’s <code>updateUrl</code> to that JSON. Or point at GitHub Releases assets.</p>
+      <pre style="margin-top:1rem">{
+  "latest": "1.2.0",
+  "builds": [{ "version": "1.2.0", "url": "uploads/builds/LocalOpsConsole-1.2.0.zip", "sha256": "..." }]
+}</pre>
+      <p style="margin-top:1rem"><a href="guide/updates.html">Full update documentation →</a></p>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-row">
+      <div>Copyright 2026 Bradford Lotriet · MIT License</div>
+      <div class="footer-links"><a href="https://github.com/Metatronixa/LocalOpsConsole">GitHub</a><a href="guide/index.html">Guide</a></div>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,16 @@
+﻿{
+    "name":  "LocalOpsConsole",
+    "latest":  "1.2.0",
+    "releasedAt":  "2026-08-05T12:25:23Z",
+    "notes":  "Free MIT release — telemetry, Configuration, Tools, Graphics, Remote, SyncMe",
+    "minVersion":  "1.0.0",
+    "builds":  [
+                   {
+                       "version":  "1.2.0",
+                       "channel":  "stable",
+                       "url":  "https://github.com/Metatronixa/LocalOpsConsole/releases/download/v1.2.0/LocalOpsConsole-1.2.0.zip",
+                       "sha256":  "a828a9bfe28ee0ad3d8cdb882b5627ed08850238c21ddcd50f5a38578b13dfa7",
+                       "size":  132050
+                   }
+               ]
+}

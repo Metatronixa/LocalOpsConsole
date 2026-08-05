@@ -1,0 +1,15 @@
+{
+  "id": "power",
+  "name": "Power",
+  "version": "1.0.0",
+  "icon": "battery-charging",
+  "description": "Power plans and battery status",
+  "order": 110,
+  "tier": 2,
+  "profiles": ["desktop_support", "systems_administrator", "power_user"],
+  "depends": [],
+  "diagnostics": ["GetPowerPlan", "GetBattery"],
+  "actions": ["SetPowerPlan"],
+  "requiresAdmin": [],
+  "cacheSeconds": { "GetPowerPlan": 15, "GetBattery": 15 }
+}

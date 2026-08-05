@@ -1,0 +1,15 @@
+{
+  "id": "users",
+  "name": "Users",
+  "version": "1.0.0",
+  "icon": "users",
+  "description": "Local users and profile path health",
+  "order": 120,
+  "tier": 2,
+  "profiles": ["desktop_support", "systems_administrator", "power_user"],
+  "depends": [],
+  "diagnostics": ["GetLocalUsers", "GetProfileHealth"],
+  "actions": [],
+  "requiresAdmin": [],
+  "cacheSeconds": { "GetLocalUsers": 30, "GetProfileHealth": 30 }
+}

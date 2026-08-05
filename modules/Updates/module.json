@@ -1,0 +1,15 @@
+{
+  "id": "updates",
+  "name": "Updates",
+  "version": "1.0.0",
+  "icon": "download",
+  "description": "Windows Update status and component reset",
+  "order": 60,
+  "tier": 2,
+  "profiles": ["helpdesk", "desktop_support", "systems_administrator", "power_user"],
+  "depends": [],
+  "diagnostics": ["GetPending"],
+  "actions": ["ResetComponents", "ClearSoftwareDistribution"],
+  "requiresAdmin": ["ResetComponents", "ClearSoftwareDistribution"],
+  "cacheSeconds": { "GetPending": 30 }
+}

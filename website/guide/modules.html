@@ -1,0 +1,127 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Modules — LocalOpsConsole</title>
+  <link rel="stylesheet" href="../assets/css/site.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap nav">
+      <a class="brand" href="../index.html">LocalOps<em>Console</em></a>
+      <ul class="nav-links">
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../features.html">Features</a></li>
+        <li><a class="active" href="index.html">Guide</a></li>
+        <li><a href="../download.html">Download</a></li>
+      </ul>
+      <a class="btn btn-teal" href="../download.html">Get the app</a>
+    </div>
+  </header>
+
+  <div class="wrap guide-layout">
+    <aside class="guide-nav">
+      <h2>Guide</h2>
+      <ul>
+        <li><a href="index.html">Overview</a></li>
+        <li><a href="getting-started.html">Getting started</a></li>
+        <li><a class="active" href="modules.html">Modules</a></li>
+        <li><a href="updates.html">Updates</a></li>
+        <li><a href="troubleshooting.html">Troubleshooting</a></li>
+      </ul>
+    </aside>
+    <article class="guide-content">
+      <h1>Modules</h1>
+      <p>Every module folder contains <code>module.json</code>, <code>diagnostics/</code>, <code>actions/</code>, and optional <code>lib/</code>.</p>
+
+      <h2>Graphics</h2>
+      <ol>
+        <li>Run <strong>GetAdapters</strong> for GPU name, driver version, and driver date.</li>
+        <li>Run <strong>OpenVendorUpdatePage</strong> to open NVIDIA, AMD, or Intel driver download pages.</li>
+      </ol>
+
+      <h2>Remote</h2>
+      <ol>
+        <li><strong>DiscoverComputers</strong> — neighbors from ARP / SMB connections.</li>
+        <li><strong>ListShares</strong> — SMB shares on a target (pass computer name).</li>
+        <li><strong>ListOpenFiles</strong> / <strong>ListSessions</strong> — need admin + rights on the target.</li>
+        <li><strong>GetRemoteRegistry</strong> — read-only remote registry; <strong>EnsureRemoteRegistry</strong> can start the local Remote Registry service.</li>
+        <li>If remote SMB/CIM calls time out, verify target firewall/RPC/WMI/SMB access, then retry.</li>
+      </ol>
+
+      <h2>SyncMe</h2>
+      <ol>
+        <li>Install SyncMe from <a href="https://www.syncme.co.za" target="_blank" rel="noopener">syncme.co.za</a> if it is not already present.</li>
+        <li>Set <code>syncMePath</code> in <code>settings.json</code> when your install location is custom.</li>
+        <li><strong>GetStatus</strong> validates install path and local console listener state.</li>
+        <li><strong>OpenConsole</strong> launches the SyncMe web UI.</li>
+        <li><strong>StartBackup</strong> starts the backup script in the background.</li>
+        <li><strong>OpenDownloadPage</strong> opens the SyncMe setup package directly when SyncMe is missing.</li>
+      </ol>
+
+      <h2>Printers</h2>
+      <ol>
+        <li>Open <strong>Printers</strong> and run <strong>GetPrinters</strong> / <strong>QueueStatus</strong>.</li>
+        <li>If jobs are stuck, run <strong>ClearQueue</strong> (admin), then <strong>RestartSpooler</strong>.</li>
+        <li>Use <strong>TestPage</strong> with a printer name to verify end-to-end printing.</li>
+      </ol>
+
+      <h2>VPN</h2>
+      <ol>
+        <li>Run <strong>GetConnections</strong> for RAS profiles and tunnel adapters.</li>
+        <li>Run <strong>Diagnose</strong> for gateway reachability and DNS hints.</li>
+        <li>If a stale WAN miniport is suspected, elevate and run <strong>ResetWanMiniport</strong>.</li>
+      </ol>
+
+      <h2>Internet Troubleshooter (Engine)</h2>
+      <ol>
+        <li>Open <strong>Internet Troubleshooter</strong>.</li>
+        <li>Run <strong>InternetIsSlow</strong> to generate a consolidated report (DNS, gateway loss, interface MTU, adapter speed, TCP globals, firewall profile summary).</li>
+      </ol>
+
+      <h2>Network</h2>
+      <ul>
+        <li><strong>GetStatus</strong> — adapters, IPv4, gateway, DNS, link speed.</li>
+        <li><strong>Ping</strong> — ICMP to a target (default 8.8.8.8).</li>
+        <li><strong>FlushDNS</strong> / <strong>RenewIP</strong> — admin remediations.</li>
+      </ul>
+
+      <h2>Tools</h2>
+      <p>Classic IT readouts: IpConfig, Netstat, RoutePrint, Arp, Nslookup, Whoami, Hostname, SystemInfo, PowerCfg, DismGetHealth, SfcVerifyOnly, ChkdskStatus, GpResult. Action: <strong>GpUpdate</strong>.</p>
+      <ul>
+        <li><strong>Nslookup</strong> — set Host / IP in the Tools panel, then run Nslookup.</li>
+        <li><strong>RouteAdd</strong> (admin) — Destination + Gateway + Mask; optional Permanent checkbox.</li>
+        <li>A spinner shows while any tool is running.</li>
+      </ul>
+      <p>OS repair (admin, long-running): <strong>SfcScanNow</strong> (<code>sfc /scannow</code>) and <strong>DismRestoreHealth</strong>.</p>
+
+      <h2>Configuration</h2>
+      <ol>
+        <li>Open <strong>Configuration</strong> to browse documented Windows settings by category: Explorer, Privacy, Windows Update, Taskbar, Power, Security.</li>
+        <li>Each card shows current, recommended, Microsoft default, risk, restart needs, and registry/provider path.</li>
+        <li>Use <strong>Apply recommended</strong> or <strong>Restore default</strong> (with confirmation). Some settings require elevation; Insider status is read-only.</li>
+      </ol>
+
+      <h2>Windows Update module</h2>
+      <p><strong>GetPending</strong> lists pending updates when the COM API is available. <strong>ResetComponents</strong> restarts WU-related services. <strong>ClearSoftwareDistribution</strong> renames cache folders — use only when WU is corrupted.</p>
+
+      <h2>System</h2>
+      <p>Live monitor for CPU and RAM (sparklines), network up/down bandwidth, disk I/O read/write MB/s + IOPS, all fixed disks (accordion — one open at a time), GPU identity, battery (if present), problem devices, uptime, and pending reboot. The header strip mirrors key metrics and bandwidth rates. Refresh forces a new telemetry snapshot.</p>
+
+      <h2>Other modules</h2>
+      <ul>
+        <li><strong>Storage</strong> — volumes, SMART, clear temp.</li>
+        <li><strong>Services</strong> — search and start/stop/restart.</li>
+        <li><strong>Security</strong> — firewall profiles, Defender status, quick scan.</li>
+        <li><strong>Event Log</strong> — recent Critical/Error events.</li>
+        <li><strong>Devices / Power / Users / Audio / Startup</strong> — see in-app Diagnostics and Actions lists.</li>
+      </ul>
+    </article>
+  </div>
+
+  <footer class="site-footer">
+    <div class="wrap footer-row"><div>Copyright 2026 Bradford Lotriet · MIT License</div></div>
+  </footer>
+</body>
+</html>

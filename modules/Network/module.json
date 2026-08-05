@@ -1,0 +1,18 @@
+{
+  "id": "network",
+  "name": "Network",
+  "version": "1.0.0",
+  "icon": "network",
+  "description": "Adapters, DNS, DHCP, and ICMP diagnostics",
+  "order": 20,
+  "tier": 3,
+  "profiles": ["helpdesk", "desktop_support", "systems_administrator", "network_administrator", "developer", "power_user"],
+  "depends": [],
+  "diagnostics": ["GetStatus", "Ping"],
+  "actions": ["FlushDNS", "RenewIP"],
+  "requiresAdmin": ["FlushDNS", "RenewIP"],
+  "cacheSeconds": {
+    "GetStatus": 15,
+    "Ping": 0
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "id": "remote",
+  "name": "Remote",
+  "version": "1.0.0",
+  "icon": "network",
+  "description": "Discover network PCs, shares, open files, and remote registry (read)",
+  "order": 25,
+  "tier": 4,
+  "profiles": ["systems_administrator", "network_administrator", "power_user"],
+  "depends": ["network"],
+  "diagnostics": ["DiscoverComputers", "ListShares", "ListOpenFiles", "ListSessions", "GetRemoteRegistry"],
+  "actions": ["EnsureRemoteRegistry"],
+  "requiresAdmin": ["ListOpenFiles", "ListSessions", "GetRemoteRegistry", "EnsureRemoteRegistry"],
+  "cacheSeconds": {
+    "DiscoverComputers": 30,
+    "ListShares": 15,
+    "ListOpenFiles": 10,
+    "ListSessions": 10,
+    "GetRemoteRegistry": 20
+  }
+}

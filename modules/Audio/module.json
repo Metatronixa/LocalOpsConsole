@@ -1,0 +1,15 @@
+{
+  "id": "audio",
+  "name": "Audio",
+  "version": "1.0.0",
+  "icon": "volume-2",
+  "description": "Playback devices and audio services",
+  "order": 130,
+  "tier": 2,
+  "profiles": ["desktop_support", "power_user"],
+  "depends": [],
+  "diagnostics": ["GetDevices"],
+  "actions": ["RestartAudioService"],
+  "requiresAdmin": ["RestartAudioService"],
+  "cacheSeconds": { "GetDevices": 15 }
+}

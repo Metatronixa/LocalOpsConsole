@@ -1,0 +1,15 @@
+{
+  "id": "devices",
+  "name": "Devices",
+  "version": "1.0.0",
+  "icon": "usb",
+  "description": "PnP problem devices and device controls",
+  "order": 100,
+  "tier": 2,
+  "profiles": ["desktop_support", "systems_administrator", "power_user"],
+  "depends": [],
+  "diagnostics": ["GetProblemDevices"],
+  "actions": ["EnableDevice", "DisableDevice", "RescanDevices"],
+  "requiresAdmin": ["EnableDevice", "DisableDevice", "RescanDevices"],
+  "cacheSeconds": { "GetProblemDevices": 25 }
+}

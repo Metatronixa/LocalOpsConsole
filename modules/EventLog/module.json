@@ -1,0 +1,15 @@
+{
+  "id": "eventlog",
+  "name": "Event Log",
+  "version": "1.0.0",
+  "icon": "scroll-text",
+  "description": "Recent Critical and Error events",
+  "order": 80,
+  "tier": 2,
+  "profiles": ["desktop_support", "systems_administrator", "power_user"],
+  "depends": [],
+  "diagnostics": ["GetRecentErrors", "GetLogSummary"],
+  "actions": [],
+  "requiresAdmin": [],
+  "cacheSeconds": { "GetRecentErrors": 20, "GetLogSummary": 30 }
+}

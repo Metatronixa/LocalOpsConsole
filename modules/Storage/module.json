@@ -1,0 +1,18 @@
+{
+  "id": "storage",
+  "name": "Storage",
+  "version": "1.0.0",
+  "icon": "hard-drive",
+  "description": "Volumes, SMART health, and temp cleanup",
+  "order": 30,
+  "tier": 2,
+  "profiles": ["desktop_support", "systems_administrator", "power_user"],
+  "depends": [],
+  "diagnostics": ["GetDisks", "SmartStatus"],
+  "actions": ["ClearTemp"],
+  "requiresAdmin": ["ClearTemp"],
+  "cacheSeconds": {
+    "GetDisks": 20,
+    "SmartStatus": 30
+  }
+}

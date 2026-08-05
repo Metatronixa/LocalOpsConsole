@@ -1,0 +1,108 @@
+﻿<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LocalOpsConsole</title>
+    <link rel="stylesheet" href="assets/css/tailwind.min.css">
+    <link rel="stylesheet" href="assets/css/styles.css">
+</head>
+<body class="h-full flex flex-col antialiased overflow-hidden select-none">
+
+    <div id="update-banner" class="hidden update-banner shrink-0">
+        <div class="update-banner-inner">
+            <span id="update-banner-text">Update available</span>
+            <div class="flex items-center gap-2">
+                <button type="button" class="action-btn cyan" onclick="applyUpdate()">Update now</button>
+                <button type="button" class="action-btn amber" onclick="dismissUpdateBanner()">Later</button>
+            </div>
+        </div>
+    </div>
+
+    <header class="h-14 border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md flex items-center justify-between px-6 shrink-0 z-20">
+        <div class="flex items-center gap-3">
+            <div class="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+                <i data-lucide="shield-alert" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-sm tracking-wide">LOCALOPSCONSOLE <span id="app-version" class="text-slate-500 font-mono">v1.2.0</span></h1>
+                <p class="text-[11px] text-slate-400 font-mono">HOST: <span id="host-name">LOCAL-PC</span></p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-4 text-xs font-mono">
+            <div class="text-slate-400">CPU <span id="telemetry-cpu" class="text-cyan-400">--%</span></div>
+            <div class="text-slate-400">RAM <span id="telemetry-mem" class="text-emerald-400">--%</span></div>
+            <div class="text-slate-400">DISK <span id="telemetry-disk" class="text-amber-400">--%</span></div>
+            <div class="text-slate-400">NET <span id="telemetry-net" class="text-sky-400">--</span></div>
+            <div class="text-slate-400 max-w-[9rem] truncate" title="GPU">GPU <span id="telemetry-gpu" class="text-violet-300">--</span></div>
+            <div id="telemetry-bat-wrap" class="text-slate-400 hidden">BAT <span id="telemetry-bat" class="text-lime-400">--%</span></div>
+            <div id="admin-badge" class="badge badge-muted">Checking Elevation...</div>
+            <div class="flex items-center gap-2 text-slate-400">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span id="engine-status">ENGINE ONLINE</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex-1 flex overflow-hidden min-h-0">
+        <aside class="w-64 border-r border-slate-800/80 bg-slate-900/30 backdrop-blur-md flex flex-col shrink-0">
+            <div class="p-4 text-[11px] font-semibold text-slate-500 uppercase tracking-wider font-mono">
+                Modules
+            </div>
+            <nav id="sidebar-nav" class="flex-1 px-3 space-y-1 overflow-y-auto">
+            </nav>
+        </aside>
+
+        <main class="flex-1 overflow-y-auto p-6 bg-slate-950/50 relative" id="page-content">
+        </main>
+    </div>
+
+    <div id="live-console-container" class="h-56 bg-slate-950 border-t border-slate-800 flex flex-col shrink-0 transition-all duration-300">
+        <div class="h-9 px-4 bg-slate-900/80 border-b border-slate-800 flex items-center justify-between font-mono text-xs text-slate-400">
+            <div class="flex items-center gap-2">
+                <i data-lucide="terminal" class="w-4 h-4 text-cyan-400"></i>
+                <span class="font-semibold text-slate-200">LIVE DIAGNOSTIC EXECUTION STREAM</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="app-copyright">Copyright 2026 Bradford Lotriet</span>
+                <button onclick="LiveConsole.clear()" class="hover:text-slate-200">Clear</button>
+                <button onclick="LiveConsole.toggleAutoScroll()" id="autoscroll-btn" class="text-cyan-400">Auto-Scroll: ON</button>
+            </div>
+        </div>
+        <div id="live-console-stream" class="flex-1 p-4 font-mono text-xs overflow-y-auto space-y-1 bg-slate-950/90">
+            <div class="text-slate-600 italic">[00:00:00] Engine ready. Click any diagnostic command to stream results...</div>
+        </div>
+    </div>
+
+    <script src="assets/js/lucide.min.js"></script>
+    <script src="assets/js/api.js"></script>
+    <script src="assets/js/console.log.js"></script>
+    <script src="assets/js/results.js"></script>
+    <script src="assets/js/view.js"></script>
+    <script src="assets/js/router.js"></script>
+    <script src="assets/js/sparkline.js"></script>
+    <script src="assets/js/app.js"></script>
+    <script src="modules/system.js"></script>
+    <script src="modules/network.js"></script>
+    <script src="modules/storage.js"></script>
+    <script src="modules/services.js"></script>
+    <script src="modules/tools.js"></script>
+    <script src="modules/configuration.js"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

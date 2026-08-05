@@ -1,0 +1,18 @@
+{
+  "id": "configuration",
+  "name": "Configuration",
+  "version": "1.0.0",
+  "icon": "sliders",
+  "description": "Documented Windows settings: view current, recommended, and restore defaults",
+  "order": 18,
+  "tier": 2,
+  "profiles": ["desktop_support", "systems_administrator", "developer", "power_user"],
+  "depends": [],
+  "diagnostics": ["GetCatalog", "GetSetting"],
+  "actions": ["ApplySetting", "RestoreDefault"],
+  "requiresAdmin": [],
+  "cacheSeconds": {
+    "GetCatalog": 5,
+    "GetSetting": 0
+  }
+}

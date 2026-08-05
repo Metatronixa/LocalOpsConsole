@@ -1,0 +1,15 @@
+{
+  "id": "syncme",
+  "name": "SyncMe",
+  "version": "1.0.0",
+  "icon": "hard-drive",
+  "description": "Launch and trigger the SyncMe backup application",
+  "order": 140,
+  "tier": 2,
+  "profiles": ["desktop_support", "systems_administrator", "power_user"],
+  "depends": [],
+  "diagnostics": ["GetStatus"],
+  "actions": ["OpenConsole", "StartBackup", "OpenDownloadPage"],
+  "requiresAdmin": [],
+  "cacheSeconds": { "GetStatus": 10 }
+}

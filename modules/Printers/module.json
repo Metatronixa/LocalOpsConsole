@@ -1,0 +1,15 @@
+{
+  "id": "printers",
+  "name": "Printers",
+  "version": "1.0.0",
+  "icon": "printer",
+  "description": "Printers, queues, and spooler remediation",
+  "order": 50,
+  "tier": 2,
+  "profiles": ["helpdesk", "desktop_support", "systems_administrator", "power_user"],
+  "depends": [],
+  "diagnostics": ["GetPrinters", "QueueStatus"],
+  "actions": ["RestartSpooler", "ClearQueue", "TestPage"],
+  "requiresAdmin": ["RestartSpooler", "ClearQueue"],
+  "cacheSeconds": { "GetPrinters": 15, "QueueStatus": 10 }
+}

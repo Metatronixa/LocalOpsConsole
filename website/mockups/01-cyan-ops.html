@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LocalOpsConsole — Mockup 01 Cyan Ops</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --surface: #ffffff;
+      --ink: #1a2332;
+      --muted: #5b6b7c;
+      --cyan: #0891b2;
+      --cyan-dark: #0e7490;
+      --dark: #0f172a;
+      --line: #d8e0ea;
+      --font: "Segoe UI", system-ui, sans-serif;
+      --mono: Consolas, "Courier New", monospace;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: var(--font); background: var(--bg); color: var(--ink); line-height: 1.5; }
+    a { color: inherit; text-decoration: none; }
+    .wrap { width: min(1120px, calc(100% - 2.5rem)); margin: 0 auto; }
+    header {
+      position: sticky; top: 0; z-index: 10;
+      background: rgba(244,247,251,.92); backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--line);
+    }
+    .nav { display: flex; align-items: center; justify-content: space-between; height: 4rem; }
+    .brand { font-weight: 800; letter-spacing: -0.02em; font-size: 1.05rem; }
+    .brand span { color: var(--cyan); }
+    .nav-links { display: flex; gap: 1.5rem; font-size: .9rem; color: var(--muted); }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: .7rem 1.15rem; border-radius: .5rem; font-weight: 650; font-size: .9rem;
+      border: 1px solid transparent; transition: .15s ease;
+    }
+    .btn-primary { background: var(--cyan); color: #fff; }
+    .btn-primary:hover { background: var(--cyan-dark); }
+    .btn-ghost { border-color: var(--line); background: var(--surface); }
+    hero, .hero {
+      display: grid; grid-template-columns: 1.1fr .9fr; gap: 2.5rem; align-items: center;
+      min-height: calc(100vh - 4rem); padding: 3.5rem 0 4rem;
+    }
+    .eyebrow { font-family: var(--mono); font-size: .75rem; color: var(--cyan-dark); text-transform: uppercase; letter-spacing: .08em; margin-bottom: .75rem; }
+    h1 { font-size: clamp(2.4rem, 5vw, 3.6rem); line-height: 1.05; letter-spacing: -0.03em; margin-bottom: 1rem; }
+    .lead { font-size: 1.1rem; color: var(--muted); max-width: 34rem; margin-bottom: 1.75rem; }
+    .cta-row { display: flex; gap: .75rem; flex-wrap: wrap; }
+    .preview {
+      background: var(--dark); color: #e2e8f0; border-radius: 1rem; padding: 1.25rem;
+      box-shadow: 0 24px 50px rgba(15,23,42,.18); min-height: 320px;
+    }
+    .preview-top { display: flex; gap: .4rem; margin-bottom: 1rem; }
+    .dot { width: .55rem; height: .55rem; border-radius: 50%; background: #334155; }
+    .preview pre { font-family: var(--mono); font-size: .72rem; line-height: 1.55; white-space: pre-wrap; }
+    .cyan { color: #22d3ee; }
+    .ok { color: #34d399; }
+    .features { padding: 4rem 0; }
+    .features h2 { font-size: 1.75rem; margin-bottom: .5rem; letter-spacing: -0.02em; }
+    .sub { color: var(--muted); margin-bottom: 2rem; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    .card {
+      background: var(--surface); border: 1px solid var(--line); border-radius: .9rem; padding: 1.25rem;
+    }
+    .card h3 { font-size: 1rem; margin-bottom: .4rem; }
+    .card p { font-size: .9rem; color: var(--muted); }
+    .band {
+      background: var(--dark); color: #f8fafc; padding: 3.5rem 0;
+    }
+    .band-inner { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; flex-wrap: wrap; }
+    .band h2 { font-size: 1.6rem; letter-spacing: -0.02em; }
+    .band p { color: #94a3b8; max-width: 28rem; margin-top: .4rem; }
+    footer { padding: 2rem 0; border-top: 1px solid var(--line); color: var(--muted); font-size: .85rem; }
+    .tag { display: inline-block; margin-bottom: 1rem; padding: .25rem .55rem; border-radius: .35rem; background: #e0f2fe; color: var(--cyan-dark); font-size: .7rem; font-family: var(--mono); }
+    @media (max-width: 860px) {
+      .hero { grid-template-columns: 1fr; min-height: auto; }
+      .grid { grid-template-columns: 1fr; }
+      .nav-links { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap nav">
+      <div class="brand">LocalOps<span>Console</span></div>
+      <nav class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#guide">Guide</a>
+        <a href="#download">Download</a>
+      </nav>
+      <a class="btn btn-primary" href="#download">Get the app</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <div>
+        <div class="tag">MOCKUP 01 · CYAN OPS</div>
+        <p class="eyebrow">Windows diagnostics, locally</p>
+        <h1>LocalOpsConsole</h1>
+        <p class="lead">A modular ops console for printers, VPN, services, storage, and classic IT tools — with a live execution stream and offline-first UI.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#download">Download v1.1.0</a>
+          <a class="btn btn-ghost" href="#guide">Read the guide</a>
+        </div>
+      </div>
+      <aside class="preview" aria-hidden="true">
+        <div class="preview-top"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        <pre><span class="cyan">$</span> .\start.ps1
+<span class="ok">✓</span> Engine online at localhost:8787
+<span class="cyan">→</span> SYSTEM  GetCpu          SUCCESS
+<span class="cyan">→</span> NETWORK FlushDNS        SUCCESS
+<span class="cyan">→</span> PRINTERS RestartSpooler SUCCESS</pre>
+      </aside>
+    </section>
+
+    <section class="features" id="features">
+      <h2>Built for real desk-side work</h2>
+      <p class="sub">Fifteen plugin modules. Diagnostics and remediations stay separated. No cloud required.</p>
+      <div class="grid">
+        <article class="card"><h3>Printers &amp; spooler</h3><p>Clear queues, restart the spooler, and send test pages without hunting through Control Panel.</p></article>
+        <article class="card"><h3>VPN diagnose</h3><p>Profile status, tunnel adapters, gateway reachability hints, and WAN miniport reset when elevated.</p></article>
+        <article class="card"><h3>IT toolkit</h3><p>ipconfig, netstat, route, nslookup, DISM health, SFC verify, and more in one console.</p></article>
+      </div>
+    </section>
+  </main>
+
+  <section class="band" id="download">
+    <div class="wrap band-inner">
+      <div>
+        <h2>Ship updates from your own site</h2>
+        <p id="guide">Host the marketing site, drop ZIPs in <code>uploads/builds</code>, and the app checks <code>uploads/update.json</code>.</p>
+      </div>
+      <a class="btn btn-primary" href="#">Download ZIP</a>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">LocalOpsConsole · Mockup 01 Cyan Ops · Bright canvas, cyan CTA, dark preview &amp; footer</div>
+  </footer>
+</body>
+</html>

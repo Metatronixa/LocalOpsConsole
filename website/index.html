@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LocalOpsConsole — Windows Diagnostic Platform</title>
+  <meta name="description" content="Modular Windows diagnostics: printers, VPN, GPU drivers, remote shares, SyncMe backup, OS repair. Offline UI." />
+  <link rel="stylesheet" href="assets/css/site.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap nav">
+      <a class="brand" href="index.html">LocalOps<em>Console</em></a>
+      <ul class="nav-links">
+        <li><a class="active" href="index.html">Home</a></li>
+        <li><a href="features.html">Features</a></li>
+        <li><a href="guide/index.html">Guide</a></li>
+        <li><a href="download.html">Download</a></li>
+      </ul>
+      <a class="btn btn-teal" href="download.html">Get app</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="tag">Free &amp; open source · MIT · v1.2.0</p>
+        <h1>LocalOpsConsole</h1>
+        <p class="lead">Free Windows diagnostics for helpdesk and engineers: live telemetry, documented configuration, printers, VPN, GPU, remote shares, SyncMe, SFC/DISM — offline UI, no agent tax.</p>
+        <div class="cta-row">
+          <a class="btn btn-teal" href="download.html">Download free</a>
+          <a class="btn btn-dark" href="https://github.com/Metatronixa/LocalOpsConsole">GitHub</a>
+          <a class="btn btn-dark" href="guide/index.html">User guide</a>
+        </div>
+      </div>
+      <aside class="hero-dark" aria-hidden="true">
+        <div>
+          <h2 style="font-size:1.35rem;letter-spacing:-0.02em;margin:0 0 0.75rem">Double-click to launch</h2>
+          <pre style="margin:0;font-family:var(--mono);font-size:0.72rem;line-height:1.55;color:#cbd5e1"><span class="t-teal">$</span> start.bat
+<span class="t-ok">✓</span> UAC elevation · Engine :8787
+<span class="t-teal">→</span> GRAPHICS GetAdapters     SUCCESS
+<span class="t-teal">→</span> REMOTE   DiscoverComputers SUCCESS</pre>
+        </div>
+        <div class="chips">
+          <span class="chip">telemetry</span>
+          <span class="chip">configuration</span>
+          <span class="chip">graphics</span>
+          <span class="chip">remote</span>
+          <span class="chip">syncme</span>
+          <span class="chip">repair</span>
+        </div>
+      </aside>
+    </section>
+
+    <section class="section">
+      <h2>See the app</h2>
+      <p class="sub">Mint canvas, teal actions, dark live console — same look in the product and on this site.</p>
+      <div class="grid-2">
+        <figure class="card" style="padding:0;overflow:hidden">
+          <img src="assets/img/screenshot-system.png" alt="LocalOpsConsole System telemetry screenshot" style="width:100%;display:block" />
+          <figcaption style="padding:0.75rem 1rem;font-size:0.85rem;color:var(--muted)">System telemetry — CPU, RAM, disk, network, GPU, devices</figcaption>
+        </figure>
+        <figure class="card" style="padding:0;overflow:hidden">
+          <img src="assets/img/screenshot-results.png" alt="LocalOpsConsole readable results table screenshot" style="width:100%;display:block" />
+          <figcaption style="padding:0.75rem 1rem;font-size:0.85rem;color:var(--muted)">Readable tables — not raw PowerShell dumps</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="section" id="features">
+      <h2>Built for real tickets</h2>
+      <p class="sub">Plugin modules with diagnostics vs actions. Offline UI. Self-hosted updates.</p>
+      <div class="grid-3">
+        <article class="card"><h3>Live system telemetry</h3><p>Header strip and System page monitor CPU, RAM, disk, network, GPU, battery, and problem devices in real time.</p></article>
+        <article class="card dark"><h3>Configuration console</h3><p>Documented Windows settings with current, recommended, default, risk, and one-click restore — starting with Explorer.</p></article>
+        <article class="card"><h3>SyncMe + repair</h3><p>Launch SyncMe backup, run SFC /scannow and DISM RestoreHealth from one console.</p></article>
+      </div>
+    </section>
+  </main>
+
+  <section class="band" id="download">
+    <div class="band-inner">
+      <div>
+        <h2>Install free — one double-click</h2>
+        <p>Unzip, run <code>start.bat</code> (UAC elevation by default), open localhost:8787. MIT licensed.</p>
+      </div>
+      <a class="btn btn-teal" href="download.html">Download ZIP</a>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="wrap footer-row">
+      <div>Copyright 2026 Bradford Lotriet · MIT License</div>
+      <div class="footer-links">
+        <a href="https://github.com/Metatronixa/LocalOpsConsole">GitHub</a>
+        <a href="guide/index.html">Guide</a>
+        <a href="features.html">Features</a>
+        <a href="download.html">Download</a>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

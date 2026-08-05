@@ -1,0 +1,15 @@
+{
+  "id": "security",
+  "name": "Security",
+  "version": "1.0.0",
+  "icon": "shield-check",
+  "description": "Firewall profiles and Microsoft Defender",
+  "order": 70,
+  "tier": 6,
+  "profiles": ["desktop_support", "systems_administrator", "power_user"],
+  "depends": [],
+  "diagnostics": ["GetFirewall", "GetDefender"],
+  "actions": ["QuickScan"],
+  "requiresAdmin": ["QuickScan"],
+  "cacheSeconds": { "GetFirewall": 20, "GetDefender": 30 }
+}

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Features — LocalOpsConsole</title>
+  <link rel="stylesheet" href="assets/css/site.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap nav">
+      <a class="brand" href="index.html">LocalOps<em>Console</em></a>
+      <ul class="nav-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a class="active" href="features.html">Features</a></li>
+        <li><a href="guide/index.html">Guide</a></li>
+        <li><a href="download.html">Download</a></li>
+      </ul>
+      <a class="btn btn-teal" href="download.html">Get app</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="page-hero">
+      <p class="eyebrow">Platform</p>
+      <h1>Features</h1>
+      <p class="lead">Free and open source (MIT). Core engine plus the module set in v1.2 — live telemetry, Configuration, Graphics, Remote, SyncMe, and OS repair.</p>
+    </div>
+
+    <section class="section" style="padding-top:0">
+      <h2>Screenshots</h2>
+      <div class="grid-2" style="margin-top:1rem">
+        <figure class="card" style="padding:0;overflow:hidden">
+          <img src="assets/img/screenshot-system.png" alt="System view" style="width:100%;display:block" />
+        </figure>
+        <figure class="card" style="padding:0;overflow:hidden">
+          <img src="assets/img/screenshot-results.png" alt="Results table view" style="width:100%;display:block" />
+        </figure>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Core platform</h2>
+      <div class="grid-3" style="margin-top:1.25rem">
+        <article class="card"><h3>Plugin modules</h3><p>Discovered via <code>module.json</code>. Diagnostics and actions stay separated.</p></article>
+        <article class="card"><h3>Readable results</h3><p>Tables and cards for objects (printers, hosts, GPUs) — not raw JSON dumps.</p></article>
+        <article class="card"><h3>Forced elevation</h3><p><code>start.bat</code> / <code>start.ps1</code> request UAC so remediations work by default.</p></article>
+        <article class="card"><h3>Offline UI</h3><p>No CDN. Styling survives broken DNS/VPN.</p></article>
+        <article class="card"><h3>Self-hosted updates</h3><p>Check <code>uploads/update.json</code>, download ZIP, verify SHA-256.</p></article>
+        <article class="card"><h3>Live console</h3><p>Every step streams to the sticky execution log and daily log files.</p></article>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Modules</h2>
+      <table class="table">
+        <thead><tr><th>Module</th><th>Highlights</th></tr></thead>
+        <tbody>
+          <tr><td>System</td><td>Live CPU/RAM sparklines, bandwidth graph, all disks accordion, GPU, devices</td></tr>
+          <tr><td>Configuration</td><td>Explorer, Privacy, Windows Update, Taskbar, Power, Security — documented apply/restore</td></tr>
+          <tr><td>Network / Remote</td><td>Adapters; discover PCs, shares, open files, remote registry read</td></tr>
+          <tr><td>Graphics</td><td>GPU, driver version/date, vendor update links</td></tr>
+          <tr><td>Printers / VPN / Storage / Services</td><td>Day-to-day desk-side remediations</td></tr>
+          <tr><td>SyncMe</td><td>Open SyncMe console, start SyncMe-Backup.ps1</td></tr>
+          <tr><td>Security / EventLog / Devices / Power / Users / Audio / Startup / Updates</td><td>Full ops coverage</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap footer-row">
+      <div>Copyright 2026 Bradford Lotriet · MIT License</div>
+      <div class="footer-links"><a href="guide/modules.html">Module guide</a><a href="download.html">Download</a></div>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,15 @@
+{
+  "id": "startup",
+  "name": "Startup",
+  "version": "1.0.0",
+  "icon": "rocket",
+  "description": "Startup apps and scheduled tasks",
+  "order": 90,
+  "tier": 2,
+  "profiles": ["desktop_support", "systems_administrator", "power_user"],
+  "depends": [],
+  "diagnostics": ["GetStartupApps", "GetScheduledTasks"],
+  "actions": ["SetStartupEnabled"],
+  "requiresAdmin": ["SetStartupEnabled"],
+  "cacheSeconds": { "GetStartupApps": 20, "GetScheduledTasks": 20 }
+}
