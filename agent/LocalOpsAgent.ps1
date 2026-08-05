@@ -1,8 +1,8 @@
 #Requires -Version 5.1
-# LocalOpsAgent.ps1 - Outbound fleet agent (v2.0.0)
+# LocalOpsAgent.ps1 - Outbound fleet agent (v2.1.5)
 
 $ErrorActionPreference = "Continue"
-$AgentVersion = "2.0.0"
+$AgentVersion = "2.1.5"
 $ConfigDir = "C:\ProgramData\LocalOpsAgent"
 $ConfigPath = Join-Path $ConfigDir "config.json"
 $LogDir = Join-Path $ConfigDir "logs"
@@ -56,7 +56,8 @@ function Invoke-AgentApi {
         [Parameter(Mandatory)] [string]$Method,
         [Parameter(Mandatory)] [string]$Path,
         [object]$Body = $null,
-        [switch]$Signed
+        [switch]$Signed,
+        [int]$TimeoutSec = 30
     )
 
     $cfg = $script:AgentConfig
@@ -83,10 +84,10 @@ function Invoke-AgentApi {
     }
 
     $params = @{
-        Uri         = $uri
-        Method      = $Method
-        Headers     = $headers
-        TimeoutSec  = 15
+        Uri             = $uri
+        Method          = $Method
+        Headers         = $headers
+        TimeoutSec      = $TimeoutSec
         UseBasicParsing = $true
     }
     if ($bodyText) { $params.Body = $bodyText }
@@ -123,6 +124,30 @@ function Invoke-AgentEnroll {
     Write-AgentLog "Enrolled as $($cfg.AgentId)"
 }
 
+function Get-AgentDiskIoMBps {
+    $read = $null
+    $write = $null
+    try {
+        $counters = Get-Counter '\PhysicalDisk(_Total)\Disk Read Bytes/sec', '\PhysicalDisk(_Total)\Disk Write Bytes/sec' -SampleInterval 1 -MaxSamples 1 -ErrorAction Stop
+        foreach ($s in @($counters.CounterSamples)) {
+            if ($s.Path -match 'Disk Read Bytes') { $read = [math]::Round(([double]$s.CookedValue) / 1MB, 2) }
+            if ($s.Path -match 'Disk Write Bytes') { $write = [math]::Round(([double]$s.CookedValue) / 1MB, 2) }
+        }
+    }
+    catch {
+        try {
+            $perf = Get-CimInstance Win32_PerfFormattedData_PerfDisk_PhysicalDisk -ErrorAction SilentlyContinue |
+                Where-Object { $_.Name -eq '_Total' } | Select-Object -First 1
+            if ($perf) {
+                $read = [math]::Round(([double]$perf.DiskReadBytesPerSec) / 1MB, 2)
+                $write = [math]::Round(([double]$perf.DiskWriteBytesPerSec) / 1MB, 2)
+            }
+        }
+        catch { }
+    }
+    return @{ Read = $read; Write = $write }
+}
+
 function Get-AgentTelemetry {
     $cpu = $null
     try {
@@ -151,6 +176,8 @@ function Get-AgentTelemetry {
         }
     }
     catch { }
+
+    $io = Get-AgentDiskIoMBps
 
     $ipv4 = $null
     $gateway = $null
@@ -181,24 +208,26 @@ function Get-AgentTelemetry {
     catch { }
 
     return @{
-        ComputerName  = $env:COMPUTERNAME
-        UserName      = "$env:USERDOMAIN\$env:USERNAME"
-        CpuPct        = $cpu
-        RamPct        = $ramPct
-        DiskFreePct   = $diskFreePct
-        IPv4          = $ipv4
-        Gateway       = $gateway
+        ComputerName   = $env:COMPUTERNAME
+        UserName       = "$env:USERDOMAIN\$env:USERNAME"
+        CpuPct         = $cpu
+        RamPct         = $ramPct
+        DiskFreePct    = $diskFreePct
+        DiskReadMBps   = $io.Read
+        DiskWriteMBps  = $io.Write
+        IPv4           = $ipv4
+        Gateway        = $gateway
         WindowsVersion = $winVer
-        UptimeSec     = $uptimeSec
-        InternetOk    = $internetOk
-        AgentVersion  = $AgentVersion
+        UptimeSec      = $uptimeSec
+        InternetOk     = $internetOk
+        AgentVersion   = $AgentVersion
     }
 }
 
 function Send-AgentHeartbeat {
     try {
         $tel = Get-AgentTelemetry
-        $resp = Invoke-AgentApi -Method POST -Path "/api/v1/fleet/heartbeat" -Body $tel -Signed
+        $resp = Invoke-AgentApi -Method POST -Path "/api/v1/fleet/heartbeat" -Body $tel -Signed -TimeoutSec 20
         if (-not $resp.Success) {
             Write-AgentLog "Heartbeat rejected: $($resp.Message)" "WARN"
         }
@@ -210,7 +239,7 @@ function Send-AgentHeartbeat {
 
 function Get-AgentPendingCommands {
     try {
-        $resp = Invoke-AgentApi -Method GET -Path "/api/v1/fleet/poll" -Signed
+        $resp = Invoke-AgentApi -Method GET -Path "/api/v1/fleet/poll" -Signed -TimeoutSec 20
         if ($resp.Success -and $resp.Data) {
             return @($resp.Data)
         }
@@ -232,6 +261,11 @@ function Send-AgentResult {
         [object[]]$LogLines = @()
     )
 
+    $lines = @($LogLines)
+    if ($lines.Count -gt 200) {
+        $lines = @($lines | Select-Object -Last 200)
+    }
+
     $body = @{
         CommandId  = $CommandId
         Success    = $Success
@@ -239,13 +273,47 @@ function Send-AgentResult {
         Data       = $Data
         ExitCode   = $ExitCode
         DurationMs = $DurationMs
-        LogLines   = @($LogLines)
+        LogLines   = $lines
     }
     try {
-        Invoke-AgentApi -Method POST -Path "/api/v1/fleet/results" -Body $body -Signed | Out-Null
+        Invoke-AgentApi -Method POST -Path "/api/v1/fleet/results" -Body $body -Signed -TimeoutSec 90 | Out-Null
     }
     catch {
         Write-AgentLog "Result post failed: $($_.Exception.Message)" "ERROR"
+    }
+}
+
+function Invoke-AgentCapturedProcess {
+    param(
+        [Parameter(Mandatory)] [string]$FilePath,
+        [string[]]$ArgumentList = @(),
+        [int]$TimeoutSec = 0
+    )
+    $psi = New-Object System.Diagnostics.ProcessStartInfo
+    $psi.FileName = $FilePath
+    $psi.Arguments = ($ArgumentList -join ' ')
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    $p = New-Object System.Diagnostics.Process
+    $p.StartInfo = $psi
+    [void]$p.Start()
+    if ($TimeoutSec -gt 0) {
+        if (-not $p.WaitForExit($TimeoutSec * 1000)) {
+            try { $p.Kill() } catch { }
+            throw "Timed out after ${TimeoutSec}s: $FilePath"
+        }
+    }
+    else {
+        $p.WaitForExit()
+    }
+    $stdout = $p.StandardOutput.ReadToEnd()
+    $stderr = $p.StandardError.ReadToEnd()
+    return [PSCustomObject]@{
+        ExitCode = $p.ExitCode
+        StdOut   = $stdout
+        StdErr   = $stderr
     }
 }
 
@@ -264,6 +332,7 @@ function Invoke-AgentCommand {
     $exitCode = 0
 
     function Add-Log([string]$Line) {
+        if ([string]::IsNullOrWhiteSpace($Line)) { return }
         [void]$logs.Add($Line)
         Write-AgentLog $Line
     }
@@ -292,7 +361,7 @@ function Invoke-AgentCommand {
             "RunScript" {
                 $scriptId = if ($Payload -and $Payload.ScriptId) { [string]$Payload.ScriptId } else { throw "ScriptId required" }
                 $path = "/api/v1/fleet/scripts/$scriptId/content"
-                $resp = Invoke-AgentApi -Method GET -Path $path -Signed
+                $resp = Invoke-AgentApi -Method GET -Path $path -Signed -TimeoutSec 30
                 if (-not $resp.Success) { throw $resp.Message }
                 $content = [string]$resp.Data.Content
                 $tmp = Join-Path $env:TEMP "loc-agent-$scriptId.ps1"
@@ -300,8 +369,8 @@ function Invoke-AgentCommand {
                 $out = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $tmp 2>&1
                 foreach ($line in @($out)) { Add-Log ([string]$line) }
                 $message = "Script $scriptId executed"
-                $success = ($LASTEXITCODE -eq 0)
-                $exitCode = $LASTEXITCODE
+                $success = ($LASTEXITCODE -eq 0 -or $null -eq $LASTEXITCODE)
+                $exitCode = if ($null -ne $LASTEXITCODE) { [int]$LASTEXITCODE } else { 0 }
             }
             "Message" {
                 $text = if ($Payload -and $Payload.Text) { [string]$Payload.Text } else { "Message from LocalOpsConsole" }
@@ -330,7 +399,7 @@ function Invoke-AgentCommand {
                 catch { Add-Log "Software inventory partial: $($_.Exception.Message)" }
 
                 $printers = @()
-                try { $printers = @(Get-Printer -ErrorAction SilentlyContinue | Select-Object Name, DriverName, PortName) }
+                try { $printers = @(Get-Printer -ErrorAction SilentlyContinue | Select-Object Name, DriverName, PortName, PrinterStatus) }
                 catch { }
 
                 $serial = $null
@@ -347,11 +416,11 @@ function Invoke-AgentCommand {
                 catch { }
 
                 $data = @{
-                    Software = @($software)
-                    Printers = @($printers)
-                    BiosSerial = $serial
-                    CpuName    = $cpuName
-                    RamGB      = $ramGb
+                    Software    = @($software)
+                    Printers    = @($printers)
+                    BiosSerial  = $serial
+                    CpuName     = $cpuName
+                    RamGB       = $ramGb
                     CollectedAt = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
                 }
                 $message = "Inventory collected"
@@ -370,9 +439,139 @@ function Invoke-AgentCommand {
                 $success = $true
             }
             "GetProcesses" {
-                $data = @(Get-Process -ErrorAction SilentlyContinue | Sort-Object CPU -Descending | Select-Object -First 50 Name, Id, CPU, WorkingSet64)
+                $data = @(Get-Process -ErrorAction SilentlyContinue |
+                    Sort-Object WorkingSet64 -Descending |
+                    Select-Object -First 60 Name, Id, CPU, @{n = 'WorkingSetMB'; e = { [math]::Round($_.WorkingSet64 / 1MB, 1) } })
                 $message = "Top processes listed"
                 $success = $true
+            }
+            "EndProcess" {
+                $pidVal = $null
+                if ($Payload -and $Payload.ProcessId) { $pidVal = [int]$Payload.ProcessId }
+                if (-not $pidVal) { throw "ProcessId required" }
+                $proc = Get-Process -Id $pidVal -ErrorAction SilentlyContinue
+                if (-not $proc) { throw "Process $pidVal not found" }
+                $name = [string]$proc.Name
+                $protected = @('System', 'Idle', 'csrss', 'smss', 'wininit', 'services', 'lsass', 'Registry', 'Memory Compression')
+                if ($protected -contains $name) { throw "Refusing to end protected process: $name ($pidVal)" }
+                if ($Payload -and $Payload.ProcessName) {
+                    $expect = [string]$Payload.ProcessName
+                    if ($name -ne $expect -and ($name + '.exe') -ne $expect) {
+                        throw "Process name mismatch: running '$name' vs expected '$expect'"
+                    }
+                }
+                Stop-Process -Id $pidVal -Force -ErrorAction Stop
+                $message = "Ended process $name ($pidVal)"
+                $data = @{ ProcessId = $pidVal; ProcessName = $name }
+                $success = $true
+            }
+            "GetPrinters" {
+                $printers = @()
+                try {
+                    $printers = @(Get-Printer -ErrorAction Stop | Select-Object Name, DriverName, PortName, PrinterStatus, Shared, Type)
+                }
+                catch {
+                    Add-Log "Get-Printer failed: $($_.Exception.Message)"
+                }
+                $data = @{ Printers = @($printers); Count = @($printers).Count }
+                $message = "Found $(@($printers).Count) printer(s)"
+                $success = $true
+            }
+            "NetHealthSmoke" {
+                $latencyMs = $null
+                $pingOk = $false
+                try {
+                    $pings = Test-Connection -ComputerName 1.1.1.1 -Count 3 -ErrorAction Stop
+                    $samples = @()
+                    foreach ($p in @($pings)) {
+                        if ($null -ne $p.ResponseTime) { $samples += [double]$p.ResponseTime }
+                        elseif ($null -ne $p.Latency) { $samples += [double]$p.Latency }
+                    }
+                    if ($samples.Count -gt 0) {
+                        $latencyMs = [math]::Round((($samples | Measure-Object -Average).Average), 1)
+                        $pingOk = $true
+                    }
+                }
+                catch {
+                    Add-Log "Ping failed: $($_.Exception.Message)"
+                }
+
+                $downloadMbps = $null
+                $downloadMs = $null
+                $downloadOk = $false
+                try {
+                    $bytes = 200000
+                    $url = "https://speed.cloudflare.com/__down?bytes=$bytes"
+                    $dlSw = [System.Diagnostics.Stopwatch]::StartNew()
+                    $wc = New-Object System.Net.WebClient
+                    try {
+                        $null = $wc.DownloadData($url)
+                    }
+                    finally { $wc.Dispose() }
+                    $dlSw.Stop()
+                    $downloadMs = [int]$dlSw.ElapsedMilliseconds
+                    if ($downloadMs -gt 0) {
+                        $downloadMbps = [math]::Round((($bytes * 8.0) / ($downloadMs / 1000.0)) / 1000000.0, 2)
+                        $downloadOk = $true
+                    }
+                }
+                catch {
+                    Add-Log "Download smoke failed: $($_.Exception.Message)"
+                }
+
+                $data = @{
+                    InternetLatencyMs = $latencyMs
+                    PingOk            = $pingOk
+                    DownloadMbps      = $downloadMbps
+                    DownloadMs        = $downloadMs
+                    DownloadOk        = $downloadOk
+                    ProbedAt          = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+                }
+                $message = "Net smoke: ping=$(if($pingOk){"${latencyMs}ms"}else{'fail'}) dl=$(if($downloadOk){"${downloadMbps} Mbps"}else{'fail'})"
+                $success = ($pingOk -or $downloadOk)
+            }
+            "SfcScannow" {
+                Add-Log "Starting sfc /scannow (may take a long time)…"
+                $sfc = Invoke-AgentCapturedProcess -FilePath "$env:SystemRoot\System32\sfc.exe" -ArgumentList @('/scannow')
+                foreach ($line in ($sfc.StdOut -split "`r?`n")) { Add-Log $line }
+                foreach ($line in ($sfc.StdErr -split "`r?`n")) { Add-Log $line }
+                $exitCode = [int]$sfc.ExitCode
+                $success = ($exitCode -eq 0)
+                $message = "sfc /scannow finished (exit $exitCode)"
+                $data = @{ ExitCode = $exitCode }
+            }
+            "ChkdskScan" {
+                $drive = "C:"
+                if ($Payload -and $Payload.Drive) { $drive = ([string]$Payload.Drive).TrimEnd('\') }
+                if ($drive -notmatch '^[A-Za-z]:$') { $drive = "C:" }
+                Add-Log "Running read-only chkdsk $drive…"
+                $chk = Invoke-AgentCapturedProcess -FilePath "$env:SystemRoot\System32\chkdsk.exe" -ArgumentList @($drive) -TimeoutSec 600
+                foreach ($line in ($chk.StdOut -split "`r?`n")) { Add-Log $line }
+                foreach ($line in ($chk.StdErr -split "`r?`n")) { Add-Log $line }
+                $exitCode = [int]$chk.ExitCode
+                $success = ($exitCode -eq 0)
+                $message = "chkdsk $drive finished (exit $exitCode)"
+                $data = @{ Drive = $drive; ExitCode = $exitCode }
+            }
+            "ChkdskScheduleFix" {
+                $drive = "C:"
+                if ($Payload -and $Payload.Drive) { $drive = ([string]$Payload.Drive).TrimEnd('\') }
+                if ($drive -notmatch '^[A-Za-z]:$') { $drive = "C:" }
+                Add-Log "Scheduling chkdsk $drive /F (may require reboot; no auto-reboot)…"
+                $psiArgs = "/c echo Y| chkdsk $drive /F"
+                $chk = Invoke-AgentCapturedProcess -FilePath "$env:SystemRoot\System32\cmd.exe" -ArgumentList @($psiArgs) -TimeoutSec 120
+                foreach ($line in ($chk.StdOut -split "`r?`n")) { Add-Log $line }
+                foreach ($line in ($chk.StdErr -split "`r?`n")) { Add-Log $line }
+                $exitCode = [int]$chk.ExitCode
+                $outAll = "$($chk.StdOut)`n$($chk.StdErr)"
+                $scheduled = ($outAll -match '(?i)schedule|next time the system restarts|would you like to schedule')
+                $success = ($exitCode -eq 0 -or $scheduled)
+                $message = if ($scheduled) {
+                    "CHKDSK /F scheduled for $drive on next restart (reboot not triggered)"
+                } else {
+                    "chkdsk $drive /F finished (exit $exitCode)"
+                }
+                $data = @{ Drive = $drive; ExitCode = $exitCode; Scheduled = [bool]$scheduled }
             }
             default {
                 throw "Unknown command type: $Type"

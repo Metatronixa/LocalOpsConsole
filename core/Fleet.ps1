@@ -2,7 +2,9 @@
 
 $script:LocFleetCommandTypes = @(
     'RestartSpooler', 'FlushDns', 'RestartService', 'RunScript', 'Message',
-    'CollectInventory', 'RestartComputer', 'GetServices', 'GetProcesses'
+    'CollectInventory', 'RestartComputer', 'GetServices', 'GetProcesses',
+    'EndProcess', 'GetPrinters', 'NetHealthSmoke',
+    'SfcScannow', 'ChkdskScan', 'ChkdskScheduleFix'
 )
 
 function Get-LocFleetCommandTypes {
@@ -45,6 +47,8 @@ function ConvertTo-LocFleetAgentSummary {
         CpuPct        = if ($tel.CpuPct -ne $null) { [double]$tel.CpuPct } else { $null }
         RamPct        = if ($tel.RamPct -ne $null) { [double]$tel.RamPct } else { $null }
         DiskFreePct   = if ($tel.DiskFreePct -ne $null) { [double]$tel.DiskFreePct } else { $null }
+        DiskReadMBps  = if ($tel.DiskReadMBps -ne $null) { [double]$tel.DiskReadMBps } else { $null }
+        DiskWriteMBps = if ($tel.DiskWriteMBps -ne $null) { [double]$tel.DiskWriteMBps } else { $null }
         InternetOk    = if ($tel.InternetOk -ne $null) { [bool]$tel.InternetOk } else { $null }
         UserName      = if ($tel.UserName) { [string]$tel.UserName } else { "" }
         IPv4          = if ($tel.IPv4) { [string]$tel.IPv4 } else { "" }
@@ -204,6 +208,83 @@ function Get-LocFleetAgentDetail {
         Commands = $cmds
         Alerts   = $alerts
     }
+}
+
+function Test-LocFleetAgentLatency {
+    param(
+        [Parameter(Mandatory)] [string]$AgentId,
+        [string]$TargetHost = ""
+    )
+
+    $agent = Get-LocFleetAgentRecord -AgentId $AgentId
+    if (-not $agent -or $agent.Revoked) {
+        return New-ApiResult -Success $false -Message "Agent not found" -StatusCode 404
+    }
+
+    $hostName = $TargetHost
+    if ([string]::IsNullOrWhiteSpace($hostName)) {
+        if ($agent.Telemetry -and $agent.Telemetry.IPv4) {
+            $hostName = [string]$agent.Telemetry.IPv4
+        }
+    }
+    if ([string]::IsNullOrWhiteSpace($hostName)) {
+        return New-ApiResult -Success $false -Message "No agent IPv4 in telemetry - wait for a heartbeat or pass TargetHost" -StatusCode 400
+    }
+
+    $rtt = New-Object System.Collections.Generic.List[double]
+    $ok = $false
+    $errorMsg = ""
+    try {
+        $pings = Test-Connection -ComputerName $hostName -Count 3 -ErrorAction Stop
+        foreach ($p in @($pings)) {
+            $ms = $null
+            if ($null -ne $p.ResponseTime) { $ms = [double]$p.ResponseTime }
+            elseif ($null -ne $p.Latency) { $ms = [double]$p.Latency }
+            if ($null -ne $ms) { [void]$rtt.Add($ms) }
+        }
+        $ok = $rtt.Count -gt 0
+        if (-not $ok) { $errorMsg = "Ping returned no RTT samples (ICMP may be blocked)" }
+    }
+    catch {
+        $errorMsg = $_.Exception.Message
+        try {
+            $tnc = Test-NetConnection -ComputerName $hostName -WarningAction SilentlyContinue -ErrorAction Stop
+            if ($tnc -and $tnc.PingSucceeded -and $null -ne $tnc.PingReplyDetails -and $null -ne $tnc.PingReplyDetails.RoundtripTime) {
+                [void]$rtt.Add([double]$tnc.PingReplyDetails.RoundtripTime)
+                $ok = $true
+                $errorMsg = ""
+            }
+            elseif (-not $errorMsg) {
+                $errorMsg = "Ping unsuccessful to $hostName"
+            }
+        }
+        catch {
+            if (-not $errorMsg) { $errorMsg = $_.Exception.Message }
+        }
+    }
+
+    $avg = $null
+    $min = $null
+    $max = $null
+    if ($rtt.Count -gt 0) {
+        $avg = [math]::Round((($rtt | Measure-Object -Average).Average), 1)
+        $min = [math]::Round((($rtt | Measure-Object -Minimum).Minimum), 1)
+        $max = [math]::Round((($rtt | Measure-Object -Maximum).Maximum), 1)
+    }
+
+    $probeOk = [bool]$ok
+    $msg = if ($probeOk) { "Latency to $hostName" } else { "Latency probe failed: $errorMsg" }
+    $payload = [ordered]@{
+        TargetHost = $hostName
+        ProbeOk    = $probeOk
+        AvgMs      = $avg
+        MinMs      = $min
+        MaxMs      = $max
+        Samples    = @($rtt.ToArray())
+        Error      = $errorMsg
+        ProbedAt   = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    }
+    return New-ApiResult -Success $probeOk -Message $msg -Data $payload
 }
 
 function Queue-LocFleetCommand {

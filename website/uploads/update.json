@@ -1,16 +1,16 @@
 ﻿{
   "name": "LocalOpsConsole",
-  "latest": "2.1.4",
-  "releasedAt": "2026-08-05T18:12:00Z",
-  "notes": "v2.1.4 — HttpListener bindHost fix: 0.0.0.0→+, keep localhost UI when LAN-bound, BindMismatch warning, URL ACL on elevate",
+  "latest": "2.1.5",
+  "releasedAt": "2026-08-05T18:39:01Z",
+  "notes": "v2.1.5 — Computers remote ops: processes/end, printers, latency, net smoke, disk IO, SFC/CHKDSK; Tailscale via fleetPublicUrl",
   "minVersion": "1.0.0",
   "builds": [
     {
-      "version": "2.1.4",
+      "version": "2.1.5",
       "channel": "stable",
-      "url": "https://github.com/Metatronixa/LocalOpsConsole/releases/download/v2.1.4/LocalOpsConsole-2.1.4.zip",
-      "sha256": "dcda063bf4859d6f302271b83e0a45541ef612b1155dc77635bfd832fc38522f",
-      "size": 333982
+      "url": "https://github.com/Metatronixa/LocalOpsConsole/releases/download/v2.1.5/LocalOpsConsole-2.1.5.zip",
+      "sha256": "f443555639440634c844e9a2c9eb526dd74812816d8b34f61441bd08627327f2",
+      "size": 336353
     }
   ]
 }

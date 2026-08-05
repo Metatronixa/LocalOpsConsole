@@ -335,6 +335,17 @@ function Invoke-LocFleetRouter {
                 Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data -StatusCode $status
                 return
             }
+            if ($agentSub -and $Segments.Count -ge 6 -and $Segments[5].ToLower() -eq 'latency') {
+                if ($method -ne "GET") {
+                    Send-JsonResponse -Context $Context -Success $false -Message "Latency requires GET" -StatusCode 405
+                    return
+                }
+                $target = $request.QueryString["host"]
+                $result = Test-LocFleetAgentLatency -AgentId $agentSub -TargetHost $(if ($target) { [string]$target } else { "" })
+                $status = if ($result.StatusCode) { [int]$result.StatusCode } else { 200 }
+                Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data -StatusCode $status
+                return
+            }
             if ($agentSub) {
                 if ($method -ne "GET") {
                     Send-JsonResponse -Context $Context -Success $false -Message "Agent detail requires GET" -StatusCode 405

@@ -1,6 +1,6 @@
 # LocalOpsConsole User Guide
 
-LocalOpsConsole is a **local-first Windows Operations Platform** (v2.1.4) for IT professionals, MSPs, system administrators, and power users.
+LocalOpsConsole is a **local-first Windows Operations Platform** (v2.1.5) for IT professionals, MSPs, system administrators, and power users.
 
 It combines plugin diagnostics with **Event Intelligence** — continuous observation that surfaces **incidents**, not raw event noise.
 
@@ -84,7 +84,11 @@ LocalOps Agent enrolls with HMAC auth for heartbeat and command polling. Fleet i
 .\Install-LocalOpsAgent.ps1 -ServerUrl "http://192.168.1.10:8787" -EnrollToken "YOUR_TOKEN"
 ```
 
-Use the console’s LAN IP (or `fleetPublicUrl`) — **not** `127.0.0.1` / `localhost`.
+Use the console’s LAN IP, **Tailscale IP**, or `fleetPublicUrl` — **not** `127.0.0.1` / `localhost`.
+
+### Remote actions (Computers)
+
+Select an online PC → detail panel: Flush DNS, Restart Spooler, Inventory, Processes (End), Printers, Ping PC, Net smoke, Message, SFC, CHKDSK scan / schedule `/F`. Update the agent on the remote PC to 2.1.5+ for new commands.
 
 ## Troubleshooting
 

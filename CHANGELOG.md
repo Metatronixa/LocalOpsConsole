@@ -1,5 +1,23 @@
 # Changelog
 
+## 2.1.5 — 2026-08-05
+
+### Features
+
+- **Computers remote ops**: processes list + end process, printers, console→PC latency (Ping PC), agent internet net smoke (ping + short download), disk IO in heartbeat telemetry (read/write MB/s).
+- **Repair commands**: SFC `/scannow`, read-only CHKDSK, schedule CHKDSK `/F` (no auto-reboot) with confirmations.
+- **Tailscale**: document using Tailscale IP in `fleetPublicUrl` / `-ServerUrl` with `bindHost: 0.0.0.0`.
+- Agent bumped to **2.1.5** (reinstall/update agents for new command types). Longer API timeouts for result posts; command log lines capped.
+
+### Verify
+
+```powershell
+.\tools\smoke-bind.ps1
+# With server running:
+.\tools\smoke-api.ps1
+.\tools\smoke-fleet-commands.ps1
+```
+
 ## 2.1.4 — 2026-08-05
 
 ### Bugs fixed

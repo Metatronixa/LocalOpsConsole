@@ -2,15 +2,17 @@ const FleetView = {
     _agents: [],
     _selected: null,
     _pollTimer: null,
+    _lastLatency: null,
 
     async render(container) {
         this._selected = null;
+        this._lastLatency = null;
         container.innerHTML = `
             <div class="space-y-6 fade-in">
                 <div class="flex items-center justify-between flex-wrap gap-2">
                     <div>
                         <h2 class="text-lg font-bold text-slate-100">Computers</h2>
-                        <p class="text-xs text-slate-400">Fleet agents — enroll, monitor telemetry, queue remote commands.</p>
+                        <p class="text-xs text-slate-400">Fleet agents — telemetry, remote actions, repairs. Tailscale: set fleetPublicUrl to http://&lt;tailscale-ip&gt;:8787.</p>
                     </div>
                     <button type="button" onclick="FleetView.refresh()" class="action-btn cyan">Refresh</button>
                 </div>
@@ -95,6 +97,21 @@ const FleetView = {
         return `${Number(v).toFixed(0)}%`;
     },
 
+    fmtIo(v) {
+        if (v == null || v === '') return '—';
+        return `${Number(v).toFixed(2)} MB/s`;
+    },
+
+    latestResultData(cmds, type) {
+        const list = API.asArray(cmds);
+        for (const c of list) {
+            if (c.Type === type && c.Result && c.Result.Data != null && (c.Status === 'Completed' || c.Status === 'Failed')) {
+                return c.Result.Data;
+            }
+        }
+        return null;
+    },
+
     async loadEnrollInfo() {
         const res = await API.request('fleet/enroll-token');
         if (!res.Success || !res.Data) {
@@ -117,13 +134,13 @@ const FleetView = {
             const bind = res.Data.BindHost || 'localhost';
             const lan = res.Data.DetectedLanIp || '';
             if (res.Data.PublicUrl) {
-                hint.textContent = `Install uses fleetPublicUrl (${res.Data.PublicUrl}). Agents must reach that host; bindHost is currently "${bind}".`;
+                hint.textContent = `Install uses fleetPublicUrl (${res.Data.PublicUrl}). Agents must reach that host (LAN or Tailscale); bindHost is currently "${bind}".`;
             } else if (res.Data.AllowsRemote) {
                 hint.textContent = `Install uses a reachable console URL (${url}). bindHost="${bind}" accepts remote agents.`;
             } else if (lan) {
                 hint.textContent = `Install uses this PC's LAN IP (${lan}) so other PCs can enroll. Also set bindHost to 0.0.0.0 in settings.json — localhost-only bind blocks remote agents.`;
             } else {
-                hint.textContent = 'Could not detect a LAN IP. Set fleetPublicUrl (e.g. http://192.168.1.10:8787) and bindHost to 0.0.0.0 for remote agents.';
+                hint.textContent = 'Could not detect a LAN IP. Set fleetPublicUrl (LAN or Tailscale IP) and bindHost to 0.0.0.0 for remote agents.';
             }
         }
         if (warn) {
@@ -139,7 +156,7 @@ const FleetView = {
     },
 
     async refresh(silent) {
-        const res = await API.request('fleet/agents', 'GET', null, 12000, { silent: !!silent });
+        const res = await API.request('fleet/agents', 'GET', null, 15000, { silent: !!silent });
         if (!res.Success) {
             if (!silent) LiveConsole.log(res.Message || 'Failed to load agents', 'WARN');
             return;
@@ -177,6 +194,7 @@ const FleetView = {
 
     async select(agentId) {
         this._selected = agentId;
+        this._lastLatency = null;
         this.renderTable();
         await this.loadDetail(agentId);
     },
@@ -187,7 +205,7 @@ const FleetView = {
         if (!silent) {
             box.innerHTML = '<h3 class="text-sm font-bold text-slate-100">Detail</h3><div class="text-slate-500 text-xs">Loading…</div>';
         }
-        const res = await API.request(`fleet/agents/${agentId}`, 'GET', null, 12000, { silent: !!silent });
+        const res = await API.request(`fleet/agents/${agentId}`, 'GET', null, 15000, { silent: !!silent });
         if (!res.Success || !res.Data) {
             box.innerHTML = `<p class="text-rose-400 text-xs">${this.escape(res.Message || 'Failed')}</p>`;
             return;
@@ -197,6 +215,13 @@ const FleetView = {
         const cmds = API.asArray(d.Commands || d.commands);
         const alerts = API.asArray(d.Alerts || d.alerts);
         const inv = a.Inventory;
+
+        const procData = this.latestResultData(cmds, 'GetProcesses');
+        const processes = procData ? API.asArray(procData) : [];
+        const printerBundle = this.latestResultData(cmds, 'GetPrinters') || (inv && inv.Printers ? { Printers: inv.Printers } : null);
+        const printers = printerBundle ? API.asArray(printerBundle.Printers || printerBundle) : [];
+        const netSmoke = this.latestResultData(cmds, 'NetHealthSmoke');
+        const lat = this._lastLatency;
 
         box.innerHTML = `
             <h3 class="text-sm font-bold text-slate-100">${this.escape(a.ComputerName || agentId)}</h3>
@@ -209,21 +234,71 @@ const FleetView = {
                 <div>CPU: ${this.fmtPct(a.CpuPct)}</div>
                 <div>RAM: ${this.fmtPct(a.RamPct)}</div>
                 <div>Disk free: ${this.fmtPct(a.DiskFreePct)}</div>
+                <div>Disk R/W: ${this.fmtIo(a.DiskReadMBps)} / ${this.fmtIo(a.DiskWriteMBps)}</div>
                 <div>Last: ${this.escape(a.LastSeen || '—')}</div>
+                <div>Agent→net: ${a.InternetOk === true ? 'OK' : (a.InternetOk === false ? 'DOWN' : '—')}</div>
             </div>
+            ${lat ? `<div class="text-[11px] text-cyan-300">Console→PC latency: ${lat.ProbeOk || lat.Success ? `avg ${lat.AvgMs} ms (min ${lat.MinMs}, max ${lat.MaxMs}) to ${this.escape(lat.TargetHost)}` : this.escape(lat.Error || 'failed')}</div>` : ''}
+            ${netSmoke ? `<div class="text-[11px] text-emerald-300">Agent internet: ping ${netSmoke.PingOk ? netSmoke.InternetLatencyMs + ' ms' : 'fail'} · download smoke ${netSmoke.DownloadOk ? netSmoke.DownloadMbps + ' Mbps' : 'fail'}</div>` : ''}
+
             <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-800">
                 <button type="button" class="action-btn cyan text-[11px]" onclick="FleetView.queueCmd('FlushDns')">Flush DNS</button>
                 <button type="button" class="action-btn cyan text-[11px]" onclick="FleetView.queueCmd('RestartSpooler')">Restart Spooler</button>
                 <button type="button" class="action-btn cyan text-[11px]" onclick="FleetView.queueCmd('CollectInventory')">Collect Inventory</button>
+                <button type="button" class="action-btn cyan text-[11px]" onclick="FleetView.queueCmd('GetProcesses')">Processes</button>
+                <button type="button" class="action-btn cyan text-[11px]" onclick="FleetView.queueCmd('GetPrinters')">Printers</button>
+                <button type="button" class="action-btn cyan text-[11px]" onclick="FleetView.pingAgent()">Ping PC</button>
+                <button type="button" class="action-btn cyan text-[11px]" onclick="FleetView.queueCmd('NetHealthSmoke')">Net smoke</button>
                 <button type="button" class="action-btn amber text-[11px]" onclick="FleetView.queueMessage()">Message</button>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button type="button" class="action-btn amber text-[11px]" onclick="FleetView.confirmQueue('SfcScannow', 'Run SFC /scannow on the remote PC? This can take a long time and will block other agent commands until finished.')">SFC scan</button>
+                <button type="button" class="action-btn amber text-[11px]" onclick="FleetView.confirmQueue('ChkdskScan', 'Run read-only CHKDSK on C: (no /F)?')">CHKDSK scan</button>
+                <button type="button" class="action-btn rose text-[11px]" onclick="FleetView.confirmQueue('ChkdskScheduleFix', 'Schedule CHKDSK /F on C: for next restart? This does NOT reboot the PC.')">CHKDSK schedule /F</button>
                 <button type="button" class="action-btn rose text-[11px]" onclick="FleetView.revokeAgent()">Remove</button>
             </div>
+
+            ${processes.length ? `
+            <div class="text-xs">
+                <p class="text-slate-300 font-semibold mb-1">Processes (top by memory)</p>
+                <div class="max-h-36 overflow-auto border border-slate-800 rounded-lg">
+                    <table class="w-full text-[10px] font-mono">
+                        <thead><tr class="text-slate-500 text-left"><th class="p-1">Name</th><th class="p-1">PID</th><th class="p-1">MB</th><th class="p-1"></th></tr></thead>
+                        <tbody>
+                            ${processes.map((p) => {
+                                const name = p.Name || p.name || '';
+                                const id = p.Id != null ? p.Id : p.id;
+                                const mb = p.WorkingSetMB != null ? p.WorkingSetMB : '';
+                                return `<tr class="border-t border-slate-800/80">
+                                    <td class="p-1">${this.escape(name)}</td>
+                                    <td class="p-1">${this.escape(id)}</td>
+                                    <td class="p-1">${this.escape(mb)}</td>
+                                    <td class="p-1"><button type="button" class="text-rose-400 hover:underline" onclick="FleetView.endProcess(${Number(id)})">End</button></td>
+                                </tr>`;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>` : ''}
+
+            ${printers.length ? `
+            <div class="text-xs">
+                <p class="text-slate-300 font-semibold mb-1">Printers</p>
+                <ul class="space-y-1 text-[10px] text-slate-400 font-mono max-h-28 overflow-auto">
+                    ${printers.map((pr) => `<li>${this.escape(pr.Name || '')} · ${this.escape(pr.DriverName || '')} · ${this.escape(pr.PortName || '')} · ${this.escape(pr.PrinterStatus != null ? pr.PrinterStatus : '')}</li>`).join('')}
+                </ul>
+            </div>` : ''}
+
             ${alerts.length ? `<div class="text-xs"><p class="text-amber-400 font-semibold mb-1">Alerts</p><ul class="space-y-1 text-slate-400">${alerts.slice(0, 5).map((al) => `<li>${this.escape(al.Type)}: ${this.escape(al.Message)}</li>`).join('')}</ul></div>` : ''}
-            ${inv ? `<div class="text-xs"><p class="text-emerald-400 font-semibold mb-1">Inventory</p><pre class="text-[10px] text-slate-400 max-h-32 overflow-auto">${this.escape(JSON.stringify(inv, null, 2))}</pre></div>` : ''}
+            ${inv ? `<div class="text-xs"><p class="text-emerald-400 font-semibold mb-1">Inventory</p><pre class="text-[10px] text-slate-400 max-h-24 overflow-auto">${this.escape(JSON.stringify(inv, null, 2))}</pre></div>` : ''}
             <div class="text-xs">
                 <p class="text-slate-300 font-semibold mb-1">Command history</p>
                 <div class="max-h-40 overflow-auto space-y-1 font-mono text-[10px] text-slate-400">
-                    ${cmds.length ? cmds.map((c) => `<div>${this.escape(c.CreatedAt)} · ${this.escape(c.Type)} · ${this.escape(c.Status)}${c.Result && c.Result.Message ? ' — ' + this.escape(c.Result.Message) : ''}</div>`).join('') : '<div class="text-slate-500">No commands yet.</div>'}
+                    ${cmds.length ? cmds.map((c) => {
+                        const extra = c.Result && c.Result.Message ? ' — ' + this.escape(c.Result.Message) : '';
+                        const dur = c.Result && c.Result.DurationMs != null ? ` (${c.Result.DurationMs}ms)` : '';
+                        return `<div>${this.escape(c.CreatedAt)} · ${this.escape(c.Type)} · ${this.escape(c.Status)}${dur}${extra}</div>`;
+                    }).join('') : '<div class="text-slate-500">No commands yet.</div>'}
                 </div>
             </div>
         `;
@@ -231,12 +306,43 @@ const FleetView = {
 
     async queueCmd(type, payload) {
         if (!this._selected) return;
-        const res = await API.request('fleet/commands', 'POST', { AgentId: this._selected, Type: type, Payload: payload || {} });
+        const res = await API.request('fleet/commands', 'POST', { AgentId: this._selected, Type: type, Payload: payload || {} }, 20000);
         if (res.Success) {
             LiveConsole.log(`Queued ${type} for agent`, 'SUCCESS', res.Data);
+            // Give agent a moment to pick up short commands, then refresh
+            setTimeout(() => this.loadDetail(this._selected, true), 4000);
             await this.loadDetail(this._selected);
         } else {
             LiveConsole.log(res.Message || 'Queue failed', 'ERROR');
+        }
+    },
+
+    async confirmQueue(type, promptText) {
+        if (!this._selected) return;
+        if (!confirm(promptText)) return;
+        await this.queueCmd(type);
+    },
+
+    async endProcess(pid) {
+        if (!this._selected) return;
+        if (!confirm(`End process PID ${pid} on the remote PC?`)) return;
+        await this.queueCmd('EndProcess', { ProcessId: pid });
+    },
+
+    async pingAgent() {
+        if (!this._selected) return;
+        LiveConsole.log('Probing console→agent latency…', 'INFO');
+        const res = await API.request(`fleet/agents/${this._selected}/latency`, 'GET', null, 20000);
+        if (res.Data) {
+            this._lastLatency = res.Data;
+            if (res.Success) {
+                LiveConsole.log(`Latency avg ${res.Data.AvgMs} ms to ${res.Data.TargetHost}`, 'SUCCESS');
+            } else {
+                LiveConsole.log(res.Message || 'Latency probe failed', 'WARN');
+            }
+            await this.loadDetail(this._selected, true);
+        } else {
+            LiveConsole.log(res.Message || 'Latency probe failed', 'ERROR');
         }
     },
 

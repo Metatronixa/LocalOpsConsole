@@ -30,10 +30,16 @@ The installer:
 
 By default the console binds to `localhost` (this PC only). Agents on other PCs need:
 
-1. **A reachable ServerUrl** — the PC's LAN IP (e.g. `http://192.168.1.10:8787`), not `127.0.0.1` / `localhost`
+1. **A reachable ServerUrl** — LAN IP or **Tailscale IP** (e.g. `http://100.x.y.z:8787`), not `127.0.0.1` / `localhost`
 2. **HttpListener open to the network** — set `bindHost` in `settings.json` to `0.0.0.0` (preferred; maps to all interfaces)
 
-Optional: set `fleetPublicUrl` (e.g. `http://192.168.1.10:8787`) to pin the dashboard install one-liner. If unset, Computers uses the detected LAN IPv4 for the suggested `-ServerUrl`. Avoid binding HttpListener to a single LAN IP unless required — that can conflict with HTTP.sys URL reservations.
+Optional: set `fleetPublicUrl` (e.g. `http://192.168.1.10:8787` or Tailscale) to pin the dashboard install one-liner. If unset, Computers uses the detected LAN IPv4 for the suggested `-ServerUrl`. Avoid binding HttpListener to a single LAN IP unless required — that can conflict with HTTP.sys URL reservations.
+
+### Computers remote actions (v2.1.5+)
+
+From the PC detail panel you can queue: Flush DNS, Restart Spooler, Collect Inventory, Processes (and End), Printers, Ping PC (console→agent latency), Net smoke (agent internet ping + short download), Message, SFC scan, CHKDSK scan (read-only), CHKDSK schedule `/F` (no auto-reboot).
+
+Reinstall or update the agent on remote PCs after upgrading the console so new command types are recognized.
 
 ## Behavior
 

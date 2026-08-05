@@ -13,7 +13,7 @@ $InstallDir = "C:\Program Files\LocalOpsAgent"
 $ConfigDir = "C:\ProgramData\LocalOpsAgent"
 $LogDir = Join-Path $ConfigDir "logs"
 $TaskName = "LocalOpsAgent"
-$AgentVersion = "2.0.0"
+$AgentVersion = "2.1.5"
 
 $scriptRoot = $PSScriptRoot
 if (-not $scriptRoot) { $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path }
