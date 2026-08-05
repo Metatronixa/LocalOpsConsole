@@ -1,16 +1,16 @@
 ﻿{
   "name": "LocalOpsConsole",
-  "latest": "2.1.0",
-  "releasedAt": "2026-08-05T16:06:39Z",
-  "notes": "v2.1.0 — Windows Operations Platform: Overview, Event Intelligence, Security Baseline, integrity gate, automation playbooks",
+  "latest": "2.1.1",
+  "releasedAt": "2026-08-05T16:50:00Z",
+  "notes": "v2.1.1 — Settings API fix, module view fixes, fleet LAN URL hints, install docs",
   "minVersion": "1.0.0",
   "builds": [
     {
-      "version": "2.1.0",
+      "version": "2.1.1",
       "channel": "stable",
-      "url": "https://github.com/Metatronixa/LocalOpsConsole/releases/download/v2.1.0/LocalOpsConsole-2.1.0.zip",
-      "sha256": "fb48e3590a1482b60e9f34d3dca6e83c078ce6eb186c9c5aa7f89ac49d3ecae8",
-      "size": 330466
+      "url": "https://github.com/Metatronixa/LocalOpsConsole/releases/download/v2.1.1/LocalOpsConsole-2.1.1.zip",
+      "sha256": "56dfcdbd7c29483959403cf524f63cdebc7242ae4eb7535447e84ef94eb69fd9",
+      "size": 332176
     }
   ]
 }
