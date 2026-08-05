@@ -9,16 +9,39 @@
 </head>
 <body>
   <header class="site-header">
-    <div class="wrap nav"><a class="brand" href="../index.html">LocalOps<em>Console</em></a></div>
+    <div class="wrap nav">
+      <a class="brand" href="../index.html"><span class="brand-mark"><img src="../assets/img/logo.svg" alt="" width="16" height="16" /></span>LocalOps<em>Console</em></a>
+      <ul class="nav-links"><li><a href="index.html">Docs</a></li></ul>
+    </div>
   </header>
   <main class="wrap docs-layout">
-    <nav class="docs-nav"><a href="index.html">Overview</a><a class="active" href="build.html">Build</a></nav>
+    <nav class="docs-nav">
+      <div class="group">Docs</div>
+      <a href="index.html">Overview</a>
+      <a href="installation.html">Installation</a>
+      <a href="architecture.html">Architecture</a>
+      <a href="modules.html">Modules</a>
+      <a href="api.html">API</a>
+      <a class="active" href="build.html">Build</a>
+      <a href="faq.html">FAQ</a>
+      <a href="troubleshooting.html">Troubleshooting</a>
+    </nav>
     <article class="docs-content">
-      <h1>Build</h1>
-      <p>Run <code>.\build.ps1</code> to stamp <code>VERSION</code>, produce <code>dist/LocalOpsConsole-x.y.z.zip</code>, and generate <code>data/integrity/module-hashes.json</code> inside the package (integrity mode <code>enforce</code>).</p>
-      <p>Use <code>.\build.ps1 -PublishWebsite</code> to copy the ZIP into <code>website/uploads/builds/</code> and refresh <code>update.json</code> with SHA-256.</p>
+      <h1>Build &amp; release</h1>
+      <ol>
+        <li>Bump SemVer in <code>VERSION</code> (and notes in <code>CHANGELOG.md</code>).</li>
+        <li>Run <code>.\build.ps1</code> — stamps version, stages package, generates integrity hashes, sets packaged <code>integrityMode: enforce</code>, writes <code>dist/LocalOpsConsole-x.y.z.zip</code> and <code>dist/LocalOpsAgent-x.y.z.zip</code>.</li>
+        <li>Optional: <code>.\build.ps1 -PublishWebsite</code> — copies ZIP under <code>website/uploads/builds/</code> and refreshes <code>update.json</code>.</li>
+        <li>For public downloads, point <code>update.json</code> <code>builds[].url</code> at the GitHub Release asset and set SHA-256.</li>
+        <li>Tag and publish a GitHub Release with both ZIPs.</li>
+      </ol>
+      <h2>Smoke test</h2>
+      <pre>.\start.bat
+.\tools\smoke-api.ps1</pre>
+      <p>Never commit live <code>fleetEnrollToken</code> values or host-specific <code>settings.json</code> secrets.</p>
     </article>
   </main>
+  <footer class="site-footer"><div class="wrap footer-copy">© 2026 Bradford Lotriet · v2.1.1</div></footer>
   <script src="../assets/js/site.js"></script>
 </body>
 </html>

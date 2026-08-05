@@ -10,12 +10,16 @@
 <body>
   <header class="site-header">
     <div class="wrap nav">
-      <a class="brand" href="../index.html">LocalOps<em>Console</em></a>
-      <ul class="nav-links"><li><a href="index.html">Docs</a></li></ul>
+      <a class="brand" href="../index.html"><span class="brand-mark"><img src="../assets/img/logo.svg" alt="" width="16" height="16" /></span>LocalOps<em>Console</em></a>
+      <ul class="nav-links">
+        <li><a href="index.html">Docs</a></li>
+        <li><a href="../download.html">Download</a></li>
+      </ul>
     </div>
   </header>
   <main class="wrap docs-layout">
     <nav class="docs-nav">
+      <div class="group">Docs</div>
       <a href="index.html">Overview</a>
       <a href="installation.html">Installation</a>
       <a class="active" href="architecture.html">Architecture</a>
@@ -27,19 +31,58 @@
     </nav>
     <article class="docs-content">
       <h1>Architecture</h1>
-      <p>Browser SPA (<code>dashboard/</code>) ↔ HttpListener (<code>api/server.ps1</code>) ↔ thin <code>router.ps1</code> ↔ core services ↔ plugin modules.</p>
-      <h2>Core services</h2>
+      <p>LocalOpsConsole is a <strong>local-first Windows Operations Platform</strong>: an offline SPA dashboard talking to a PowerShell <code>HttpListener</code> API that loads plugin modules and optional Event Intelligence.</p>
+
+      <h2>Runtime flow</h2>
+      <ol>
+        <li><code>start.bat</code> → <code>start.ps1</code> (UAC elevation when possible).</li>
+        <li>Launches <code>api/server.ps1</code> with port, modules path, dashboard path, root.</li>
+        <li>Server dot-sources <code>core/Engine.ps1</code> file list at <em>script</em> scope (required for PowerShell scoping).</li>
+        <li><code>HttpListener</code> serves <code>dashboard/</code> static files and routes <code>/api/v1/*</code> through <code>api/router.ps1</code>.</li>
+        <li>Browser opens <code>http://localhost:{port}/</code> (default <strong>8787</strong>) on Overview.</li>
+      </ol>
+
+      <h2>Layers</h2>
       <ul>
-        <li><code>Engine.ps1</code> — ordered bootstrap</li>
-        <li><code>SecurityManager</code> / <code>IntegrityManager</code> / <code>PermissionManager</code> — execution gate</li>
-        <li><code>EventEngine</code> + Watch / Rule / Correlation / Incident / Notification / Automation</li>
-        <li><code>ModuleLoader</code> — manifests, depends, invoke</li>
-        <li><code>TaskRunner</code> — live telemetry</li>
+        <li><strong>Dashboard</strong> (<code>dashboard/</code>) — vanilla JS SPA: <code>app.js</code> sidebar/profiles, <code>router.js</code> views, custom module views + generic <code>ModuleView</code>.</li>
+        <li><strong>API</strong> (<code>api/</code>) — thin router: health, modules, settings, telemetry, Event Intel, fleet, then <code>{module}/diagnostics|actions/{name}</code>.</li>
+        <li><strong>Core</strong> (<code>core/</code>) — settings, security gate, modules, telemetry, Event Intelligence, fleet, updater, automation.</li>
+        <li><strong>Modules</strong> (<code>modules/*/module.json</code>) — diagnostics &amp; actions as PowerShell scripts.</li>
+        <li><strong>Rules / notifications</strong> — Event Intel rules under <code>rules/</code>; channel plugins under <code>notifications/</code>.</li>
       </ul>
-      <h2>Event pipeline</h2>
-      <p>Observe → Normalize → Rule Engine → Correlation → Incident → Notification → Timeline → Dashboard (Overview / Incidents).</p>
+
+      <h2>Core bootstrap order</h2>
+      <p><code>Engine.ps1</code> loads Response → Security → Settings → Logger → Cache → Integrity → Permission → ModuleLoader → SecurityManager → TaskRunner → Updater → Fleet* → EventStore → Timeline → Severity → Rule → Correlation → Incident → Notification → Watch → Health → SecurityScore → Automation → EventEngine.</p>
+
+      <h2>Execution gate</h2>
+      <p>Every module diagnostic/action passes <code>SecurityManager</code>:</p>
+      <ol>
+        <li>Manifest validation</li>
+        <li>SHA-256 integrity (<code>warn</code> in source; <code>enforce</code> in packaged builds)</li>
+        <li>Elevation / <code>requiresAdmin</code></li>
+        <li>Dependencies</li>
+        <li>Parameter allow-list</li>
+        <li>Path jail (script must stay under the module folder)</li>
+      </ol>
+
+      <h2>Event Intelligence pipeline</h2>
+      <p>When <code>eventIntelEnabled</code> is true:</p>
+      <p><strong>Watch</strong> (Event Logs + signals) → <strong>Normalize</strong> → <strong>RuleEngine</strong> (<code>rules/</code>) → <strong>Correlation</strong> → <strong>Incident</strong> → <strong>Notify</strong> (channels, quiet hours) → <strong>Timeline</strong> → Dashboard (Overview / Incidents / Alerts).</p>
+      <p>Automation playbooks run only when a rule sets <code>automation.enabled: true</code> (opt-in, audited).</p>
+
+      <h2>Fleet (optional)</h2>
+      <p>Outbound LocalOps Agent enrolls with a token, then heartbeats and polls commands with HMAC. Console default bind is localhost — remote agents need <code>bindHost: 0.0.0.0</code> (or LAN IP) plus a reachable <code>ServerUrl</code> / <code>fleetPublicUrl</code>. See <a href="installation.html">Installation</a>.</p>
+
+      <h2>Data on disk</h2>
+      <ul>
+        <li><code>data/events/</code>, <code>data/incidents/</code> — Event Intel persistence</li>
+        <li><code>data/fleet/</code> — agents, commands, audit</li>
+        <li><code>data/integrity/</code> — module hashes (packaged builds)</li>
+        <li><code>logs/</code> — daily operational logs</li>
+      </ul>
     </article>
   </main>
+  <footer class="site-footer"><div class="wrap footer-copy">© 2026 Bradford Lotriet · v2.1.1</div></footer>
   <script src="../assets/js/site.js"></script>
 </body>
 </html>

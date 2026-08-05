@@ -11,6 +11,7 @@ Thumbs.db
 .vscode/
 .idea/
 tools/.chrome-capture-profile/
+/tech.html
 *.user
 .env
 *.pfx

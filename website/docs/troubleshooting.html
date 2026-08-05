@@ -9,10 +9,23 @@
 </head>
 <body>
   <header class="site-header">
-    <div class="wrap nav"><a class="brand" href="../index.html">LocalOps<em>Console</em></a></div>
+    <div class="wrap nav">
+      <a class="brand" href="../index.html"><span class="brand-mark"><img src="../assets/img/logo.svg" alt="" width="16" height="16" /></span>LocalOps<em>Console</em></a>
+      <ul class="nav-links"><li><a href="index.html">Docs</a></li></ul>
+    </div>
   </header>
   <main class="wrap docs-layout">
-    <nav class="docs-nav"><a href="index.html">Overview</a><a class="active" href="troubleshooting.html">Troubleshooting</a></nav>
+    <nav class="docs-nav">
+      <div class="group">Docs</div>
+      <a href="index.html">Overview</a>
+      <a href="installation.html">Installation</a>
+      <a href="architecture.html">Architecture</a>
+      <a href="modules.html">Modules</a>
+      <a href="api.html">API</a>
+      <a href="build.html">Build</a>
+      <a href="faq.html">FAQ</a>
+      <a class="active" href="troubleshooting.html">Troubleshooting</a>
+    </nav>
     <article class="docs-content">
       <h1>Troubleshooting</h1>
       <ul>
@@ -21,16 +34,29 @@
         <li>Use Live Console stream for action errors.</li>
         <li>Verify module scripts are listed in <code>module.json</code>.</li>
         <li>If the UI is blank, hard-refresh the browser (Ctrl+F5).</li>
+        <li>Run <code>.\tools\smoke-api.ps1</code> with the server up.</li>
       </ul>
+
+      <h2>Failed to fetch (all APIs)</h2>
+      <ul>
+        <li>Nothing is listening on the console port (default 8787).</li>
+        <li>Run <code>start.bat</code> again; check Task Manager for <code>powershell</code> hosting <code>api\server.ps1</code>.</li>
+        <li>Test <code>http://localhost:8787/api/v1/health</code> in a browser.</li>
+      </ul>
+
       <h2>Remote agent cannot enroll / connect</h2>
       <ul>
         <li>Confirm <code>-ServerUrl</code> is the console PC’s <strong>LAN IP</strong> (or <code>fleetPublicUrl</code>), not <code>127.0.0.1</code> / <code>localhost</code>.</li>
         <li>On the console, set <code>bindHost</code> to <code>0.0.0.0</code> (or the LAN IP) and restart — default <code>localhost</code> rejects remote clients.</li>
-        <li>Allow inbound TCP on the console port (default <code>8787</code>) in Windows Firewall.</li>
+        <li>Allow inbound TCP on the console port in Windows Firewall.</li>
         <li>From the remote PC, test in a browser: <code>http://&lt;console-LAN-IP&gt;:8787/</code>.</li>
       </ul>
+
+      <h2>Settings HTTP 405</h2>
+      <p>Upgrade to <strong>v2.1.1+</strong>. Older builds could return 405 on valid GET/POST because the router omitted the HTTP method variable.</p>
     </article>
   </main>
+  <footer class="site-footer"><div class="wrap footer-copy">© 2026 Bradford Lotriet · v2.1.1</div></footer>
   <script src="../assets/js/site.js"></script>
 </body>
 </html>

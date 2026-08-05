@@ -37,6 +37,9 @@
       <h2>Port already in use</h2>
       <p>Change <code>port</code> in <code>settings.json</code> (default <code>8787</code>) and relaunch. Another app may already own 8080 on some machines.</p>
 
+      <h2>Failed to fetch on every API</h2>
+      <p>The HttpListener is not running. Run <code>start.bat</code> again and open <code>http://localhost:8787/api/v1/health</code>. Use <code>.\tools\smoke-api.ps1</code> to verify.</p>
+
       <h2>Server fails to start</h2>
       <ul>
         <li>Run <code>api\server.ps1</code> directly to see errors.</li>

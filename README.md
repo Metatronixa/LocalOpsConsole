@@ -111,13 +111,18 @@ Privileged actions are listed in each module’s `requiresAdmin`. Automation is 
 - Binds to **localhost** only by default.
 - Admin-required actions are blocked without elevation.
 - UI works offline (no CDN).
-- Do not expose the API to the network.
+- Do not expose the API to the public internet. For LAN fleet agents, set `bindHost` to `0.0.0.0` and use the console LAN IP (see `docs/USER_GUIDE.md`).
+- See `SECURITY.md` and `CHANGELOG.md`.
 
 ## Updates
 
 Set `updateUrl` in `settings.json` to your hosted `update.json` (defaults to the GitHub raw manifest). Updates are never silent — the operator must confirm.
 
 Bump SemVer in `VERSION`, then build. Attach the ZIP to a GitHub Release for public downloads.
+
+```powershell
+.\tools\smoke-api.ps1   # after start.bat — API smoke test
+```
 
 ## License
 

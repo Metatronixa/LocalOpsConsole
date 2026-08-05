@@ -9,23 +9,48 @@
 </head>
 <body>
   <header class="site-header">
-    <div class="wrap nav"><a class="brand" href="../index.html">LocalOps<em>Console</em></a></div>
+    <div class="wrap nav">
+      <a class="brand" href="../index.html"><span class="brand-mark"><img src="../assets/img/logo.svg" alt="" width="16" height="16" /></span>LocalOps<em>Console</em></a>
+      <ul class="nav-links"><li><a href="index.html">Docs</a></li></ul>
+    </div>
   </header>
   <main class="wrap docs-layout">
     <nav class="docs-nav">
+      <div class="group">Docs</div>
       <a href="index.html">Overview</a>
+      <a href="installation.html">Installation</a>
+      <a href="architecture.html">Architecture</a>
       <a class="active" href="modules.html">Modules</a>
       <a href="api.html">API</a>
+      <a href="build.html">Build</a>
+      <a href="faq.html">FAQ</a>
+      <a href="troubleshooting.html">Troubleshooting</a>
     </nav>
     <article class="docs-content">
       <h1>Modules</h1>
-      <p>Each module folder contains <code>module.json</code>, optional <code>diagnostics/</code>, <code>actions/</code>, and <code>lib/</code>.</p>
+      <p>Each folder under <code>modules/</code> has <code>module.json</code>, optional <code>diagnostics/</code>, <code>actions/</code>, and <code>lib/</code>. Profiles filter which modules appear in the sidebar.</p>
+
+      <h2>Layout in the UI</h2>
+      <ul>
+        <li><strong>Overview</strong> — Overview</li>
+        <li><strong>Operations</strong> — Computers (Fleet), Tools, Configuration, Internet Health, Network, Remote, Services, Printers, Updates, Audio, SyncMe, Remote Support, VPN, …</li>
+        <li><strong>Security</strong> — Security Center, Security Baseline, Security Tools, Event Log</li>
+        <li><strong>Health / Performance / Inventory</strong> — Health Center, System, Devices, Users, Graphics, Storage, Startup, Power</li>
+        <li><strong>Incidents / Monitoring / Automation / Settings</strong> — Incident Center, Alerts, Timeline, Automation, Settings</li>
+      </ul>
+
+      <h2>Capabilities</h2>
+      <p>Manifests may declare <code>capabilities</code>: <code>inventory</code>, <code>diagnostics</code>, <code>monitoring</code>, <code>remediation</code>, <code>automation</code>, <code>reporting</code>, <code>analytics</code>.</p>
+
+      <h2>Views</h2>
+      <p>Rich custom JS views exist for Overview, System, Services, Network, Storage, Fleet, Security*, Incidents, Alerts, Timeline, Automation, Settings, Internet Health, and others. Remaining modules use the generic <code>ModuleView</code> (diagnostics + remediation buttons). The UI normalizes single-item arrays from PowerShell JSON so those pages always render.</p>
+
       <h2>Documentation template</h2>
-      <p>For every module, document: Purpose, Capabilities, Diagnostics, Remediation, Automation, Permissions, Security implications, Expected runtime, Typical use cases. See <code>docs/modules/</code> in the repository for per-module pages.</p>
-      <h2>Capabilities field</h2>
-      <p>Manifests may declare <code>capabilities</code> such as <code>inventory</code>, <code>diagnostics</code>, <code>monitoring</code>, <code>remediation</code>, <code>automation</code>, <code>reporting</code>.</p>
+      <p>Purpose · Capabilities · Diagnostics · Remediation · Automation · Permissions · Security implications · Expected runtime · Typical use cases.</p>
+      <p>Filled examples: <code>docs/modules/</code> (Security Baseline, Services, Storage, Printers, Updates, Internet Health, Security, Event Log).</p>
     </article>
   </main>
+  <footer class="site-footer"><div class="wrap footer-copy">© 2026 Bradford Lotriet · v2.1.1</div></footer>
   <script src="../assets/js/site.js"></script>
 </body>
 </html>
