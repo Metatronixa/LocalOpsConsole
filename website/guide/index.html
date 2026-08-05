@@ -58,6 +58,10 @@
       <p>Modules can be tagged with a numeric <strong>tier</strong> (1–10). Higher tiers generally mean deeper, engineer-level workflows.</p>
       <p>The consolidated <strong>Internet Health</strong> module (Networking) covers gateway/DNS/public checks, hosts/WINS, VPN, repairs, and an automatic diagnosis engine. Summary loads in a couple of seconds; full diagnosis and speed tests are opt-in.</p>
 
+      <h2>Fleet agents (Computers)</h2>
+      <p>v2.0 adds a <strong>Computers</strong> module for managing outbound fleet agents. Install <code>LocalOpsAgent</code> on remote PCs — they connect to your console with an enrollment token and HMAC-signed requests. No agent listener required on desktops.</p>
+      <p>Extract <code>LocalOpsAgent-2.0.0.zip</code> (from <code>dist/</code> after build), run <code>Install-LocalOpsAgent.ps1</code> as Administrator with your console URL and token from the Computers dashboard. For LAN agents, set <code>bindHost</code> or <code>fleetPublicUrl</code> in <code>settings.json</code>.</p>
+
       <h2>Safety</h2>
       <ul>
         <li>The listener binds to <code>localhost</code> only.</li>

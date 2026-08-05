@@ -120,9 +120,40 @@ function Invoke-LocDnsResolve {
         [int]$TimeoutSec = 2
     )
     try {
-        $r = Resolve-DnsName -Name $HostName -DnsOnly -ErrorAction Stop | Select-Object -First 1
-        $addr = if ($r) { [string]$r.IPAddress } else { $null }
-        return [PSCustomObject]@{ HostName = $HostName; Success = [bool]$addr; Address = $addr }
+        # Prefer timed nslookup — Resolve-DnsName has no reliable timeout and can hang the API thread.
+        if (Get-Command Invoke-ToolCommand -ErrorAction SilentlyContinue) {
+            $r = Invoke-ToolCommand -FilePath "nslookup.exe" -ArgumentList @($HostName) -TimeoutSec $TimeoutSec
+            $addr = $null
+            if ($r.Output -match '(?im)Address:\s*([0-9a-fA-F:.]+)\s*$') {
+                $candidates = [regex]::Matches($r.Output, '(?im)^Address:\s*([0-9a-fA-F:.]+)\s*$')
+                if ($candidates.Count -gt 0) {
+                    $addr = $candidates[$candidates.Count - 1].Groups[1].Value
+                    if ($addr -match '^\d+\.\d+\.\d+\.\d+$' -or $addr -match ':') { }
+                    else { $addr = $null }
+                }
+            }
+            if (-not $addr -and $r.Output -match '(?i)Name:\s*\S+\s+Address(?:es)?:\s*([0-9.]+)') {
+                $addr = $Matches[1]
+            }
+            # Fallback parse: last IPv4 in output that isn't the DNS server line duplicated oddly
+            if (-not $addr) {
+                $ips = [regex]::Matches($r.Output, '\b(\d{1,3}(?:\.\d{1,3}){3})\b') | ForEach-Object { $_.Groups[1].Value }
+                $addr = @($ips | Select-Object -Last 1)[0]
+            }
+            return [PSCustomObject]@{ HostName = $HostName; Success = [bool]$addr; Address = $addr; TimedOut = [bool]$r.TimedOut }
+        }
+        $job = Start-Job -ScriptBlock {
+            param($h)
+            Resolve-DnsName -Name $h -DnsOnly -ErrorAction Stop | Select-Object -First 1 -ExpandProperty IPAddress
+        } -ArgumentList $HostName
+        if (-not (Wait-Job $job -Timeout $TimeoutSec)) {
+            Stop-Job $job -ErrorAction SilentlyContinue
+            Remove-Job $job -Force -ErrorAction SilentlyContinue
+            return [PSCustomObject]@{ HostName = $HostName; Success = $false; Address = $null; TimedOut = $true; Message = "DNS timed out" }
+        }
+        $addr = Receive-Job $job
+        Remove-Job $job -Force -ErrorAction SilentlyContinue
+        return [PSCustomObject]@{ HostName = $HostName; Success = [bool]$addr; Address = [string]$addr; TimedOut = $false }
     }
     catch {
         return [PSCustomObject]@{ HostName = $HostName; Success = $false; Address = $null; Message = $_.Exception.Message }
@@ -131,49 +162,56 @@ function Invoke-LocDnsResolve {
 
 function Get-LocActiveAdapterInfo {
     try {
-        $na = Get-NetAdapter -ErrorAction SilentlyContinue | Where-Object { $_.Status -eq 'Up' -and $_.Virtual -eq $false } | Select-Object -First 1
-        if (-not $na) {
-            $na = Get-NetAdapter -ErrorAction SilentlyContinue | Where-Object { $_.Status -eq 'Up' } | Select-Object -First 1
+        # Prefer CIM — Get-NetAdapter can stall without a timeout on some hosts.
+        $cfg = Get-CimInstance Win32_NetworkAdapterConfiguration -Filter "IPEnabled=TRUE" -ErrorAction SilentlyContinue |
+            Where-Object {
+                $_.IPAddress -and (@($_.IPAddress) | Where-Object { $_ -match '^\d+\.\d+\.\d+\.\d+$' -and $_ -notmatch '^127\.' })
+            } |
+            Select-Object -First 1
+        if (-not $cfg) { return $null }
+
+        $ipv4 = @($cfg.IPAddress | Where-Object { $_ -match '^\d+\.\d+\.\d+\.\d+$' -and $_ -notmatch '^127\.' } | Select-Object -First 1)
+        $gw = @($cfg.DefaultIPGateway | Where-Object { $_ -match '^\d+\.\d+\.\d+\.\d+$' } | Select-Object -First 1)
+        $dns = if ($cfg.DNSServerSearchOrder) { ($cfg.DNSServerSearchOrder -join ", ") } else { "" }
+        $ipv6 = @($cfg.IPAddress | Where-Object { $_ -match ':' -and $_ -notmatch '(?i)^fe80:' } | Select-Object -First 1)
+        if (-not $ipv6) {
+            $ipv6 = @($cfg.IPAddress | Where-Object { $_ -match ':' } | Select-Object -First 1)
         }
-        if (-not $na) { return $null }
 
-        $type = if ($na.MediaType -match '802\.11|Native80211|Wireless') { 'WiFi' }
-                elseif ($na.MediaType -match '802\.3|Ethernet') { 'Ethernet' }
-                else { [string]$na.MediaType }
-
-        $ipCfg = Get-NetIPConfiguration -InterfaceIndex $na.ifIndex -ErrorAction SilentlyContinue
-        $ipv4 = @($ipCfg.IPv4Address | Select-Object -ExpandProperty IPAddress -ErrorAction SilentlyContinue)
-        $gw = @($ipCfg.IPv4DefaultGateway | Select-Object -ExpandProperty NextHop -ErrorAction SilentlyContinue)
-        $dns = @($ipCfg.DnsServer | Select-Object -ExpandProperty ServerAddresses -ErrorAction SilentlyContinue)
-        $ipv6 = @($ipCfg.IPv6Address | Select-Object -ExpandProperty IPAddress -ErrorAction SilentlyContinue | Select-Object -First 2)
+        $name = [string]$cfg.Description
+        $mac = [string]$cfg.MACAddress
+        $linkSpeed = $null
+        $mediaConnected = $true
+        $type = "Ethernet"
+        $ifIndex = [int]$cfg.InterfaceIndex
+        try {
+            $na = Get-CimInstance Win32_NetworkAdapter -Filter ("InterfaceIndex=$ifIndex") -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($na) {
+                if ($na.NetConnectionID) { $name = [string]$na.NetConnectionID }
+                if ($na.Speed -and $na.Speed -gt 0) { $linkSpeed = ("{0} Mbps" -f [math]::Round($na.Speed / 1MB, 0)) }
+                if ($na.AdapterType -match '(?i)wireless|802\.11') { $type = "WiFi" }
+                $mediaConnected = ($na.NetConnectionStatus -eq 2)
+            }
+        }
+        catch { }
 
         $mtu = $null
-        try {
-            $iface = Get-NetIPInterface -InterfaceIndex $na.ifIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue | Select-Object -First 1
-            if ($iface) { $mtu = [int]$iface.NlMtu }
-        }
-        catch { }
-
-        $dhcp = $false
-        try {
-            $dhcp = (Get-NetIPInterface -InterfaceIndex $na.ifIndex -AddressFamily IPv4 -ErrorAction SilentlyContinue).Dhcp -eq 'Enabled'
-        }
-        catch { }
+        $dhcp = [bool]$cfg.DHCPEnabled
 
         return [PSCustomObject]@{
-            Name          = [string]$na.Name
-            InterfaceIndex= [int]$na.ifIndex
-            Type          = $type
-            Status        = [string]$na.Status
-            LinkSpeed     = [string]$na.LinkSpeed
-            MacAddress    = [string]$na.MacAddress
-            MediaConnected= [bool]$na.MediaConnected
-            IPv4          = if ($ipv4) { [string]$ipv4[0] } else { $null }
-            Gateway       = if ($gw) { [string]$gw[0] } else { $null }
-            DnsServers    = ($dns -join ", ")
-            DhcpEnabled   = $dhcp
-            Mtu           = $mtu
-            IPv6          = ($ipv6 -join ", ")
+            Name           = $name
+            InterfaceIndex = $ifIndex
+            Type           = $type
+            Status         = if ($mediaConnected) { "Up" } else { "Disconnected" }
+            LinkSpeed      = $linkSpeed
+            MacAddress     = $mac
+            MediaConnected = $mediaConnected
+            IPv4           = if ($ipv4) { [string]$ipv4 } else { $null }
+            Gateway        = if ($gw) { [string]$gw } else { $null }
+            DnsServers     = $dns
+            DhcpEnabled    = $dhcp
+            Mtu            = $mtu
+            IPv6           = if ($ipv6) { [string]$ipv6 } else { $null }
         }
     }
     catch {

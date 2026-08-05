@@ -217,7 +217,7 @@ const InternetHealthView = {
         const el = document.getElementById('ih-summary');
         if (el) el.innerHTML = '<div class="text-xs text-slate-400"><span class="spinner"></span> Loading summary…</div>';
         const q = refresh ? 'refresh=1' : '';
-        const res = await API.diagnostic('internetSlow', 'GetHealthSummary', q, 8000);
+        const res = await API.diagnostic('internetSlow', 'GetHealthSummary', q, 15000);
         if (!el) return;
         if (!res.Success) {
             el.innerHTML = `<div class="p-4 rounded-xl border border-rose-500/40 text-rose-300 text-xs">${this.escape(res.Message)}</div>`;

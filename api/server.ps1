@@ -33,10 +33,14 @@ $RootPath = [System.IO.Path]::GetFullPath($RootPath)
 . (Join-Path $RootPath "core\ModuleLoader.ps1")
 . (Join-Path $RootPath "core\TaskRunner.ps1")
 . (Join-Path $RootPath "core\Updater.ps1")
+. (Join-Path $RootPath "core\FleetStore.ps1")
+. (Join-Path $RootPath "core\FleetAuth.ps1")
+. (Join-Path $RootPath "core\Fleet.ps1")
 . (Join-Path $PSScriptRoot "router.ps1")
 
 Initialize-LocSettings -RootPath $RootPath
 Initialize-LocLogger -RootPath $RootPath
+Initialize-LocFleetStore
 Initialize-ModuleLoader -ModulesPath $ModulesPath
 Start-LocTaskRunner
 
@@ -123,7 +127,7 @@ try {
         if ($request.HttpMethod -eq "OPTIONS") {
             $context.Response.Headers.Add("Access-Control-Allow-Origin", "*")
             $context.Response.Headers.Add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-            $context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type")
+            $context.Response.Headers.Add("Access-Control-Allow-Headers", "Content-Type, X-Loc-Agent, X-Loc-Timestamp, X-Loc-Signature")
             $context.Response.StatusCode = 204
             $context.Response.Close()
             continue

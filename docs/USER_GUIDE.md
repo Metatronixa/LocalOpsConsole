@@ -1,6 +1,6 @@
 # LocalOpsConsole User Guide
 
-**Free and open source** (MIT) modular Windows diagnostic platform: PowerShell HttpListener API + offline SPA dashboard (**v1.3.0**).
+**Free and open source** (MIT) modular Windows diagnostic platform: PowerShell HttpListener API + offline SPA dashboard (**v2.0.0**).
 
 Source and releases: [github.com/Metatronixa/LocalOpsConsole](https://github.com/Metatronixa/LocalOpsConsole)
 
@@ -209,6 +209,42 @@ App flow: `GET /api/v1/updates/check` → banner if newer → confirm → `POST 
 
 Publish: bump `VERSION`, run `.\build.ps1 -PublishWebsite`, deploy `website/` (or `uploads/`).
 
+## Fleet RMM (Computers) — v2.0
+
+The **Computers** sidebar module manages outbound fleet agents on remote Windows PCs. Agents call into the console — no inbound listener on desktops.
+
+### Console setup
+
+1. Start LocalOpsConsole as usual.
+2. Open **Computers** in the sidebar (Enterprise domain).
+3. Copy the **enrollment token** and install one-liner.
+
+Fleet data is stored under `data/fleet/` (JSON files). Settings in `settings.json`:
+
+```json
+"fleetEnabled": true,
+"fleetEnrollToken": "",
+"fleetOfflineSeconds": 90,
+"fleetPublicUrl": ""
+```
+
+If `fleetEnrollToken` is empty on first run, a token is auto-generated. For remote agents, set `bindHost` to `0.0.0.0` or your LAN IP, or set `fleetPublicUrl` (e.g. `http://192.168.1.10:8787`).
+
+### Install an agent
+
+1. Copy `agent/` from the repo or extract `dist/LocalOpsAgent-2.0.0.zip` to the target PC.
+2. Run PowerShell **as Administrator**:
+
+```powershell
+.\Install-LocalOpsAgent.ps1 -ServerUrl "http://192.168.1.10:8787" -EnrollToken "YOUR_TOKEN"
+```
+
+The agent registers a scheduled task (`LocalOpsAgent`), heartbeats every 30s, and polls for commands every 3s. Logs: `C:\ProgramData\LocalOpsAgent\logs\`.
+
+### Remote commands
+
+From the Computers detail panel: Flush DNS, Restart Spooler, Collect Inventory, Message, and more. All queued commands and results are audited to `data/fleet/audit.jsonl`.
+
 ## Troubleshooting
 
 | Issue | Fix |
@@ -221,6 +257,8 @@ Publish: bump `VERSION`, run `.\build.ps1 -PublishWebsite`, deploy `website/` (o
 | Remote list shares timed out | Verify firewall plus RPC/WMI/SMB access to target, then retry |
 | Update check fails | Test `updateUrl` in browser; validate JSON + sha256 |
 | Server won't start | Run `api\server.ps1` directly; read `logs\` |
+| Agent won't enroll | Check ServerUrl reachability; verify token; set bindHost/fleetPublicUrl for remote PCs |
+| Agent shows offline | Check scheduled task LocalOpsAgent; review `C:\ProgramData\LocalOpsAgent\logs\` |
 | Unstyled UI | Use the listener URL, not raw file:// |
 
 ## Safety

@@ -1,4 +1,4 @@
-{
+﻿{
   "port": 8787,
   "cacheTtlSeconds": 20,
   "taskIntervalSeconds": 30,
@@ -8,5 +8,9 @@
   "syncMePath": "",
   "rustDeskInstallerUrl": "",
   "rustDeskInstallerSha256": "",
-  "rustDeskSilentArgs": ""
+  "rustDeskSilentArgs": "",
+  "fleetEnabled": true,
+  "fleetEnrollToken": "",
+  "fleetOfflineSeconds": 90,
+  "fleetPublicUrl": ""
 }

@@ -16,6 +16,9 @@ const Router = {
             SystemView._active = false;
             SystemView.stopPoll();
         }
+        if (typeof FleetView !== 'undefined' && FleetView.stopPoll) {
+            FleetView.stopPoll();
+        }
 
         document.querySelectorAll('#sidebar-nav button').forEach((btn) => {
             btn.classList.toggle('active', btn.dataset.module === (mod ? mod.id : moduleId));
@@ -37,7 +40,8 @@ const Router = {
             printers: typeof PrintersView !== 'undefined' ? PrintersView : null,
             remotesupport: typeof RemoteSupportView !== 'undefined' ? RemoteSupportView : null,
             remote: typeof RemoteView !== 'undefined' ? RemoteView : null,
-            internetslow: typeof InternetHealthView !== 'undefined' ? InternetHealthView : null
+            internetslow: typeof InternetHealthView !== 'undefined' ? InternetHealthView : null,
+            fleet: typeof FleetView !== 'undefined' ? FleetView : null
         };
 
         const key = mod.id.toLowerCase();

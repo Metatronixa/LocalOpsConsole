@@ -1,5 +1,240 @@
 # api/router.ps1 - Thin /api/v1 router
 
+function Read-LocRequestBody {
+    param([System.Net.HttpListenerRequest]$Request)
+    $reader = New-Object System.IO.StreamReader($Request.InputStream, $Request.ContentEncoding)
+    return $reader.ReadToEnd()
+}
+
+function Parse-LocJsonBody {
+    param([string]$Body)
+    if ([string]::IsNullOrWhiteSpace($Body)) { return @{} }
+    try {
+        $obj = $Body | ConvertFrom-Json
+        return ConvertTo-Hashtable -InputObject $obj
+    }
+    catch {
+        return $null
+    }
+}
+
+function Invoke-LocFleetRouter {
+    param(
+        [System.Net.HttpListenerContext]$Context,
+        [string[]]$Segments
+    )
+
+    $request = $Context.Request
+    $method = $request.HttpMethod.ToUpperInvariant()
+
+    if (-not (Test-LocFleetEnabled)) {
+        Send-JsonResponse -Context $Context -Success $false -Message "Fleet is disabled" -StatusCode 503
+        return
+    }
+
+    # segments: api, v1, fleet, ...
+    $sub = if ($Segments.Count -ge 4) { $segments[3] } else { "" }
+    $subLower = $sub.ToLower()
+    $agentSub = if ($Segments.Count -ge 5) { $Segments[4] } else { "" }
+
+    # Agent HMAC routes
+    $agentRoutes = @('enroll', 'heartbeat', 'poll', 'results', 'events')
+    $needsHmac = ($subLower -in $agentRoutes) -or ($subLower -eq 'scripts' -and $agentSub -and $Segments.Count -ge 6 -and $Segments[5].ToLower() -eq 'content')
+
+    $body = ""
+    $bodyHash = @{}
+    if ($method -eq "POST") {
+        $body = Read-LocRequestBody -Request $request
+        $parsed = Parse-LocJsonBody -Body $body
+        if ($null -eq $parsed -and -not [string]::IsNullOrWhiteSpace($body)) {
+            Send-JsonResponse -Context $Context -Success $false -Message "Invalid JSON body" -StatusCode 400
+            return
+        }
+        if ($parsed) { $bodyHash = $parsed }
+    }
+
+    $agentId = $null
+    if ($needsHmac) {
+        if ($subLower -eq 'enroll') {
+            # enroll uses token, not HMAC
+        }
+        else {
+            $auth = Test-LocAgentSignature -Request $request -Body $body
+            if (-not $auth.Success) {
+                $status = if ($auth.StatusCode) { [int]$auth.StatusCode } else { 401 }
+                Send-JsonResponse -Context $Context -Success $false -Message $auth.Message -StatusCode $status
+                return
+            }
+            $agentId = [string]$auth.Data.AgentId
+        }
+    }
+
+    switch ($subLower) {
+        'enroll' {
+            if ($method -ne "POST") {
+                Send-JsonResponse -Context $Context -Success $false -Message "Enroll requires POST" -StatusCode 405
+                return
+            }
+            $token = if ($bodyHash.Token) { [string]$bodyHash.Token } else { "" }
+            $computer = if ($bodyHash.ComputerName) { [string]$bodyHash.ComputerName } else { "UNKNOWN" }
+            $ver = if ($bodyHash.AgentVersion) { [string]$bodyHash.AgentVersion } else { "2.0.0" }
+            $result = Enroll-LocAgent -Token $token -ComputerName $computer -AgentVersion $ver
+            $status = if ($result.StatusCode) { [int]$result.StatusCode } else { 200 }
+            Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data -StatusCode $status
+            return
+        }
+        'heartbeat' {
+            if ($method -ne "POST") {
+                Send-JsonResponse -Context $Context -Success $false -Message "Heartbeat requires POST" -StatusCode 405
+                return
+            }
+            $result = Register-LocHeartbeat -AgentId $agentId -Telemetry $bodyHash
+            Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data
+            return
+        }
+        'poll' {
+            if ($method -ne "GET") {
+                Send-JsonResponse -Context $Context -Success $false -Message "Poll requires GET" -StatusCode 405
+                return
+            }
+            $result = Claim-LocFleetCommands -AgentId $agentId
+            Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data
+            return
+        }
+        'results' {
+            if ($method -ne "POST") {
+                Send-JsonResponse -Context $Context -Success $false -Message "Results requires POST" -StatusCode 405
+                return
+            }
+            $cmdId = if ($bodyHash.CommandId) { [string]$bodyHash.CommandId } else { "" }
+            if (-not $cmdId) {
+                Send-JsonResponse -Context $Context -Success $false -Message "CommandId required" -StatusCode 400
+                return
+            }
+            $result = Complete-LocFleetCommand -AgentId $agentId -CommandId $cmdId `
+                -Success ([bool](if ($null -ne $bodyHash.Success) { $bodyHash.Success } else { $true })) `
+                -Message ([string](if ($bodyHash.Message) { $bodyHash.Message } else { "" })) `
+                -Data $bodyHash.Data `
+                -ExitCode ([int](if ($bodyHash.ExitCode) { $bodyHash.ExitCode } else { 0 })) `
+                -DurationMs ([int](if ($bodyHash.DurationMs) { $bodyHash.DurationMs } else { 0 })) `
+                -LogLines @($bodyHash.LogLines)
+            $status = if ($result.StatusCode) { [int]$result.StatusCode } else { 200 }
+            Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data -StatusCode $status
+            return
+        }
+        'events' {
+            if ($method -ne "POST") {
+                Send-JsonResponse -Context $Context -Success $false -Message "Events requires POST" -StatusCode 405
+                return
+            }
+            $result = Register-LocFleetEvent -AgentId $agentId -Event $bodyHash
+            Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data
+            return
+        }
+        'agents' {
+            if ($agentSub -and $Segments.Count -ge 6 -and $Segments[5].ToLower() -eq 'revoke') {
+                if ($method -ne "POST") {
+                    Send-JsonResponse -Context $Context -Success $false -Message "Revoke requires POST" -StatusCode 405
+                    return
+                }
+                $result = Revoke-LocAgent -AgentId $agentSub
+                $status = if ($result.StatusCode) { [int]$result.StatusCode } else { 200 }
+                Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data -StatusCode $status
+                return
+            }
+            if ($agentSub) {
+                if ($method -ne "GET") {
+                    Send-JsonResponse -Context $Context -Success $false -Message "Agent detail requires GET" -StatusCode 405
+                    return
+                }
+                $result = Get-LocFleetAgentDetail -AgentId $agentSub
+                $status = if ($result.StatusCode) { [int]$result.StatusCode } else { 200 }
+                Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data -StatusCode $status
+                return
+            }
+            if ($method -ne "GET") {
+                Send-JsonResponse -Context $Context -Success $false -Message "Agents list requires GET" -StatusCode 405
+                return
+            }
+            $result = Get-LocFleetAgents
+            Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data
+            return
+        }
+        'commands' {
+            if ($method -eq "POST") {
+                $aid = if ($bodyHash.AgentId) { [string]$bodyHash.AgentId } else { "" }
+                $type = if ($bodyHash.Type) { [string]$bodyHash.Type } else { "" }
+                if (-not $aid -or -not $type) {
+                    Send-JsonResponse -Context $Context -Success $false -Message "AgentId and Type required" -StatusCode 400
+                    return
+                }
+                $payload = if ($bodyHash.Payload) { $bodyHash.Payload } else { $null }
+                $result = Queue-LocFleetCommand -AgentId $aid -Type $type -Payload $payload
+                $status = if ($result.StatusCode) { [int]$result.StatusCode } else { 200 }
+                Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data -StatusCode $status
+                return
+            }
+            if ($method -ne "GET") {
+                Send-JsonResponse -Context $Context -Success $false -Message "Commands require GET or POST" -StatusCode 405
+                return
+            }
+            $filterId = $request.QueryString["agentId"]
+            $result = Get-LocFleetCommands -AgentId $filterId
+            Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data
+            return
+        }
+        'alerts' {
+            if ($method -ne "GET") {
+                Send-JsonResponse -Context $Context -Success $false -Message "Alerts require GET" -StatusCode 405
+                return
+            }
+            $result = Get-LocFleetAlerts
+            Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data
+            return
+        }
+        'scripts' {
+            if ($agentSub -and $Segments.Count -ge 6 -and $Segments[5].ToLower() -eq 'content') {
+                if ($method -ne "GET") {
+                    Send-JsonResponse -Context $Context -Success $false -Message "Script content requires GET" -StatusCode 405
+                    return
+                }
+                $result = Get-LocFleetScriptContent -ScriptId $agentSub
+                $status = if ($result.StatusCode) { [int]$result.StatusCode } else { 200 }
+                Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data -StatusCode $status
+                return
+            }
+            if ($method -ne "GET") {
+                Send-JsonResponse -Context $Context -Success $false -Message "Scripts require GET" -StatusCode 405
+                return
+            }
+            $result = Get-LocFleetScripts
+            Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data
+            return
+        }
+        'enroll-token' {
+            if ($Segments.Count -ge 5 -and $Segments[4].ToLower() -eq 'rotate') {
+                if ($method -ne "POST") {
+                    Send-JsonResponse -Context $Context -Success $false -Message "Rotate requires POST" -StatusCode 405
+                    return
+                }
+                $result = Rotate-LocFleetEnrollToken
+                Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data
+                return
+            }
+            if ($method -ne "GET") {
+                Send-JsonResponse -Context $Context -Success $false -Message "Enroll token requires GET" -StatusCode 405
+                return
+            }
+            $result = Get-LocFleetEnrollToken
+            Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data
+            return
+        }
+        default {
+            Send-JsonResponse -Context $Context -Success $false -Message "Unknown fleet endpoint" -StatusCode 404
+        }
+    }
+}
+
 function Invoke-LocRouter {
     param(
         [Parameter(Mandatory)]
@@ -129,6 +364,12 @@ function Invoke-LocRouter {
             return
         }
         Send-JsonResponse -Context $Context -Success $false -Message "Use /api/v1/updates/check or /api/v1/updates/apply" -StatusCode 400
+        return
+    }
+
+    # Built-in: fleet RMM (before module routes)
+    if ($resource -eq "fleet") {
+        Invoke-LocFleetRouter -Context $Context -Segments $segments
         return
     }
 

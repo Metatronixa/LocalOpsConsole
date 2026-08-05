@@ -6,7 +6,7 @@
 [![PowerShell](https://img.shields.io/badge/PowerShell-5.1+-5391FE?style=flat-square&logo=powershell&logoColor=white)](https://github.com/Metatronixa/LocalOpsConsole)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-059669?style=flat-square)](CONTRIBUTING.md)
 
-**Free and open source** Windows diagnostic console for helpdesk and engineers — no RMM tax.
+**Free and open source** Windows diagnostic console for helpdesk and engineers — with a light outbound **LocalOps Agent** fleet (v2.0).
 
 PowerShell HttpListener API + offline SPA. Plugin modules via `module.json`. **Internet Health**, live telemetry, Configuration, Printers, Remote Support (RustDesk), SyncMe, OS repair, and more.
 
@@ -53,6 +53,7 @@ Opens `http://localhost:8787/`.
 
 | Area | What you get |
 |------|----------------|
+| **Computers (fleet)** | Outbound LocalOps Agent — heartbeat, command queue, script library, alerts |
 | **Internet Health** | Consolidated Network+VPN: summary, tests, hosts, diagnosis, repairs, opt-in speed test |
 | **Live telemetry** | CPU, RAM, disk I/O, network, GPU (fast path — no PnP inventory on every poll) |
 | **Configuration** | Explorer / Privacy / Update / Taskbar / Power / Security — apply & restore |

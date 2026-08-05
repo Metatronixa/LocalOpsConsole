@@ -1,0 +1,22 @@
+{
+  "id": "fleet",
+  "name": "Computers",
+  "version": "2.0.0",
+  "icon": "monitor",
+  "description": "Fleet agents and remote commands",
+  "order": 5,
+  "tier": 2,
+  "profiles": [
+    "helpdesk",
+    "desktop_support",
+    "systems_administrator",
+    "network_administrator",
+    "developer",
+    "power_user"
+  ],
+  "depends": [],
+  "diagnostics": [],
+  "actions": [],
+  "requiresAdmin": [],
+  "hidden": false
+}

@@ -31,6 +31,7 @@ function Invoke-ToolCommand {
             ExitCode = -1
             Output   = ("Timed out after ${TimeoutSec}s`n" + $partialOut + "`n" + $partialErr).Trim()
             Error    = $partialErr
+            TimedOut = $true
         }
     }
 
@@ -43,5 +44,6 @@ function Invoke-ToolCommand {
         ExitCode = $p.ExitCode
         Output   = ($stdout + "`n" + $stderr).Trim()
         Error    = ([string]$stderr).Trim()
+        TimedOut = $false
     }
 }

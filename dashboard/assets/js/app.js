@@ -180,7 +180,7 @@ function renderSidebar(modules) {
         if (['graphics', 'devices'].includes(id)) return 'Hardware';
         if (['storage', 'printers', 'syncme'].includes(id)) return 'Storage';
         if (['network', 'vpn', 'internetslow'].includes(id)) return 'Networking';
-        if (['remote', 'remotesupport'].includes(id)) return 'Enterprise';
+        if (['remote', 'remotesupport', 'fleet'].includes(id)) return 'Enterprise';
         if (['security', 'eventlog'].includes(id)) return 'Security';
         return 'Developer';
     }

@@ -15,3 +15,7 @@ Thumbs.db
 *.pfx
 *.pem
 LocalOpsConsole-server-*.log
+data/fleet/*.json
+data/fleet/*.jsonl
+!data/.gitkeep
+!data/fleet/.gitkeep

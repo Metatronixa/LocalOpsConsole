@@ -33,7 +33,7 @@ $stage = Join-Path $env:TEMP $stageName
 if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
 New-Item -ItemType Directory -Path $stage | Out-Null
 
-$include = @("api", "core", "modules", "dashboard", "VERSION", "version.json", "settings.json", "start.ps1", "start.bat", "README.md", "build.ps1", "docs")
+$include = @("api", "core", "modules", "dashboard", "scripts", "VERSION", "version.json", "settings.json", "start.ps1", "start.bat", "README.md", "build.ps1", "docs")
 foreach ($item in $include) {
     $src = Join-Path $Root $item
     if (-not (Test-Path $src)) { continue }
@@ -58,6 +58,15 @@ Remove-Item $stage -Recurse -Force
 
 Write-Host "Built $zipPath" -ForegroundColor Green
 Write-Host "Version $Version" -ForegroundColor Cyan
+
+# Package fleet agent
+$agentDir = Join-Path $Root "agent"
+if (Test-Path $agentDir) {
+    $agentZip = Join-Path $distDir "LocalOpsAgent-$Version.zip"
+    if (Test-Path $agentZip) { Remove-Item $agentZip -Force }
+    Compress-Archive -Path (Join-Path $agentDir "*") -DestinationPath $agentZip -Force
+    Write-Host "Built $agentZip" -ForegroundColor Green
+}
 
 if ($PublishWebsite) {
     $uploads = Join-Path $Root "website\uploads"
