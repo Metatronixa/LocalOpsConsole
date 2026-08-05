@@ -2,7 +2,7 @@
 # Downloads the latest LocalOpsConsole release (free / MIT), verifies SHA-256 when available, extracts, optionally launches.
 [CmdletBinding()]
 param(
-    [string]$ManifestUrl = "https://raw.githubusercontent.com/Metatronixa/LocalOpsConsole/main/website/uploads/update.json",
+    [string]$ManifestUrl = "https://www.opsconsole.co.za/uploads/update.json",
     [string]$InstallPath = "",
     [switch]$Launch
 )

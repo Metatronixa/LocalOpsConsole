@@ -101,6 +101,9 @@ if ($PublishWebsite) {
     $sha = (Get-FileHash -Path $destZip -Algorithm SHA256).Hash.ToLowerInvariant()
     $size = (Get-Item $destZip).Length
     $releasedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+    # Feed is served from www.opsconsole.co.za/uploads; ZIP stays on GitHub Releases.
+    # Relative builds/... still works if you also mirror the ZIP under uploads/builds/.
+    $downloadUrl = "https://github.com/Metatronixa/LocalOpsConsole/releases/download/v$Version/$stageName.zip"
     $manifest = [ordered]@{
         name        = "LocalOpsConsole"
         latest      = $Version
@@ -111,7 +114,7 @@ if ($PublishWebsite) {
             [ordered]@{
                 version = $Version
                 channel = "stable"
-                url     = "builds/$stageName.zip"
+                url     = $downloadUrl
                 sha256  = $sha
                 size    = $size
             }

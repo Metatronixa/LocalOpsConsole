@@ -1,16 +1,16 @@
 ﻿{
   "name": "LocalOpsConsole",
-  "latest": "2.1.1",
-  "releasedAt": "2026-08-05T16:50:00Z",
-  "notes": "v2.1.1 — Settings API fix, module view fixes, fleet LAN URL hints, install docs",
+  "latest": "2.1.2",
+  "releasedAt": "2026-08-05T17:25:00Z",
+  "notes": "v2.1.2 — Update feed moved to https://www.opsconsole.co.za/uploads/update.json",
   "minVersion": "1.0.0",
   "builds": [
     {
-      "version": "2.1.1",
+      "version": "2.1.2",
       "channel": "stable",
-      "url": "https://github.com/Metatronixa/LocalOpsConsole/releases/download/v2.1.1/LocalOpsConsole-2.1.1.zip",
-      "sha256": "56dfcdbd7c29483959403cf524f63cdebc7242ae4eb7535447e84ef94eb69fd9",
-      "size": 332176
+      "url": "https://github.com/Metatronixa/LocalOpsConsole/releases/download/v2.1.2/LocalOpsConsole-2.1.2.zip",
+      "sha256": "107d374092f8db59111eea169ffed3ee0381f884eac847ecd411ce82ddd13b99",
+      "size": 332193
     }
   ]
 }

@@ -16,7 +16,7 @@
         <li><a class="active" href="index.html">Guide</a></li>
         <li><a href="../download.html">Download</a></li>
       </ul>
-      <a class="btn btn-teal" href="../download.html">Get the app</a>
+      <a class="btn btn-primary" href="../download.html">Get the app</a>
     </div>
   </header>
 
@@ -33,44 +33,45 @@
     </aside>
     <article class="guide-content">
       <h1>Updates</h1>
-      <p>The app checks a JSON manifest in your marketing site’s <code>uploads</code> folder and downloads versioned ZIP builds from there.</p>
+      <p>By default the app checks <code>https://www.opsconsole.co.za/uploads/update.json</code> and downloads the ZIP named in that manifest (GitHub Release or a mirrored build under <code>uploads/builds/</code>).</p>
 
-      <h2>Manifest</h2>
-      <p>Host this file at a URL the PC can reach, for example <code>https://your.site/uploads/update.json</code>:</p>
+      <h2>Production feed</h2>
+      <p>Host / deploy <code>update.json</code> at:</p>
+      <pre>https://www.opsconsole.co.za/uploads/update.json</pre>
+      <p>Default <code>settings.json</code>:</p>
+      <pre>"updateUrl": "https://www.opsconsole.co.za/uploads/update.json"</pre>
+
+      <h2>Manifest shape</h2>
       <pre>{
   "name": "LocalOpsConsole",
-  "latest": "1.2.0",
+  "latest": "2.1.2",
   "releasedAt": "2026-08-05T00:00:00Z",
-  "notes": "Graphics, Remote, SyncMe, OS repair, readable results",
+  "notes": "Release notes",
   "minVersion": "1.0.0",
   "builds": [
     {
-      "version": "1.2.0",
+      "version": "2.1.2",
       "channel": "stable",
-      "url": "uploads/builds/LocalOpsConsole-1.2.0.zip",
+      "url": "https://github.com/Metatronixa/LocalOpsConsole/releases/download/v2.1.2/LocalOpsConsole-2.1.2.zip",
       "sha256": "REPLACE_WITH_SHA256",
       "size": 0
     }
   ]
 }</pre>
-
-      <h2>Configure the app</h2>
-      <p>In <code>settings.json</code> set:</p>
-      <pre>"updateUrl": "https://your.site/uploads/update.json"</pre>
-      <p>Relative build URLs in the manifest are resolved against the directory that contains <code>update.json</code>. Leave <code>updateUrl</code> empty to use local <code>website/uploads/update.json</code>.</p>
+      <p>Relative URLs (e.g. <code>builds/LocalOpsConsole-x.y.z.zip</code>) resolve against the directory that contains <code>update.json</code> — useful if you also mirror ZIPs under <code>https://www.opsconsole.co.za/uploads/builds/</code>.</p>
 
       <h2>In the dashboard</h2>
       <ol>
         <li>On load, the UI calls <code>GET /api/v1/updates/check</code>.</li>
         <li>If <code>latest</code> is newer than local <code>VERSION</code>, an update banner appears.</li>
-        <li>Confirm to run <code>POST /api/v1/updates/apply</code> — download, SHA-256 verify (when provided), extract over the install (preserving <code>logs/</code> and local <code>settings.json</code>), then restart the server process.</li>
+        <li>Confirm to run <code>POST /api/v1/updates/apply</code> — download, SHA-256 verify, extract (preserving <code>logs/</code> and local <code>settings.json</code>), then restart.</li>
       </ol>
 
       <h2>Publishing a release</h2>
       <ol>
         <li>Bump <code>VERSION</code> and run <code>.\build.ps1 -PublishWebsite</code>.</li>
-        <li>Confirm <code>website/uploads/builds/LocalOpsConsole-x.y.z.zip</code> and refreshed <code>update.json</code>.</li>
-        <li>Deploy the <code>website/</code> folder (or at least <code>uploads/</code>) to your static host.</li>
+        <li>Attach ZIPs to the GitHub Release; refresh <code>website/uploads/update.json</code> with SHA-256.</li>
+        <li>Deploy <code>website/uploads/update.json</code> (and optional <code>builds/</code>) to <strong>www.opsconsole.co.za/uploads/</strong>.</li>
       </ol>
 
       <div class="callout warn" style="margin-top:1.25rem">

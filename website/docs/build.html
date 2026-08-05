@@ -32,7 +32,8 @@
         <li>Bump SemVer in <code>VERSION</code> (and notes in <code>CHANGELOG.md</code>).</li>
         <li>Run <code>.\build.ps1</code> — stamps version, stages package, generates integrity hashes, sets packaged <code>integrityMode: enforce</code>, writes <code>dist/LocalOpsConsole-x.y.z.zip</code> and <code>dist/LocalOpsAgent-x.y.z.zip</code>.</li>
         <li>Optional: <code>.\build.ps1 -PublishWebsite</code> — copies ZIP under <code>website/uploads/builds/</code> and refreshes <code>update.json</code>.</li>
-        <li>For public downloads, point <code>update.json</code> <code>builds[].url</code> at the GitHub Release asset and set SHA-256.</li>
+        <li>Publish a GitHub Release with both ZIPs; set <code>builds[].url</code> to the Release asset (or a mirror under <code>https://www.opsconsole.co.za/uploads/builds/</code>).</li>
+        <li>Deploy <code>website/uploads/update.json</code> to <strong>https://www.opsconsole.co.za/uploads/update.json</strong> (default in-app check URL).</li>
         <li>Tag and publish a GitHub Release with both ZIPs.</li>
       </ol>
       <h2>Smoke test</h2>

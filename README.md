@@ -6,7 +6,7 @@
 [![PowerShell](https://img.shields.io/badge/PowerShell-5.1+-5391FE?style=flat-square&logo=powershell&logoColor=white)](https://github.com/Metatronixa/LocalOpsConsole)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-059669?style=flat-square)](CONTRIBUTING.md)
 
-**Local-first Windows Operations Platform** (v2.1.1) for IT professionals, MSPs, and power users — diagnostics, Event Intelligence, incidents, security baseline, and safe remediation.
+**Local-first Windows Operations Platform** (v2.1.2) for IT professionals, MSPs, and power users — diagnostics, Event Intelligence, incidents, security baseline, and safe remediation.
 
 PowerShell HttpListener API + offline SPA. Plugin modules via `module.json`. **Overview** answers “Is this computer healthy?” using health score, security posture, and active incidents — not raw Event Viewer dumps.
 
@@ -116,7 +116,7 @@ Privileged actions are listed in each module’s `requiresAdmin`. Automation is 
 
 ## Updates
 
-Set `updateUrl` in `settings.json` to your hosted `update.json` (defaults to the GitHub raw manifest). Updates are never silent — the operator must confirm.
+Default `updateUrl` is `https://www.opsconsole.co.za/uploads/update.json`. Override in `settings.json` if you host your own feed. Updates are never silent — the operator must confirm.
 
 Bump SemVer in `VERSION`, then build. Attach the ZIP to a GitHub Release for public downloads.
 

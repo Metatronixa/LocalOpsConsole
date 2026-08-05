@@ -1,6 +1,6 @@
 # LocalOpsConsole User Guide
 
-LocalOpsConsole is a **local-first Windows Operations Platform** (v2.1.1) for IT professionals, MSPs, system administrators, and power users.
+LocalOpsConsole is a **local-first Windows Operations Platform** (v2.1.2) for IT professionals, MSPs, system administrators, and power users.
 
 It combines plugin diagnostics with **Event Intelligence** — continuous observation that surfaces **incidents**, not raw event noise.
 
@@ -68,7 +68,7 @@ Dedicated dashboard views paint immediately, then load data asynchronously with 
 
 ## Updates
 
-Use the in-app update banner or `GET /api/v1/updates/check`. Release checksums live in `website/uploads/update.json`.
+Use the in-app update banner or `GET /api/v1/updates/check`. The app checks `https://www.opsconsole.co.za/uploads/update.json` by default (override with `updateUrl` in `settings.json`). Checksums are SHA-256 in that manifest.
 
 ## Fleet (optional)
 

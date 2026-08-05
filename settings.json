@@ -4,7 +4,7 @@
   "taskIntervalSeconds": 30,
   "logRetentionDays": 14,
   "bindHost": "localhost",
-  "updateUrl": "https://raw.githubusercontent.com/Metatronixa/LocalOpsConsole/main/website/uploads/update.json",
+  "updateUrl": "https://www.opsconsole.co.za/uploads/update.json",
   "syncMePath": "",
   "rustDeskInstallerUrl": "",
   "rustDeskInstallerSha256": "",
@@ -44,3 +44,4 @@
   "fleetEnabled": true,
   "fleetEnrollToken": ""
 }
+
