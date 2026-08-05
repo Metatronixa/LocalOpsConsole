@@ -1,14 +1,28 @@
 # LocalOpsConsole
 
-**Free and open source** modular Windows diagnostic and remediation platform (**v1.2.0**). MIT License.
+[![License: MIT](https://img.shields.io/badge/License-MIT-0f766e?style=flat-square)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/Metatronixa/LocalOpsConsole?color=14b8a6&style=flat-square&label=release)](https://github.com/Metatronixa/LocalOpsConsole/releases/latest)
+[![Platform](https://img.shields.io/badge/platform-Windows-0078D4?style=flat-square&logo=windows&logoColor=white)](https://github.com/Metatronixa/LocalOpsConsole)
+[![PowerShell](https://img.shields.io/badge/PowerShell-5.1+-5391FE?style=flat-square&logo=powershell&logoColor=white)](https://github.com/Metatronixa/LocalOpsConsole)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-059669?style=flat-square)](CONTRIBUTING.md)
 
-PowerShell HttpListener API + offline SPA. Fully local assets (no CDN). Plugin modules via `module.json`. Marketing site, user guide, and self-hosted updates included.
+**Free and open source** Windows diagnostic console for helpdesk and engineers — no RMM tax.
 
-Built for helpdesk, desktop support, and systems engineers who want deep local tooling without an RMM tax.
+PowerShell HttpListener API + offline SPA. Plugin modules via `module.json`. Live telemetry, documented Configuration, Tools, Graphics, Remote, SyncMe, OS repair, and more.
+
+<p align="center">
+  <img src="website/assets/img/screenshot-system.png" alt="LocalOpsConsole — live system telemetry" width="860" />
+</p>
+<p align="center"><em>Live telemetry — CPU, RAM, disk, network, GPU, devices</em></p>
+
+<p align="center">
+  <img src="website/assets/img/screenshot-results.png" alt="LocalOpsConsole — readable diagnostic results" width="860" />
+</p>
+<p align="center"><em>Readable tables — not raw PowerShell dumps</em></p>
 
 ## Why free?
 
-LocalOpsConsole is intentionally free so techs and small teams can diagnose Windows without buying another agent platform. Use it, fork it, improve it — and help desk-side operators stay sharp.
+Intentionally MIT so techs and small teams can diagnose Windows without buying another agent platform. Use it, fork it, improve it.
 
 ## Quick start
 
@@ -19,8 +33,6 @@ LocalOpsConsole is intentionally free so techs and small teams can diagnose Wind
 3. Double-click **`start.bat`** (requests UAC so remediations work).
 
 ### Option B — Bootstrap script
-
-After the site/release is published:
 
 ```powershell
 iwr https://raw.githubusercontent.com/Metatronixa/LocalOpsConsole/main/website/uploads/Install-LocalOpsConsole.ps1 -OutFile "$env:TEMP\Install-LOC.ps1"
@@ -37,15 +49,16 @@ cd LocalOpsConsole
 
 Opens `http://localhost:8787/`.
 
-## Features (highlights)
+## Features
 
-- **Live telemetry** — CPU, RAM, disk, network bandwidth, disk I/O sparklines, GPU, problem devices
-- **Configuration** — documented Explorer / Privacy / Windows Update / Taskbar / Power / Security settings with apply & restore
-- **Tools** — classic IT commands, Nslookup target, RouteAdd, SFC/DISM repair
-- **Network / Remote / VPN / Printers / Graphics / SyncMe** and more modules
-- **Profiles & tiers** — UI filtering for helpdesk through power user
-- **Internet Troubleshooter** — first diagnostic engine (`InternetIsSlow`)
-- **Standard users** can navigate and run most diagnostics; remediations need elevation
+| Area | What you get |
+|------|----------------|
+| **Live telemetry** | CPU, RAM, disk I/O, network, GPU, problem devices |
+| **Configuration** | Explorer / Privacy / Update / Taskbar / Power / Security — apply & restore |
+| **Tools** | Classic IT commands, Nslookup, RouteAdd, SFC / DISM |
+| **Modules** | Network, Remote, VPN, Printers, Graphics, SyncMe, and more |
+| **Profiles** | Helpdesk → power user UI filtering |
+| **Access** | Standard users: most diagnostics · Elevated: remediations |
 
 ## Documentation
 
@@ -90,7 +103,7 @@ Bump SemVer in `VERSION`, then build. Attach the ZIP to a GitHub Release for pub
 
 ## Updates
 
-Set `updateUrl` in `settings.json` to your hosted `update.json` (or leave empty to try local `website/uploads/update.json`). Updates are never silent — the operator must confirm.
+Set `updateUrl` in `settings.json` to your hosted `update.json` (defaults to the GitHub raw manifest). Updates are never silent — the operator must confirm.
 
 ## Safety notes
 
