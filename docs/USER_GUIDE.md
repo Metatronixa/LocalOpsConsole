@@ -1,6 +1,6 @@
 # LocalOpsConsole User Guide
 
-LocalOpsConsole is a **local-first Windows Operations Platform** (v2.1.2) for IT professionals, MSPs, system administrators, and power users.
+LocalOpsConsole is a **local-first Windows Operations Platform** (v2.1.4) for IT professionals, MSPs, system administrators, and power users.
 
 It combines plugin diagnostics with **Event Intelligence** — continuous observation that surfaces **incidents**, not raw event noise.
 
@@ -76,7 +76,7 @@ LocalOps Agent enrolls with HMAC auth for heartbeat and command polling. Fleet i
 
 ### Install agent on another PC
 
-1. On the **console** PC, set `bindHost` to `0.0.0.0` (or the LAN IP). Optionally set `fleetPublicUrl` to `http://<console-LAN-IP>:8787`.
+1. On the **console** PC, set `bindHost` to `0.0.0.0` (listens on all interfaces; mapped to HttpListener `+`). Set `fleetPublicUrl` to `http://<console-LAN-IP>:8787` so agents get a reachable URL. Prefer this over binding HttpListener to a single LAN IP (can conflict with HTTP.sys reservations).
 2. Restart the console. Open **Computers** and copy the install one-liner.
 3. On the **remote** PC, extract `LocalOpsAgent-x.y.z.zip` and run as Administrator:
 
@@ -93,7 +93,7 @@ Use the console’s LAN IP (or `fleetPublicUrl`) — **not** `127.0.0.1` / `loca
 - Use the live console stream for script errors
 - Set `integrityMode` to `warn` during local module development
 - Run `.\tools\smoke-api.ps1` with the server running
-- Remote agents: LAN IP / `fleetPublicUrl` + `bindHost: 0.0.0.0`
+- Remote agents: `fleetPublicUrl` (LAN IP) + `bindHost: 0.0.0.0`; if start fails with “conflicts with an existing registration”, free port 8787 / check `netsh http show urlacl`
 - Event Log “Access denied” on the Security channel is normal without elevation
 
 See also `CHANGELOG.md` and `SECURITY.md`.

@@ -1,5 +1,21 @@
 # Changelog
 
+## 2.1.4 — 2026-08-05
+
+### Bugs fixed
+
+1. **HttpListener failed when `bindHost` was a LAN IP or `0.0.0.0`**  
+   Binding a concrete IP (e.g. `172.x.x.x`) often hit “conflicts with an existing registration”. `0.0.0.0` was passed through literally and is not a valid HttpListener wildcard. The server now maps `0.0.0.0` / `*` / `+` to `http://+:port/` and prints clearer conflict hints (port holders, `netsh http show urlacl`, prefer `fleetPublicUrl` for the agent URL).
+
+### Notes
+
+- For remote agents: set `bindHost` to `0.0.0.0` and put the reachable LAN URL in `fleetPublicUrl` / `-ServerUrl`.
+
+## 2.1.3 — 2026-08-05
+
+### Changes
+- **Computers → Remove** now deletes the agent from the fleet store (PC disappears from the list). Previously revoke only flagged the record.
+
 ## 2.1.2 — 2026-08-05
 
 ### Changes

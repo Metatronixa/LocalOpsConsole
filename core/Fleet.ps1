@@ -469,6 +469,7 @@ function Revoke-LocAgent {
         return New-ApiResult -Success $false -Message "Agent not found" -StatusCode 404
     }
 
+    # Hard-remove so the PC disappears from Computers (soft Revoked flag alone was easy to miss).
     Invoke-LocFleetFileLock -Name "agents" -Action {
         $data = Read-LocFleetJson -FileName "agents.json" -Default @{ agents = @{} }
         $agentsHash = @{}
@@ -478,18 +479,13 @@ function Revoke-LocAgent {
         elseif ($data.agents -is [hashtable]) { $agentsHash = @{} + $data.agents }
 
         if ($agentsHash.ContainsKey($AgentId)) {
-            $rec = $agentsHash[$AgentId]
-            if ($rec -is [PSCustomObject]) {
-                $rec | Add-Member -NotePropertyName Revoked -NotePropertyValue $true -Force
-            }
-            else { $rec.Revoked = $true }
-            $agentsHash[$AgentId] = $rec
+            $agentsHash.Remove($AgentId)
             Write-LocFleetJson -FileName "agents.json" -Data @{ agents = $agentsHash }
         }
     }
 
     Add-LocFleetAudit -Action "AgentRevoked" -AgentId $AgentId
-    return New-ApiResult -Success $true -Message "Agent revoked" -Data @{ AgentId = $AgentId }
+    return New-ApiResult -Success $true -Message "Agent removed" -Data @{ AgentId = $AgentId }
 }
 
 function Rotate-LocFleetEnrollToken {

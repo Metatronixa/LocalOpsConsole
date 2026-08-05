@@ -31,9 +31,9 @@ The installer:
 By default the console binds to `localhost` (this PC only). Agents on other PCs need:
 
 1. **A reachable ServerUrl** — the PC's LAN IP (e.g. `http://192.168.1.10:8787`), not `127.0.0.1` / `localhost`
-2. **HttpListener open to the network** — set `bindHost` in `settings.json` to `0.0.0.0` or that LAN IP
+2. **HttpListener open to the network** — set `bindHost` in `settings.json` to `0.0.0.0` (preferred; maps to all interfaces)
 
-Optional: set `fleetPublicUrl` (e.g. `http://192.168.1.10:8787`) to pin the dashboard install one-liner. If unset, Computers uses the detected LAN IPv4 for the suggested `-ServerUrl`.
+Optional: set `fleetPublicUrl` (e.g. `http://192.168.1.10:8787`) to pin the dashboard install one-liner. If unset, Computers uses the detected LAN IPv4 for the suggested `-ServerUrl`. Avoid binding HttpListener to a single LAN IP unless required — that can conflict with HTTP.sys URL reservations.
 
 ## Behavior
 

@@ -1,16 +1,16 @@
 ﻿{
   "name": "LocalOpsConsole",
-  "latest": "2.1.2",
-  "releasedAt": "2026-08-05T17:25:00Z",
-  "notes": "v2.1.2 — Update feed moved to https://www.opsconsole.co.za/uploads/update.json",
+  "latest": "2.1.4",
+  "releasedAt": "2026-08-05T18:01:02Z",
+  "notes": "v2.1.4 — Fix HttpListener bindHost: map 0.0.0.0 to + and clearer LAN/fleet conflict hints",
   "minVersion": "1.0.0",
   "builds": [
     {
-      "version": "2.1.2",
+      "version": "2.1.4",
       "channel": "stable",
-      "url": "https://github.com/Metatronixa/LocalOpsConsole/releases/download/v2.1.2/LocalOpsConsole-2.1.2.zip",
-      "sha256": "107d374092f8db59111eea169ffed3ee0381f884eac847ecd411ce82ddd13b99",
-      "size": 332193
+      "url": "https://github.com/Metatronixa/LocalOpsConsole/releases/download/v2.1.4/LocalOpsConsole-2.1.4.zip",
+      "sha256": "9524a341e9624c0d7240326ef01742eee27fb927c6143f0b2c220141f5950a8a",
+      "size": 333028
     }
   ]
 }

@@ -44,7 +44,17 @@ if (Test-LocEventIntelEnabled) {
 
 $settings = Get-LocSettings
 if ($Port -le 0) { $Port = [int]$settings.port }
-$bindHost = if ($settings.bindHost) { $settings.bindHost } else { "localhost" }
+$bindHost = if ($settings.bindHost) { [string]$settings.bindHost.Trim() } else { "localhost" }
+if ([string]::IsNullOrWhiteSpace($bindHost)) { $bindHost = "localhost" }
+
+# HttpListener prefix host: 0.0.0.0/*/+ => '+' (all interfaces). Concrete IP stays as-is.
+$listenHost = $bindHost
+if ($bindHost -match '^(?i)(0\.0\.0\.0|\*|\+)$') {
+    $listenHost = "+"
+}
+elseif ($bindHost -match '^(?i)(127\.0\.0\.1)$') {
+    $listenHost = "localhost"
+}
 
 $MimeTypes = @{
     ".html" = "text/html; charset=utf-8"
@@ -60,7 +70,7 @@ $MimeTypes = @{
 }
 
 $listener = New-Object System.Net.HttpListener
-$prefix = "http://${bindHost}:$Port/"
+$prefix = "http://${listenHost}:$Port/"
 $listener.Prefixes.Add($prefix)
 $script:LocHttpListener = $listener
 $script:LocShutdownRequested = $false
@@ -77,10 +87,21 @@ function Request-LocShutdown {
 
 try {
     $listener.Start()
-    Write-LocLog -Module "CORE" -Action "Server" -Level "SUCCESS" -Message "Listening on $prefix"
+    $listenMsg = if ($listenHost -ne $bindHost) { "Listening on $prefix (bindHost=$bindHost)" } else { "Listening on $prefix" }
+    Write-LocLog -Module "CORE" -Action "Server" -Level "SUCCESS" -Message $listenMsg
 }
 catch {
-    Write-Error "Failed to start HttpListener on $prefix. $_"
+    $hint = @"
+Failed to start HttpListener on $prefix. $_
+
+Hints:
+- Stop any leftover LocalOps / powershell still holding port $Port (Get-NetTCPConnection -LocalPort $Port).
+- Check URL reservations: netsh http show urlacl
+- Overlapping reservations (e.g. http://+:${Port}/ vs a specific IP) cause 'conflicts with an existing registration'.
+- For remote agents prefer bindHost=0.0.0.0 and put the LAN URL in fleetPublicUrl / agent -ServerUrl (avoid binding a single LAN IP unless required).
+- Run elevated if HTTP.sys URL ACL denies access.
+"@
+    Write-Error $hint
     exit 1
 }
 

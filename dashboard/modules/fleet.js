@@ -197,7 +197,7 @@ const FleetView = {
                 <button type="button" class="action-btn cyan text-[11px]" onclick="FleetView.queueCmd('RestartSpooler')">Restart Spooler</button>
                 <button type="button" class="action-btn cyan text-[11px]" onclick="FleetView.queueCmd('CollectInventory')">Collect Inventory</button>
                 <button type="button" class="action-btn amber text-[11px]" onclick="FleetView.queueMessage()">Message</button>
-                <button type="button" class="action-btn rose text-[11px]" onclick="FleetView.revokeAgent()">Revoke</button>
+                <button type="button" class="action-btn rose text-[11px]" onclick="FleetView.revokeAgent()">Remove</button>
             </div>
             ${alerts.length ? `<div class="text-xs"><p class="text-amber-400 font-semibold mb-1">Alerts</p><ul class="space-y-1 text-slate-400">${alerts.slice(0, 5).map((al) => `<li>${this.escape(al.Type)}: ${this.escape(al.Message)}</li>`).join('')}</ul></div>` : ''}
             ${inv ? `<div class="text-xs"><p class="text-emerald-400 font-semibold mb-1">Inventory</p><pre class="text-[10px] text-slate-400 max-h-32 overflow-auto">${this.escape(JSON.stringify(inv, null, 2))}</pre></div>` : ''}
@@ -230,16 +230,16 @@ const FleetView = {
 
     async revokeAgent() {
         if (!this._selected) return;
-        if (!confirm('Revoke this agent? It will no longer authenticate.')) return;
+        if (!confirm('Remove this PC from Computers? It will be deleted from the fleet and can no longer authenticate.')) return;
         const res = await API.request(`fleet/agents/${this._selected}/revoke`, 'POST', {});
         if (res.Success) {
-            LiveConsole.log('Agent revoked', 'WARN');
+            LiveConsole.log('Agent removed', 'WARN');
             this._selected = null;
             await this.refresh();
             const box = document.getElementById('fleet-detail');
-            if (box) box.innerHTML = '<p class="text-slate-500 text-xs">Agent revoked.</p>';
+            if (box) box.innerHTML = '<p class="text-slate-500 text-xs">PC removed from Computers.</p>';
         } else {
-            LiveConsole.log(res.Message || 'Revoke failed', 'ERROR');
+            LiveConsole.log(res.Message || 'Remove failed', 'ERROR');
         }
     },
 

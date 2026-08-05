@@ -1,5 +1,5 @@
 ﻿{
     "name":  "LocalOpsConsole",
-    "version":  "2.1.2",
+    "version":  "2.1.4",
     "description":  "Local-first Windows Operations Platform with Event Intelligence, incidents, security baseline, and fleet agent"
 }

@@ -54,7 +54,7 @@
       <p>Restart the server after updating. Module libs must load before each action (fixed in 1.2).</p>
 
       <h2>SyncMe not found</h2>
-      <p>Run the <strong>OpenDownloadPage</strong> action to open SyncMe setup, install it, then set <code>syncMePath</code> in <code>settings.json</code> to your install folder and restart.</p>
+      <p>Run <strong>OpenDownloadPage</strong> to open <a href="https://www.syncme.co.za" target="_blank" rel="noopener">syncme.co.za</a>, install SyncMe, then set <code>syncMePath</code> in <code>settings.json</code> if needed and restart.</p>
 
       <h2>Remote open files / sessions fail</h2>
       <p>Need elevation and SMB admin rights on the target PC. Registry reads require Remote Registry enabled on the target.</p>
@@ -70,7 +70,8 @@
       <h2>Remote agent cannot enroll</h2>
       <ul>
         <li><code>-ServerUrl</code> must be the console’s LAN IP or <code>fleetPublicUrl</code> — not <code>127.0.0.1</code>.</li>
-        <li>Set console <code>bindHost</code> to <code>0.0.0.0</code> and restart; allow firewall TCP on the port.</li>
+        <li>Set console <code>bindHost</code> to <code>0.0.0.0</code> (not a single LAN IP) and set <code>fleetPublicUrl</code>; restart; allow firewall TCP on the port.</li>
+        <li>If the server fails with “conflicts with an existing registration”, stop leftover listeners on 8787 and run <code>netsh http show urlacl</code>.</li>
         <li>See <a href="../docs/installation.html">Installation — LocalOps Agent</a>.</li>
       </ul>
 
