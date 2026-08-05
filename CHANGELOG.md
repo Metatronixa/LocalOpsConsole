@@ -7,9 +7,16 @@
 1. **HttpListener failed when `bindHost` was a LAN IP or `0.0.0.0`**  
    Binding a concrete IP (e.g. `172.x.x.x`) often hit “conflicts with an existing registration”. `0.0.0.0` was passed through literally and is not a valid HttpListener wildcard. The server now maps `0.0.0.0` / `*` / `+` to `http://+:port/` and prints clearer conflict hints (port holders, `netsh http show urlacl`, prefer `fleetPublicUrl` for the agent URL).
 
+2. **LAN-only bind broke the local UI (`Failed to fetch`)**  
+   The launcher always opens `http://localhost:8787`. Binding only a LAN IP left localhost unreachable. Concrete IP binds now also listen on localhost. Elevated `start.ps1` registers the HTTP.sys URL ACL for non-loopback prefixes.
+
+3. **`fleetPublicUrl` + `bindHost=localhost` silently misled enroll**  
+   Computers now surfaces a BindMismatch warning when the suggested agent URL is remote but the console is localhost-only.
+
 ### Notes
 
-- For remote agents: set `bindHost` to `0.0.0.0` and put the reachable LAN URL in `fleetPublicUrl` / `-ServerUrl`.
+- For remote agents: set `bindHost` to `0.0.0.0` and put the reachable LAN URL in `fleetPublicUrl` / `-ServerUrl`. Accept UAC on `start.bat`.
+- Verify with `.\tools\smoke-bind.ps1` and `.\tools\smoke-api.ps1` (server running).
 
 ## 2.1.3 — 2026-08-05
 

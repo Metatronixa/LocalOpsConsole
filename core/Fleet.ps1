@@ -589,6 +589,14 @@ function Get-LocFleetEnrollToken {
     $bind = if ($settings.bindHost) { [string]$settings.bindHost } else { "localhost" }
     $hint = Get-LocFleetSuggestedServerUrl -PublicUrl $publicUrl -BindHost $bind -Port $port
 
+    $bindMismatch = $false
+    $bindWarning = ""
+    $suggestedIsRemote = $hint.SuggestedUrl -and ($hint.SuggestedUrl -notmatch '(?i)localhost|127\.0\.0\.1')
+    if ($suggestedIsRemote -and -not $hint.AllowsRemote) {
+        $bindMismatch = $true
+        $bindWarning = "Suggested agent URL is $($hint.SuggestedUrl) but bindHost is '$bind' (localhost only). Remote agents will fail to connect. Set bindHost to 0.0.0.0 and restart."
+    }
+
     return New-ApiResult -Success $true -Message "Enrollment token" -Data @{
         Token         = $token
         SuggestedUrl  = $hint.SuggestedUrl
@@ -597,6 +605,8 @@ function Get-LocFleetEnrollToken {
         BindHost      = $hint.BindHost
         AllowsRemote  = [bool]$hint.AllowsRemote
         UrlSource     = $hint.Source
+        BindMismatch  = $bindMismatch
+        BindWarning   = $bindWarning
     }
 }
 

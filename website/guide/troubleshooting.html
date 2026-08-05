@@ -39,6 +39,7 @@
 
       <h2>Failed to fetch on every API</h2>
       <p>The HttpListener is not running. Run <code>start.bat</code> again and open <code>http://localhost:8787/api/v1/health</code>. Use <code>.\tools\smoke-api.ps1</code> to verify.</p>
+      <p>If you set <code>bindHost</code> to a single LAN IP only, older builds broke the localhost UI (launcher opens localhost). Use <code>bindHost: 0.0.0.0</code> and accept UAC. v2.1.4+ also keeps a localhost listener when binding a concrete IP.</p>
 
       <h2>Server fails to start</h2>
       <ul>

@@ -47,14 +47,8 @@ if ($Port -le 0) { $Port = [int]$settings.port }
 $bindHost = if ($settings.bindHost) { [string]$settings.bindHost.Trim() } else { "localhost" }
 if ([string]::IsNullOrWhiteSpace($bindHost)) { $bindHost = "localhost" }
 
-# HttpListener prefix host: 0.0.0.0/*/+ => '+' (all interfaces). Concrete IP stays as-is.
-$listenHost = $bindHost
-if ($bindHost -match '^(?i)(0\.0\.0\.0|\*|\+)$') {
-    $listenHost = "+"
-}
-elseif ($bindHost -match '^(?i)(127\.0\.0\.1)$') {
-    $listenHost = "localhost"
-}
+$listenHosts = @(Resolve-LocHttpListenHosts -BindHost $bindHost)
+$prefixes = @($listenHosts | ForEach-Object { "http://${_}:$Port/" })
 
 $MimeTypes = @{
     ".html" = "text/html; charset=utf-8"
@@ -70,8 +64,9 @@ $MimeTypes = @{
 }
 
 $listener = New-Object System.Net.HttpListener
-$prefix = "http://${listenHost}:$Port/"
-$listener.Prefixes.Add($prefix)
+foreach ($prefix in $prefixes) {
+    $listener.Prefixes.Add($prefix)
+}
 $script:LocHttpListener = $listener
 $script:LocShutdownRequested = $false
 
@@ -87,18 +82,20 @@ function Request-LocShutdown {
 
 try {
     $listener.Start()
-    $listenMsg = if ($listenHost -ne $bindHost) { "Listening on $prefix (bindHost=$bindHost)" } else { "Listening on $prefix" }
+    $prefixList = ($prefixes -join ", ")
+    $listenMsg = "Listening on $prefixList (bindHost=$bindHost)"
     Write-LocLog -Module "CORE" -Action "Server" -Level "SUCCESS" -Message $listenMsg
 }
 catch {
+    $prefixList = ($prefixes -join ", ")
     $hint = @"
-Failed to start HttpListener on $prefix. $_
+Failed to start HttpListener on $prefixList. $_
 
 Hints:
 - Stop any leftover LocalOps / powershell still holding port $Port (Get-NetTCPConnection -LocalPort $Port).
 - Check URL reservations: netsh http show urlacl
 - Overlapping reservations (e.g. http://+:${Port}/ vs a specific IP) cause 'conflicts with an existing registration'.
-- For remote agents prefer bindHost=0.0.0.0 and put the LAN URL in fleetPublicUrl / agent -ServerUrl (avoid binding a single LAN IP unless required).
+- For remote agents prefer bindHost=0.0.0.0 and put the LAN URL in fleetPublicUrl / agent -ServerUrl.
 - Run elevated if HTTP.sys URL ACL denies access.
 "@
     Write-Error $hint

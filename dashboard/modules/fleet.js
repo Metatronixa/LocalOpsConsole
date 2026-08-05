@@ -33,6 +33,7 @@ const FleetView = {
                         </div>
                     </div>
                     <p id="fleet-url-hint" class="text-[11px] text-slate-500"></p>
+                    <p id="fleet-bind-warn" class="hidden text-[11px] text-rose-400 font-semibold"></p>
                 </div>
 
                 <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
@@ -96,10 +97,18 @@ const FleetView = {
 
     async loadEnrollInfo() {
         const res = await API.request('fleet/enroll-token');
-        if (!res.Success || !res.Data) return;
+        if (!res.Success || !res.Data) {
+            const warn = document.getElementById('fleet-bind-warn');
+            if (warn) {
+                warn.classList.remove('hidden');
+                warn.textContent = `Could not load enrollment info: ${res.Message || 'Failed to fetch'}. Is the API running? Open http://localhost:8787/api/v1/health`;
+            }
+            return;
+        }
         const tokenEl = document.getElementById('fleet-token');
         const cmdEl = document.getElementById('fleet-install-cmd');
         const hint = document.getElementById('fleet-url-hint');
+        const warn = document.getElementById('fleet-bind-warn');
         const url = res.Data.SuggestedUrl || 'http://localhost:8787';
         if (tokenEl) tokenEl.value = res.Data.Token || '';
         const cmd = `powershell -ExecutionPolicy Bypass -File .\\Install-LocalOpsAgent.ps1 -ServerUrl "${url}" -EnrollToken "${res.Data.Token || ''}"`;
@@ -112,9 +121,19 @@ const FleetView = {
             } else if (res.Data.AllowsRemote) {
                 hint.textContent = `Install uses a reachable console URL (${url}). bindHost="${bind}" accepts remote agents.`;
             } else if (lan) {
-                hint.textContent = `Install uses this PC's LAN IP (${lan}) so other PCs can enroll. Also set bindHost to 0.0.0.0 (or ${lan}) in settings.json — localhost-only bind blocks remote agents.`;
+                hint.textContent = `Install uses this PC's LAN IP (${lan}) so other PCs can enroll. Also set bindHost to 0.0.0.0 in settings.json — localhost-only bind blocks remote agents.`;
             } else {
                 hint.textContent = 'Could not detect a LAN IP. Set fleetPublicUrl (e.g. http://192.168.1.10:8787) and bindHost to 0.0.0.0 for remote agents.';
+            }
+        }
+        if (warn) {
+            if (res.Data.BindMismatch && res.Data.BindWarning) {
+                warn.classList.remove('hidden');
+                warn.textContent = res.Data.BindWarning;
+                LiveConsole.log(res.Data.BindWarning, 'ERROR');
+            } else {
+                warn.classList.add('hidden');
+                warn.textContent = '';
             }
         }
     },

@@ -46,6 +46,29 @@ function Get-LocRoot {
     return $script:LocRoot
 }
 
+<#
+.SYNOPSIS
+  Map settings.bindHost to HttpListener prefix hostnames.
+.NOTES
+  Concrete LAN IPs also include localhost so start.ps1 / the local UI keep working.
+  0.0.0.0 / * / + map to HTTP.sys strong wildcard '+'.
+#>
+function Resolve-LocHttpListenHosts {
+    param([string]$BindHost = "localhost")
+
+    $bind = if ($BindHost) { $BindHost.Trim() } else { "localhost" }
+    if ([string]::IsNullOrWhiteSpace($bind)) { $bind = "localhost" }
+
+    if ($bind -match '^(?i)(0\.0\.0\.0|\*|\+)$') {
+        return @("+")
+    }
+    if ($bind -match '^(?i)(localhost|127\.0\.0\.1)$') {
+        return @("localhost")
+    }
+    # Specific interface: listen there AND on loopback (launcher always opens localhost).
+    return @($bind, "localhost")
+}
+
 function Get-LocEventIntelSettings {
     $s = Get-LocSettings
     $defaults = [PSCustomObject]@{

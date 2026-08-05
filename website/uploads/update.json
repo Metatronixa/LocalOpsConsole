@@ -1,16 +1,16 @@
 ﻿{
   "name": "LocalOpsConsole",
   "latest": "2.1.4",
-  "releasedAt": "2026-08-05T18:01:02Z",
-  "notes": "v2.1.4 — Fix HttpListener bindHost: map 0.0.0.0 to + and clearer LAN/fleet conflict hints",
+  "releasedAt": "2026-08-05T18:12:00Z",
+  "notes": "v2.1.4 — HttpListener bindHost fix: 0.0.0.0→+, keep localhost UI when LAN-bound, BindMismatch warning, URL ACL on elevate",
   "minVersion": "1.0.0",
   "builds": [
     {
       "version": "2.1.4",
       "channel": "stable",
       "url": "https://github.com/Metatronixa/LocalOpsConsole/releases/download/v2.1.4/LocalOpsConsole-2.1.4.zip",
-      "sha256": "9524a341e9624c0d7240326ef01742eee27fb927c6143f0b2c220141f5950a8a",
-      "size": 333028
+      "sha256": "dcda063bf4859d6f302271b83e0a45541ef612b1155dc77635bfd832fc38522f",
+      "size": 333982
     }
   ]
 }

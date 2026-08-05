@@ -65,6 +65,28 @@ try {
 }
 catch { }
 
+# Ensure HTTP.sys URL ACLs for non-loopback binds (requires elevation)
+$bindHostCfg = "localhost"
+try {
+    if ($cfg -and $cfg.bindHost) { $bindHostCfg = [string]$cfg.bindHost }
+}
+catch { }
+. (Join-Path $Root "core\Settings.ps1")
+$listenHosts = @(Resolve-LocHttpListenHosts -BindHost $bindHostCfg)
+if ($isAdmin) {
+    foreach ($lh in $listenHosts) {
+        if ($lh -match '^(?i)(localhost|127\.0\.0\.1)$') { continue }
+        $aclUrl = "http://${lh}:${Port}/"
+        $existingAcl = netsh http show urlacl url=$aclUrl 2>$null
+        if ("$existingAcl" -notmatch [regex]::Escape($aclUrl)) {
+            Write-Host "Adding URL ACL $aclUrl ..." -ForegroundColor DarkGray
+            netsh http add urlacl url=$aclUrl user=Everyone >$null 2>&1
+        }
+    }
+}
+elseif ($listenHosts | Where-Object { $_ -notmatch '^(?i)(localhost|127\.0\.0\.1)$' }) {
+    Write-Host "Warning: bindHost=$bindHostCfg needs Administrator to listen on the LAN. Re-run start.bat and accept UAC." -ForegroundColor Yellow
+}
 $modulesPath = Join-Path $Root "modules"
 $dashboardPath = Join-Path $Root "dashboard"
 $errLog = Join-Path $env:TEMP "LocalOpsConsole-server-err.log"
