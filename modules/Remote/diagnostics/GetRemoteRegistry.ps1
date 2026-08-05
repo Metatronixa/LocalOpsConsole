@@ -1,10 +1,13 @@
 param(
-    [Parameter(Mandatory)]
-    [string]$ComputerName,
+    [string]$ComputerName = "",
     [ValidateSet("HKLM", "HKCU", "HKU", "HKCR")]
     [string]$Hive = "HKLM",
     [string]$Path = "SOFTWARE\Microsoft\Windows NT\CurrentVersion"
 )
+
+$gate = Assert-LocRemoteComputerName -ComputerName $ComputerName
+if ($gate) { return $gate }
+$ComputerName = $ComputerName.Trim().TrimStart('\\')
 
 try {
     $hiveEnum = switch ($Hive) {
@@ -45,5 +48,5 @@ try {
     })
 }
 catch {
-    return New-ApiResult -Success $false -Message "Remote registry failed: $($_.Exception.Message). Ensure Remote Registry service is running on the target and firewalls allow RPC."
+    return New-ApiResult -Success $false -Message "Remote registry failed on ${ComputerName}: $($_.Exception.Message). Ensure Remote Registry service is running on the target and firewalls allow RPC."
 }

@@ -25,7 +25,7 @@
                 <i data-lucide="shield-alert" class="w-5 h-5"></i>
             </div>
             <div>
-                <h1 class="font-bold text-sm tracking-wide">LOCALOPSCONSOLE <span id="app-version" class="text-slate-500 font-mono">v1.2.0</span></h1>
+                <h1 class="font-bold text-sm tracking-wide">LOCALOPSCONSOLE <span id="app-version" class="text-slate-500 font-mono">v1.3.0</span></h1>
                 <p class="text-[11px] text-slate-400 font-mono">HOST: <span id="host-name">LOCAL-PC</span></p>
             </div>
         </div>
@@ -37,7 +37,9 @@
             <div class="text-slate-400">NET <span id="telemetry-net" class="text-sky-400">--</span></div>
             <div class="text-slate-400 max-w-[9rem] truncate" title="GPU">GPU <span id="telemetry-gpu" class="text-violet-300">--</span></div>
             <div id="telemetry-bat-wrap" class="text-slate-400 hidden">BAT <span id="telemetry-bat" class="text-lime-400">--%</span></div>
-            <div id="admin-badge" class="badge badge-muted">Checking Elevation...</div>
+            <div id="telemetry-vpn-wrap" class="text-slate-400 hidden max-w-[8rem] truncate">VPN <span id="telemetry-vpn" class="text-teal-300">--</span></div>
+            <div id="admin-badge" class="badge badge-muted" title="STANDARD USER can run diagnostics; remediations need elevation">Checking Elevation...</div>
+            <button type="button" id="btn-shutdown" onclick="shutdownConsole()" class="action-btn amber text-[11px] px-2 py-1" title="Stop the LocalOpsConsole server">Shutdown</button>
             <div class="flex items-center gap-2 text-slate-400">
                 <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                 <span id="engine-status">ENGINE ONLINE</span>
@@ -89,8 +91,13 @@
     <script src="modules/services.js"></script>
     <script src="modules/tools.js"></script>
     <script src="modules/configuration.js"></script>
+    <script src="modules/printers.js"></script>
+    <script src="modules/remote.js"></script>
+    <script src="modules/remotesupport.js"></script>
+    <script src="modules/internetslow.js"></script>
 </body>
 </html>
+
 
 
 

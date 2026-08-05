@@ -43,8 +43,8 @@
 
       <h2>Remote</h2>
       <ol>
-        <li><strong>DiscoverComputers</strong> — neighbors from ARP / SMB connections.</li>
-        <li><strong>ListShares</strong> — SMB shares on a target (pass computer name).</li>
+        <li><strong>DiscoverComputers</strong> — neighbors from ARP / SMB connections; <strong>click a PC</strong> to select it.</li>
+        <li><strong>ListShares</strong> — SMB shares on the <em>selected</em> target (fast-fail if unreachable; bounded timeouts).</li>
         <li><strong>ListOpenFiles</strong> / <strong>ListSessions</strong> — need admin + rights on the target.</li>
         <li><strong>GetRemoteRegistry</strong> — read-only remote registry; <strong>EnsureRemoteRegistry</strong> can start the local Remote Registry service.</li>
         <li>If remote SMB/CIM calls time out, verify target firewall/RPC/WMI/SMB access, then retry.</li>
@@ -62,30 +62,47 @@
 
       <h2>Printers</h2>
       <ol>
-        <li>Open <strong>Printers</strong> and run <strong>GetPrinters</strong> / <strong>QueueStatus</strong>.</li>
-        <li>If jobs are stuck, run <strong>ClearQueue</strong> (admin), then <strong>RestartSpooler</strong>.</li>
-        <li>Use <strong>TestPage</strong> with a printer name to verify end-to-end printing.</li>
+        <li>Open <strong>Printers</strong> — select a printer for detail (driver, port, jobs).</li>
+        <li>Use the spooler panel for status; elevate for Restart / Kill process / Set Automatic.</li>
+        <li>Queue table: Cancel / Pause / Resume jobs; Clear all when elevated.</li>
+        <li>Run a TCP/IP network test (Ping, DNS, ports 9100/515) on network printers.</li>
+        <li>Review recent print/spooler event errors in the events panel.</li>
+      </ol>
+
+      <h2>Remote Support (RustDesk)</h2>
+      <ol>
+        <li>Open <strong>Remote Support</strong> under Enterprise — status, version, service, and ID (passwords are never shown).</li>
+        <li>Copy ID for the technician; Open / Start / Stop / Restart as needed (service actions need elevation).</li>
+        <li>Set <code>rustDeskInstallerUrl</code> in <code>settings.json</code> to enable silent Install (optional SHA-256).</li>
       </ol>
 
       <h2>VPN</h2>
       <ol>
+        <li>When connected, the header shows a <strong>VPN</strong> chip (name truncated; details in tooltip).</li>
         <li>Run <strong>GetConnections</strong> for RAS profiles and tunnel adapters.</li>
         <li>Run <strong>Diagnose</strong> for gateway reachability and DNS hints.</li>
         <li>If a stale WAN miniport is suspected, elevate and run <strong>ResetWanMiniport</strong>.</li>
       </ol>
 
-      <h2>Internet Troubleshooter (Engine)</h2>
+      <h2>Internet Health</h2>
       <ol>
-        <li>Open <strong>Internet Troubleshooter</strong>.</li>
-        <li>Run <strong>InternetIsSlow</strong> to generate a consolidated report (DNS, gateway loss, interface MTU, adapter speed, TCP globals, firewall profile summary).</li>
+        <li>Open <strong>Internet Health</strong> under Networking (replaces separate Network / VPN / Troubleshooter menu items).</li>
+        <li>Summary loads automatically — gateway, DNS, public reachability, overall health %.</li>
+        <li>Run individual connectivity tests, edit hosts (elevated), manage VPN, or click <strong>Run diagnosis</strong> for recommended repairs.</li>
+        <li>Speed test is optional and never runs on page load.</li>
       </ol>
 
       <h2>Network</h2>
       <ul>
-        <li><strong>GetStatus</strong> — adapters, IPv4, gateway, DNS, link speed.</li>
+        <li><strong>GetStatus</strong> — adapters, IPv4, gateway, DNS, WINS, NetBIOS mode, link speed.</li>
+        <li><strong>Hosts file</strong> — view entries; Add / Remove / Toggle require elevation (backup <code>hosts.bak.loc</code>).</li>
+        <li><strong>GetWins</strong> / <strong>GetNbstat</strong> — WINS servers and NetBIOS name table/cache.</li>
         <li><strong>Ping</strong> — ICMP to a target (default 8.8.8.8).</li>
         <li><strong>FlushDNS</strong> / <strong>RenewIP</strong> — admin remediations.</li>
       </ul>
+
+      <h2>Shutdown</h2>
+      <p>Use the header <strong>Shutdown</strong> button to stop the LocalOpsConsole server; the launcher window closes when the process exits.</p>
 
       <h2>Tools</h2>
       <p>Classic IT readouts: IpConfig, Netstat, RoutePrint, Arp, Nslookup, Whoami, Hostname, SystemInfo, PowerCfg, DismGetHealth, SfcVerifyOnly, ChkdskStatus, GpResult. Action: <strong>GpUpdate</strong>.</p>

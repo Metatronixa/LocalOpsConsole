@@ -76,6 +76,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function refreshSidebarWithActiveProfile() {
         const active = getActiveProfile();
         const filtered = (allModules || []).filter((m) => {
+            if (m.hidden) return false;
             if (!m.profiles || !Array.isArray(m.profiles) || m.profiles.length === 0) return true;
             return m.profiles.includes(active);
         });
@@ -151,6 +152,23 @@ async function applyUpdate() {
     }
 }
 
+async function shutdownConsole() {
+    if (!confirm('Shut down LocalOpsConsole? The server and launcher window will close.')) return;
+    const btn = document.getElementById('btn-shutdown');
+    const engineEl = document.getElementById('engine-status');
+    if (btn) btn.disabled = true;
+    if (engineEl) engineEl.innerText = 'SHUTTING DOWN…';
+    LiveConsole.log('Shutting down server…', 'WARN');
+    try {
+        await API.request('shutdown', 'POST', {}, 5000);
+    } catch (e) { /* expected once listener stops */ }
+    if (engineEl) {
+        engineEl.innerText = 'OFFLINE';
+        engineEl.classList.add('text-rose-400');
+    }
+    LiveConsole.log('Server stopped. You can close this tab.', 'INFO');
+}
+
 function renderSidebar(modules) {
     const nav = document.getElementById('sidebar-nav');
     nav.innerHTML = '';
@@ -160,9 +178,9 @@ function renderSidebar(modules) {
         const id = (mod && mod.id ? String(mod.id).toLowerCase() : '');
         if (['system', 'services', 'tools', 'updates', 'startup', 'power', 'users', 'audio', 'configuration'].includes(id)) return 'System';
         if (['graphics', 'devices'].includes(id)) return 'Hardware';
-        if (['storage', 'printers', 'syncme', 'internetSlow'].includes(id)) return 'Storage';
+        if (['storage', 'printers', 'syncme'].includes(id)) return 'Storage';
         if (['network', 'vpn', 'internetslow'].includes(id)) return 'Networking';
-        if (['remote'].includes(id)) return 'Enterprise';
+        if (['remote', 'remotesupport'].includes(id)) return 'Enterprise';
         if (['security', 'eventlog'].includes(id)) return 'Security';
         return 'Developer';
     }
@@ -293,20 +311,39 @@ async function refreshTelemetry() {
         }
     }
     if (netEl) {
-        if (d.Network && d.Network.Connected && d.Network.IPv4) {
+        if (d.Network && d.Network.Connected) {
             const up = Number(d.Network.SendMbps);
             const down = Number(d.Network.RecvMbps);
             const rates = (!isNaN(up) || !isNaN(down))
                 ? ` ↑${(up || 0).toFixed(1)} ↓${(down || 0).toFixed(1)}`
                 : '';
-            netEl.innerText = `${d.Network.IPv4}${rates}`;
-            netEl.title = d.Network.Adapter || '';
+            const v4 = d.Network.IPv4 || '';
+            const v6s = d.Network.IPv6 || '';
+            let label = v4 || v6s || 'UP';
+            if (v4 && v6s) label = `${v4} · ${v6s}`;
+            netEl.innerText = `${label}${rates}`;
+            const tipParts = [];
+            if (d.Network.Adapter) tipParts.push(d.Network.Adapter);
+            if (d.Network.IPv6Full) tipParts.push(`IPv6 full: ${d.Network.IPv6Full}`);
+            netEl.title = tipParts.join(' | ');
             netEl.classList.remove('text-rose-400');
         } else if (d.Network && d.Network.Connected === false) {
             netEl.innerText = 'DOWN';
             netEl.classList.add('text-rose-400');
         } else {
             netEl.innerText = '--';
+        }
+    }
+    const vpnWrap = document.getElementById('telemetry-vpn-wrap');
+    const vpnEl = document.getElementById('telemetry-vpn');
+    if (vpnWrap && vpnEl) {
+        if (d.Vpn && d.Vpn.Connected) {
+            vpnWrap.classList.remove('hidden');
+            const name = String(d.Vpn.Name || 'VPN');
+            vpnEl.innerText = name.length > 14 ? name.slice(0, 12) + '…' : name;
+            vpnEl.title = [d.Vpn.Name, d.Vpn.TunnelType, d.Vpn.ServerAddress].filter(Boolean).join(' · ');
+        } else {
+            vpnWrap.classList.add('hidden');
         }
     }
     if (gpuEl) {

@@ -8,7 +8,7 @@
 
 **Free and open source** Windows diagnostic console for helpdesk and engineers — no RMM tax.
 
-PowerShell HttpListener API + offline SPA. Plugin modules via `module.json`. Live telemetry, documented Configuration, Tools, Graphics, Remote, SyncMe, OS repair, and more.
+PowerShell HttpListener API + offline SPA. Plugin modules via `module.json`. **Internet Health**, live telemetry, Configuration, Printers, Remote Support (RustDesk), SyncMe, OS repair, and more.
 
 <p align="center">
   <img src="website/assets/img/screenshot-system.png" alt="LocalOpsConsole — live system telemetry" width="860" />
@@ -53,11 +53,12 @@ Opens `http://localhost:8787/`.
 
 | Area | What you get |
 |------|----------------|
-| **Live telemetry** | CPU, RAM, disk I/O, network, GPU, problem devices |
+| **Internet Health** | Consolidated Network+VPN: summary, tests, hosts, diagnosis, repairs, opt-in speed test |
+| **Live telemetry** | CPU, RAM, disk I/O, network, GPU (fast path — no PnP inventory on every poll) |
 | **Configuration** | Explorer / Privacy / Update / Taskbar / Power / Security — apply & restore |
+| **Printers** | Detail, spooler, queue jobs, network test, events |
+| **Remote / Remote Support** | Discover→select→shares; RustDesk status/ID/install |
 | **Tools** | Classic IT commands, Nslookup, RouteAdd, SFC / DISM |
-| **Modules** | Network, Remote, VPN, Printers, Graphics, SyncMe, and more |
-| **Profiles** | Helpdesk → power user UI filtering |
 | **Access** | Standard users: most diagnostics · Elevated: remediations |
 
 ## Documentation

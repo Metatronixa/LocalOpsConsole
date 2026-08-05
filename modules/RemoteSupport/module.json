@@ -1,0 +1,27 @@
+{
+  "id": "remotesupport",
+  "name": "Remote Support",
+  "version": "1.0.0",
+  "icon": "monitor-smartphone",
+  "description": "RustDesk remote support — install, status, and service control",
+  "order": 145,
+  "tier": 4,
+  "profiles": ["helpdesk", "desktop_support", "systems_administrator", "power_user"],
+  "depends": [],
+  "diagnostics": ["GetRustDeskStatus"],
+  "actions": [
+    "InstallRustDesk",
+    "StartRustDesk",
+    "StopRustDesk",
+    "RestartRustDeskService",
+    "OpenRustDesk",
+    "CopyRustDeskId"
+  ],
+  "requiresAdmin": [
+    "InstallRustDesk",
+    "StartRustDesk",
+    "StopRustDesk",
+    "RestartRustDeskService"
+  ],
+  "cacheSeconds": { "GetRustDeskStatus": 10 }
+}

@@ -1,18 +1,22 @@
 {
   "id": "network",
   "name": "Network",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "icon": "network",
-  "description": "Adapters, DNS, DHCP, and ICMP diagnostics",
+  "description": "Adapters, DNS, DHCP, hosts file, WINS/NetBIOS, and ICMP diagnostics",
+  "hidden": true,
   "order": 20,
   "tier": 3,
-  "profiles": ["helpdesk", "desktop_support", "systems_administrator", "network_administrator", "developer", "power_user"],
+  "profiles": [],
   "depends": [],
-  "diagnostics": ["GetStatus", "Ping"],
-  "actions": ["FlushDNS", "RenewIP"],
-  "requiresAdmin": ["FlushDNS", "RenewIP"],
+  "diagnostics": ["GetStatus", "Ping", "GetHostsFile", "GetWins", "GetNbstat"],
+  "actions": ["FlushDNS", "RenewIP", "AddHostsEntry", "RemoveHostsEntry", "ToggleHostsEntry"],
+  "requiresAdmin": ["FlushDNS", "RenewIP", "AddHostsEntry", "RemoveHostsEntry", "ToggleHostsEntry"],
   "cacheSeconds": {
     "GetStatus": 15,
-    "Ping": 0
+    "Ping": 0,
+    "GetHostsFile": 5,
+    "GetWins": 20,
+    "GetNbstat": 0
   }
 }

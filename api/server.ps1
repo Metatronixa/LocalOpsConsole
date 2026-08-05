@@ -60,6 +60,18 @@ $MimeTypes = @{
 $listener = New-Object System.Net.HttpListener
 $prefix = "http://${bindHost}:$Port/"
 $listener.Prefixes.Add($prefix)
+$script:LocHttpListener = $listener
+$script:LocShutdownRequested = $false
+
+function Request-LocShutdown {
+    $script:LocShutdownRequested = $true
+    try {
+        if ($script:LocHttpListener -and $script:LocHttpListener.IsListening) {
+            $script:LocHttpListener.Stop()
+        }
+    }
+    catch { }
+}
 
 try {
     $listener.Start()
@@ -142,7 +154,13 @@ try {
 }
 finally {
     Stop-LocTaskRunner
-    if ($listener.IsListening) { $listener.Stop() }
-    $listener.Close()
+    try {
+        if ($listener.IsListening) { $listener.Stop() }
+        $listener.Close()
+    }
+    catch { }
     Write-LocLog -Module "CORE" -Action "Server" -Level "INFO" -Message "Server stopped"
+    if ($script:LocShutdownRequested) {
+        [Environment]::Exit(0)
+    }
 }

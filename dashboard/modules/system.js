@@ -123,13 +123,14 @@ const SystemView = {
 
     startPoll() {
         this.stopPoll();
+        // Soft poll only — force=1 every 2s was blocking the single-threaded API (~40s feel).
         this._pollId = setInterval(() => {
             if (!this._active || !document.getElementById('sys-cpu-usage')) {
                 this.stopPoll();
                 this._active = false;
                 return;
             }
-            this.refresh(true);
+            this.refresh(false);
         }, 2000);
     },
 
@@ -268,12 +269,22 @@ const SystemView = {
                 { data: this._hist.send, color: '#22d3ee' },
                 { data: this._hist.recv, color: '#34d399' }
             ], { floorMax: 1 });
-            if (d.Network.Connected && d.Network.IPv4) {
-                if (ip) ip.innerText = d.Network.IPv4;
-                if (meta) meta.innerText = d.Network.Adapter || 'Connected';
+            if (d.Network.Connected) {
+                const parts = [];
+                if (d.Network.IPv4) parts.push(d.Network.IPv4);
+                if (d.Network.IPv6) parts.push(d.Network.IPv6);
+                if (ip) {
+                    ip.innerText = parts.length ? parts.join(' · ') : 'UP';
+                    ip.title = d.Network.IPv6Full ? `IPv6 full: ${d.Network.IPv6Full}` : '';
+                }
+                let metaText = d.Network.Adapter || 'Connected';
+                if (d.Vpn && d.Vpn.Connected) {
+                    metaText += ` · VPN ${d.Vpn.Name || ''} (${d.Vpn.TunnelType || ''}) ${d.Vpn.ServerAddress || ''}`.trim();
+                }
+                if (meta) meta.innerText = metaText;
             } else {
-                if (ip) ip.innerText = 'DOWN';
-                if (meta) meta.innerText = 'No enabled IPv4 adapter';
+                if (ip) { ip.innerText = 'DOWN'; ip.title = ''; }
+                if (meta) meta.innerText = 'No enabled IP adapter';
             }
         }
 

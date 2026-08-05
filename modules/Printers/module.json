@@ -1,15 +1,55 @@
 {
   "id": "printers",
   "name": "Printers",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "icon": "printer",
-  "description": "Printers, queues, and spooler remediation",
+  "description": "Printers, queues, spooler remediation, and network diagnostics",
   "order": 50,
   "tier": 2,
   "profiles": ["helpdesk", "desktop_support", "systems_administrator", "power_user"],
   "depends": [],
-  "diagnostics": ["GetPrinters", "QueueStatus"],
-  "actions": ["RestartSpooler", "ClearQueue", "TestPage"],
-  "requiresAdmin": ["RestartSpooler", "ClearQueue"],
-  "cacheSeconds": { "GetPrinters": 15, "QueueStatus": 10 }
+  "diagnostics": [
+    "GetPrinters",
+    "QueueStatus",
+    "GetPrinterDetail",
+    "GetSpooler",
+    "GetQueueJobs",
+    "GetPortDetail",
+    "TestPrinterNetwork",
+    "GetPrintEvents"
+  ],
+  "actions": [
+    "RestartSpooler",
+    "ClearQueue",
+    "TestPage",
+    "CancelJob",
+    "PauseJob",
+    "ResumeJob",
+    "KillSpoolerProcess",
+    "SetSpoolerAutomatic",
+    "RecreateTcpIpPort",
+    "RemoveGhostPrinter"
+  ],
+  "requiresAdmin": [
+    "RestartSpooler",
+    "ClearQueue",
+    "TestPage",
+    "CancelJob",
+    "PauseJob",
+    "ResumeJob",
+    "KillSpoolerProcess",
+    "SetSpoolerAutomatic",
+    "RecreateTcpIpPort",
+    "RemoveGhostPrinter"
+  ],
+  "cacheSeconds": {
+    "GetPrinters": 15,
+    "QueueStatus": 10,
+    "GetPrinterDetail": 10,
+    "GetSpooler": 10,
+    "GetQueueJobs": 5,
+    "GetPortDetail": 15,
+    "TestPrinterNetwork": 0,
+    "GetPrintEvents": 20
+  }
 }

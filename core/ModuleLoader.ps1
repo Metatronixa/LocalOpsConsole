@@ -36,6 +36,7 @@ function Initialize-ModuleLoader {
                 Diagnostics    = @($json.diagnostics | ForEach-Object { [string]$_ })
                 Actions        = @($json.actions | ForEach-Object { [string]$_ })
                 RequiresAdmin  = @($json.requiresAdmin | ForEach-Object { [string]$_ })
+                Hidden         = if ($null -ne $json.hidden) { [bool]$json.hidden } else { $false }
                 CacheSeconds   = @{}
                 Path           = $moduleDir
                 ManifestPath   = $file.FullName

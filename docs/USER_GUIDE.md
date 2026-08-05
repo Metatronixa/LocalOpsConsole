@@ -1,6 +1,6 @@
 # LocalOpsConsole User Guide
 
-**Free and open source** (MIT) modular Windows diagnostic platform: PowerShell HttpListener API + offline SPA dashboard (**v1.2.0**).
+**Free and open source** (MIT) modular Windows diagnostic platform: PowerShell HttpListener API + offline SPA dashboard (**v1.3.0**).
 
 Source and releases: [github.com/Metatronixa/LocalOpsConsole](https://github.com/Metatronixa/LocalOpsConsole)
 
@@ -15,10 +15,14 @@ Source and releases: [github.com/Metatronixa/LocalOpsConsole](https://github.com
 
 | Mode | What works |
 |------|------------|
-| **STANDARD USER** | Navigate all modules, live telemetry, most diagnostics (status, ping, lists, Configuration HKCU settings, etc.) |
-| **ELEVATED** | Remediations: spooler restart, clear queue, hosts edits, RouteAdd, SFC/DISM, many Security/Power policy settings, silent installs |
+| **STANDARD USER** | Navigate all modules, live telemetry (incl. IPv6 / VPN chip when connected), most diagnostics (status, ping, hosts *read*, WINS/nbtstat, printer list/queue/events, RustDesk status/ID copy, Configuration HKCU settings, etc.) |
+| **ELEVATED** | Remediations: spooler restart, clear/cancel jobs, hosts add/remove/toggle, RouteAdd, SFC/DISM, Security/Power policy, RustDesk install/service control, silent installs |
 
-The header badge shows elevation state. Admin-only actions are disabled or return Access Denied without UAC.
+The header badge shows elevation state. Admin-only actions are disabled with a **Needs elevation** hint and return Access Denied without UAC. Cancel UAC on launch to stay as standard user — the app remains fully navigable.
+
+### Shutdown
+
+Use the header **Shutdown** button to stop the API server. The launcher (`start.bat` / `start.ps1`) exits when the server process ends.
 
 ### UI tour
 
@@ -44,10 +48,24 @@ This profile affects **what the UI shows** (sidebar module list). It does not re
 
 Some modules are tagged with a numeric **tier** (1–10). Higher tiers generally mean deeper/engineer-level workflows and more detailed analysis.
 
-## Diagnostic engine: Internet Troubleshooter
+## Internet Health
 
-The first “engine-style” workflow is available as module **`Internet Troubleshooter`**.
+Module **Internet Health** consolidates Network + VPN + connectivity diagnostics into one Networking sidebar entry.
 
+- **Summary** loads in ~2s (gateway, DNS, public HTTPS, loss/latency, overall %).
+- **Connectivity tests** run individually (Gateway, DNS, HTTPS, TCP 80/443, etc.).
+- **DNS / Hosts / WINS**, **VPN / Proxy**, adapters, Winsock, TCP/IP, routing, cable, Wi‑Fi, events, timeline.
+- **Automatic diagnosis** returns likely cause, recommended repairs, and a decision table.
+- **Repairs** (admin): Flush DNS, Renew IP, Reset Winsock/TCP, Clear ARP, Restart adapter, Reset proxy, etc.
+- **Speed test** is opt-in only (never auto-runs on page load).
+
+Standalone Network and VPN modules remain as APIs but are hidden from the sidebar.
+
+### Faster startup
+
+Telemetry no longer runs a full `Get-PnpDevice` inventory on every refresh. System page soft-polls cached telemetry; use **Refresh Telemetry** for a forced update. **Get Profile Health** no longer recursively sizes profiles (avoids timeouts).
+
+## Profiles (UI depth gating)
 Run the diagnostic **`InternetIsSlow`** to generate a consolidated report that (best-effort) checks:
 
 - DNS health
@@ -119,20 +137,31 @@ Categories: **Explorer**, **Privacy**, **Windows Update**, **Taskbar**, **Power*
 
 ### Printers
 
-1. `GetPrinters` / `QueueStatus`
-2. Stuck jobs → `ClearQueue` then `RestartSpooler` (admin)
-3. `TestPage` with printer name
+Custom **Printers** view (Phase 1):
 
-### VPN
+1. Select a printer — detail shows driver, port, jobs, default flag.
+2. **Spooler** panel — status/start type; admin: Restart, Kill hung process, Set Automatic.
+3. **Queue** — Cancel / Pause / Resume jobs; Clear all (admin).
+4. **Network test** — Ping/DNS/TCP 9100·515/HTTP for TCP/IP ports (IPv6 best-effort).
+5. **Print events** — recent spooler/PrintService errors.
+6. Admin: Recreate TCP/IP port, Remove ghost printer (confirm).
 
-1. `GetConnections` — RAS profiles + tunnel adapters
-2. `Diagnose` — gateway / DNS hints
-3. Elevate → `ResetWanMiniport` if needed
+### Remote Support (RustDesk)
 
-### Network
+RustDesk-only remote support module (no AnyDesk/TeamViewer; **passwords never shown**).
 
-- `GetStatus`, `Ping`
-- Admin: `FlushDNS`, `RenewIP`
+1. Status: installed, version, running, service, ID.
+2. Copy ID to clipboard.
+3. Open / Start / Stop / Restart service (admin where required).
+4. Install from `settings.json` → `rustDeskInstallerUrl` (+ optional SHA-256 / silent args).
+
+### VPN & Network (via Internet Health)
+
+Use **Internet Health** under Networking for VPN status/disconnect, hosts file, WINS, Flush DNS, Renew IP, and connectivity tests. Header still shows a **VPN** chip when connected (never credentials).
+
+### Remote (LAN)
+
+Discover computers → **click a PC** → List shares / sessions / open files (bounded timeouts; TCP 445 probe first).
 
 ### Windows Update (module)
 

@@ -11,6 +11,7 @@ $script:LocTelemetry = @{
     Disks   = $null
     DiskIo  = $null
     Network = $null
+    Vpn     = $null
     Gpu     = $null
     Battery = $null
     Devices = $null
@@ -26,11 +27,47 @@ function Get-LocTelemetry {
         Disks   = $script:LocTelemetry.Disks
         DiskIo  = $script:LocTelemetry.DiskIo
         Network = $script:LocTelemetry.Network
+        Vpn     = $script:LocTelemetry.Vpn
         Gpu     = $script:LocTelemetry.Gpu
         Battery = $script:LocTelemetry.Battery
         Devices = $script:LocTelemetry.Devices
         Host    = $script:LocTelemetry.Host
         Updated = $script:LocTelemetry.Updated
+    }
+}
+
+function Expand-LocIPv6Address {
+    param([string]$Address)
+    if ([string]::IsNullOrWhiteSpace($Address)) { return $null }
+    try {
+        $ip = [System.Net.IPAddress]::Parse($Address.Trim())
+        if ($ip.AddressFamily -ne [System.Net.Sockets.AddressFamily]::InterNetworkV6) { return $null }
+        $bytes = $ip.GetAddressBytes()
+        $parts = for ($i = 0; $i -lt 16; $i += 2) {
+            '{0:x4}' -f (($bytes[$i] -shl 8) -bor $bytes[$i + 1])
+        }
+        return ($parts -join ':')
+    }
+    catch {
+        return $null
+    }
+}
+
+function Get-LocPrimaryIPv6 {
+    param([string[]]$Addresses)
+    $list = @($Addresses | Where-Object { $_ -and $_ -match ':' })
+    $nonLink = @($list | Where-Object { $_ -notmatch '(?i)^fe80:' -and $_ -notmatch '(?i)^::1$' })
+    $pick = if ($nonLink.Count) { $nonLink[0] } elseif ($list.Count) { $list[0] } else { $null }
+    if (-not $pick) { return $null }
+    try {
+        $short = [System.Net.IPAddress]::Parse($pick).ToString()
+    }
+    catch {
+        $short = [string]$pick
+    }
+    return [PSCustomObject]@{
+        Short = $short
+        Full  = Expand-LocIPv6Address -Address $short
     }
 }
 
@@ -215,11 +252,21 @@ function Update-LocTelemetry {
                     $_.IPAddress -and (@($_.IPAddress) | Where-Object { $_ -match '^\d+\.\d+\.\d+\.\d+$' -and $_ -notmatch '^127\.' })
                 } |
                 Select-Object -First 1
+            if (-not $nic) {
+                $nic = Get-CimInstance -ClassName Win32_NetworkAdapterConfiguration -Filter "IPEnabled=TRUE" -ErrorAction Stop |
+                    Where-Object {
+                        $_.IPAddress -and (@($_.IPAddress) | Where-Object { $_ -match ':' -and $_ -notmatch '(?i)^::1$' })
+                    } |
+                    Select-Object -First 1
+            }
             if ($nic) {
                 $ipv4 = @($nic.IPAddress) | Where-Object { $_ -match '^\d+\.\d+\.\d+\.\d+$' -and $_ -notmatch '^127\.' } | Select-Object -First 1
+                $v6 = Get-LocPrimaryIPv6 -Addresses @($nic.IPAddress)
                 $script:LocTelemetry.Network = [PSCustomObject]@{
                     Connected = $true
-                    IPv4      = [string]$ipv4
+                    IPv4      = if ($ipv4) { [string]$ipv4 } else { $null }
+                    IPv6      = if ($v6) { [string]$v6.Short } else { $null }
+                    IPv6Full  = if ($v6) { [string]$v6.Full } else { $null }
                     Adapter   = [string]$nic.Description
                     SendMbps  = $sendMbps
                     RecvMbps  = $recvMbps
@@ -229,6 +276,8 @@ function Update-LocTelemetry {
                 $script:LocTelemetry.Network = [PSCustomObject]@{
                     Connected = $false
                     IPv4      = $null
+                    IPv6      = $null
+                    IPv6Full  = $null
                     Adapter   = $null
                     SendMbps  = $sendMbps
                     RecvMbps  = $recvMbps
@@ -239,10 +288,49 @@ function Update-LocTelemetry {
             $script:LocTelemetry.Network = [PSCustomObject]@{
                 Connected = $false
                 IPv4      = $null
+                IPv6      = $null
+                IPv6Full  = $null
                 Adapter   = $null
                 SendMbps  = $sendMbps
                 RecvMbps  = $recvMbps
             }
+        }
+
+        # Connected VPN summary (never credentials; never block)
+        try {
+            $vpnConn = $null
+            if (Get-Command Get-VpnConnection -ErrorAction SilentlyContinue) {
+                $vpnConn = @(Get-VpnConnection -ErrorAction SilentlyContinue |
+                    Where-Object { $_.ConnectionStatus -eq 'Connected' } |
+                    Select-Object -First 1)
+            }
+            if ($vpnConn) {
+                $v = $vpnConn[0]
+                $adapterName = $null
+                try {
+                    $adapterName = @(Get-NetAdapter -ErrorAction SilentlyContinue |
+                        Where-Object {
+                            $_.Status -eq 'Up' -and
+                            ($_.InterfaceDescription -match '(?i)vpn|wan miniport|tap|tun|wireguard|ras' -or $_.Name -match '(?i)vpn')
+                        } |
+                        Select-Object -First 1 -ExpandProperty Name)
+                }
+                catch { }
+                $script:LocTelemetry.Vpn = [PSCustomObject]@{
+                    Connected        = $true
+                    Name             = [string]$v.Name
+                    ServerAddress    = [string]$v.ServerAddress
+                    TunnelType       = [string]$v.TunnelType
+                    ConnectionStatus = [string]$v.ConnectionStatus
+                    Adapter          = $adapterName
+                }
+            }
+            else {
+                $script:LocTelemetry.Vpn = $null
+            }
+        }
+        catch {
+            $script:LocTelemetry.Vpn = $null
         }
 
         # GPU identity (not live load)
@@ -292,15 +380,10 @@ function Update-LocTelemetry {
             $script:LocTelemetry.Battery = $null
         }
 
-        # Problem devices count (best-effort, never hang)
-        try {
-            $problemCount = @(Get-PnpDevice -ErrorAction SilentlyContinue | Where-Object { $_.Status -and $_.Status -ne 'OK' }).Count
-            $script:LocTelemetry.Devices = [PSCustomObject]@{
-                ProblemCount = [int]$problemCount
-            }
-        }
-        catch {
-            $script:LocTelemetry.Devices = $null
+        # Problem devices — NEVER full Get-PnpDevice on hot path (can take 10–60s).
+        # Count stays null until a module requests a dedicated diagnostic.
+        if (-not $script:LocTelemetry.Devices) {
+            $script:LocTelemetry.Devices = [PSCustomObject]@{ ProblemCount = $null }
         }
 
         # Host / uptime
@@ -352,8 +435,8 @@ function Get-LocTelemetrySnapshot {
 
 function Start-LocTaskRunner {
     $script:LocTaskRunnerEnabled = $true
-    Update-LocTelemetry
-    Write-LocLog -Module "CORE" -Action "TaskRunner" -Level "INFO" -Message "Task runner started (lightweight)"
+    # Do not block server listen on first telemetry — refresh lazily on /telemetry.
+    Write-LocLog -Module "CORE" -Action "TaskRunner" -Level "INFO" -Message "Task runner started (lazy telemetry)"
 }
 
 function Stop-LocTaskRunner {

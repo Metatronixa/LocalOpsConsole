@@ -55,6 +55,7 @@ function Invoke-LocRouter {
                 diagnostics   = $_.Diagnostics
                 actions       = $_.Actions
                 requiresAdmin = $_.RequiresAdmin
+                hidden        = $_.Hidden
             }
         }
         Send-JsonResponse -Context $Context -Success $true -Message "Modules loaded" -Data @($mods)
@@ -80,6 +81,21 @@ function Invoke-LocRouter {
             $force = $true
         }
         Send-JsonResponse -Context $Context -Success $true -Message "Telemetry snapshot" -Data (Get-LocTelemetrySnapshot -Force $force)
+        return
+    }
+
+    # Built-in: shutdown (stops HttpListener; launcher Wait-Process then exits)
+    if ($resource -eq "shutdown") {
+        if ($request.HttpMethod -ne "POST") {
+            Send-JsonResponse -Context $Context -Success $false -Message "Shutdown requires POST" -StatusCode 405
+            return
+        }
+        Write-LocLog -Module "CORE" -Action "Shutdown" -Level "WARN" -Message "Shutdown requested via API"
+        Send-JsonResponse -Context $Context -Success $true -Message "Shutting down" -Data @{ Stopping = $true }
+        # Response already flushed; stop listener so the accept loop exits.
+        if (Get-Command Request-LocShutdown -ErrorAction SilentlyContinue) {
+            Request-LocShutdown
+        }
         return
     }
 

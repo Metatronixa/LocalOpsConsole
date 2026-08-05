@@ -1,10 +1,14 @@
-param(
-    [Parameter(Mandatory)]
-    [string]$ComputerName
-)
+param([string]$ComputerName = "")
+
+$gate = Assert-LocRemoteComputerName -ComputerName $ComputerName
+if ($gate) { return $gate }
+$ComputerName = $ComputerName.Trim().TrimStart('\\')
 
 try {
-    $session = New-LocRemoteCimSession -ComputerName $ComputerName -OperationTimeoutSec 8
+    if (-not (Test-RemoteHostOnline -ComputerName $ComputerName -TimeoutMs 2000)) {
+        return New-ApiResult -Success $false -Message "Host $ComputerName unreachable (ICMP/TCP 445). Select another PC." -StatusCode 504
+    }
+    $session = New-LocRemoteCimSession -ComputerName $ComputerName -OperationTimeoutSec 5
     $sessions = @(Get-SmbSession -CimSession $session -ErrorAction Stop | Select-Object -First 200 | ForEach-Object {
         [PSCustomObject]@{
             SessionId    = $_.SessionId
@@ -20,7 +24,7 @@ try {
 }
 catch {
     if (Test-LocRemoteTimeoutError -Exception $_.Exception) {
-        return New-ApiResult -Success $false -Message "Sessions query timed out on ${ComputerName}. Check admin rights plus firewall/RPC/WMI/SMB access on the target."
+        return New-ApiResult -Success $false -Message "Sessions query timed out on ${ComputerName}. Check admin rights plus firewall/RPC/WMI/SMB access on the target." -StatusCode 504
     }
     return New-ApiResult -Success $false -Message "Sessions failed on ${ComputerName}: $($_.Exception.Message)"
 }

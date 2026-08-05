@@ -49,7 +49,7 @@
 
       <h2>UI tour</h2>
       <ul>
-        <li><strong>Header</strong> — product name, version chip, elevation badge, CPU/RAM strip.</li>
+        <li><strong>Header</strong> — product name, version, elevation badge, telemetry chips (CPU/RAM/DISK/NET/GPU/VPN), <strong>Shutdown</strong> button.</li>
         <li><strong>Profile selector</strong> — choose operator profile; this only changes which modules are shown in the sidebar.</li>
         <li><strong>Sidebar</strong> — modules from <code>GET /api/v1/modules</code>.</li>
         <li><strong>Main pane</strong> — module view; results render as tables/cards when data is tabular.</li>
@@ -64,12 +64,15 @@
   "logRetentionDays": 14,
   "bindHost": "localhost",
   "updateUrl": "https://raw.githubusercontent.com/Metatronixa/LocalOpsConsole/main/website/uploads/update.json",
-  "syncMePath": ""
+  "syncMePath": "",
+  "rustDeskInstallerUrl": "",
+  "rustDeskInstallerSha256": "",
+  "rustDeskSilentArgs": ""
 }</pre>
-      <p>Change <code>port</code> if 8787 is busy. Leave <code>updateUrl</code> blank to skip update checks, or point it at the GitHub manifest / your own host (see <a href="updates.html">Updates</a>). Set <code>syncMePath</code> only if SyncMe is installed locally.</p>
+      <p>Change <code>port</code> if 8787 is busy. Leave <code>updateUrl</code> blank to skip update checks, or point it at the GitHub manifest / your own host (see <a href="updates.html">Updates</a>). Set <code>syncMePath</code> only if SyncMe is installed locally. Set <code>rustDeskInstallerUrl</code> for Remote Support silent install.</p>
 
       <div class="callout warn" style="margin-top:1.25rem">
-        <strong>Elevation badge:</strong> STANDARD USER means remediations may be blocked. Approve the UAC prompt from <code>start.bat</code>, or right-click → Run as administrator.
+        <strong>Elevation badge:</strong> STANDARD USER can navigate and run most diagnostics. Remediations show <em>Needs elevation</em> until you approve UAC from <code>start.bat</code>, or right-click → Run as administrator.
       </div>
     </article>
   </div>

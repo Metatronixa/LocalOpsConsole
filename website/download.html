@@ -30,11 +30,11 @@
     <section class="section" style="padding-top:0" id="latest">
       <div class="card" style="padding:1.75rem">
         <span class="badge">stable · free</span>
-        <h2 style="margin:0.75rem 0 0.35rem">LocalOpsConsole 1.2.0</h2>
-        <p style="color:var(--muted);margin:0 0 1.25rem">Live telemetry, Configuration, Tools, Graphics, Remote, SyncMe, OS repair. Requires Windows PowerShell 5.1+.</p>
+        <h2 style="margin:0.75rem 0 0.35rem">LocalOpsConsole 1.3.0</h2>
+        <p style="color:var(--muted);margin:0 0 1.25rem">Internet Health dashboard, Printers Phase 1, Remote Support (RustDesk), faster startup. Requires Windows PowerShell 5.1+.</p>
         <div class="cta-row">
           <a class="btn btn-teal" href="https://github.com/Metatronixa/LocalOpsConsole/releases/latest">GitHub Releases</a>
-          <a class="btn btn-teal" href="uploads/builds/LocalOpsConsole-1.2.0.zip">Download ZIP (local mirror)</a>
+          <a class="btn btn-teal" href="uploads/builds/LocalOpsConsole-1.3.0.zip">Download ZIP (local mirror)</a>
           <a class="btn btn-ghost" href="https://github.com/Metatronixa/LocalOpsConsole">Source</a>
           <a class="btn btn-ghost" href="guide/getting-started.html">Install guide</a>
         </div>
@@ -65,8 +65,8 @@ powershell -ExecutionPolicy Bypass -File "$env:TEMP\Install-LOC.ps1" -Launch</pr
       <h2>Publish your own updates</h2>
       <p style="color:var(--muted)">Copy a new build into <code>website/uploads/builds/</code>, update <code>website/uploads/update.json</code>, and set the app’s <code>updateUrl</code> to that JSON. Or point at GitHub Releases assets.</p>
       <pre style="margin-top:1rem">{
-  "latest": "1.2.0",
-  "builds": [{ "version": "1.2.0", "url": "uploads/builds/LocalOpsConsole-1.2.0.zip", "sha256": "..." }]
+  "latest": "1.3.0",
+  "builds": [{ "version": "1.3.0", "url": "uploads/builds/LocalOpsConsole-1.3.0.zip", "sha256": "..." }]
 }</pre>
       <p style="margin-top:1rem"><a href="guide/updates.html">Full update documentation →</a></p>
     </section>

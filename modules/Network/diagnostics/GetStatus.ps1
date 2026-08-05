@@ -12,6 +12,8 @@ try {
         $dns = if ($cfg.DNSServerSearchOrder) { ($cfg.DNSServerSearchOrder -join ", ") } else { "-" }
         if ([string]::IsNullOrWhiteSpace($dns)) { $dns = "-" }
 
+        $winsP = if ($cfg.WINSPrimaryServer) { [string]$cfg.WINSPrimaryServer } else { "" }
+        $winsS = if ($cfg.WINSSecondaryServer) { [string]$cfg.WINSSecondaryServer } else { "" }
         $adapters += [PSCustomObject]@{
             InterfaceAlias = [string]$cfg.Description
             Status         = "Up"
@@ -20,6 +22,9 @@ try {
             Gateway        = if ($gw) { [string]$gw[0] } else { "-" }
             DNSServers     = $dns
             LinkSpeed      = "-"
+            WINSPrimary    = $winsP
+            WINSSecondary  = $winsS
+            NetbiosMode    = Get-LocNetbiosModeLabel -Value $cfg.TcpipNetbiosOptions
         }
     }
 
