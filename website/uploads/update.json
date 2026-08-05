@@ -1,16 +1,16 @@
 ﻿{
-    "name":  "LocalOpsConsole",
-    "latest":  "2.0.0",
-    "releasedAt":  "2026-08-05T14:34:00Z",
-    "notes":  "v2.0.0 — LocalOps Agent fleet (outbound RMM), Internet Health, timeout fixes for DNS/adapters",
-    "minVersion":  "1.0.0",
-    "builds":  [
-                   {
-                       "version":  "2.0.0",
-                       "channel":  "stable",
-                       "url":  "https://github.com/Metatronixa/LocalOpsConsole/releases/download/v2.0.0/LocalOpsConsole-2.0.0.zip",
-                       "sha256":  "818ed30b366c85df0934934bb3f0a124bdd9948ef2ad213cb660cc5f5d4bc083",
-                       "size":  222841
-                   }
-               ]
+  "name": "LocalOpsConsole",
+  "latest": "2.1.0",
+  "releasedAt": "2026-08-05T16:06:39Z",
+  "notes": "v2.1.0 — Windows Operations Platform: Overview, Event Intelligence, Security Baseline, integrity gate, automation playbooks",
+  "minVersion": "1.0.0",
+  "builds": [
+    {
+      "version": "2.1.0",
+      "channel": "stable",
+      "url": "https://github.com/Metatronixa/LocalOpsConsole/releases/download/v2.1.0/LocalOpsConsole-2.1.0.zip",
+      "sha256": "fb48e3590a1482b60e9f34d3dca6e83c078ce6eb186c9c5aa7f89ac49d3ecae8",
+      "size": 330466
+    }
+  ]
 }
