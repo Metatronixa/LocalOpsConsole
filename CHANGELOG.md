@@ -9,6 +9,13 @@
 - **Tailscale**: document using Tailscale IP in `fleetPublicUrl` / `-ServerUrl` with `bindHost: 0.0.0.0`.
 - Agent bumped to **2.1.5** (reinstall/update agents for new command types). Longer API timeouts for result posts; command log lines capped.
 
+### Package refresh (same 2.1.5)
+
+- Claim **one** command per poll; do not claim while another is Running (fixes piles of Pending/Running during SFC).
+- Computers warns when Online but commands Pending &gt;60s, and when agent version is outdated.
+- Latency endpoint always returns Success when the probe runs; ICMP result is `ProbeOk` (no false API WARN spam).
+- Agent disk IO uses CIM counters (avoids Get-Counter stalling the poll loop).
+
 ### Verify
 
 ```powershell
@@ -16,6 +23,7 @@
 # With server running:
 .\tools\smoke-api.ps1
 .\tools\smoke-fleet-commands.ps1
+.\tools\smoke-fleet-commands.ps1 -Live
 ```
 
 ## 2.1.4 — 2026-08-05

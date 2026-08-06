@@ -97,7 +97,8 @@ Select an online PC → detail panel: Flush DNS, Restart Spooler, Inventory, Pro
 - Use the live console stream for script errors
 - Set `integrityMode` to `warn` during local module development
 - Run `.\tools\smoke-api.ps1` with the server running
-- Remote agents: `fleetPublicUrl` (LAN IP) + `bindHost: 0.0.0.0`; if start fails with “conflicts with an existing registration”, free port 8787 / check `netsh http show urlacl`
+- Remote agents: `fleetPublicUrl` (LAN or Tailscale IP) + `bindHost: 0.0.0.0`; if start fails with “conflicts with an existing registration”, free port 8787 / check `netsh http show urlacl`
+- Commands stuck **Pending**: agent is not polling — restart task **LocalOpsAgent**, check `C:\ProgramData\LocalOpsAgent\logs`, confirm `ServerUrl`. **Failed** with “Unknown command type” means an old agent after claim — install Agent 2.1.5+
 - Event Log “Access denied” on the Security channel is normal without elevation
 
 See also `CHANGELOG.md` and `SECURITY.md`.

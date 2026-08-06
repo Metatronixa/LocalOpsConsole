@@ -284,7 +284,8 @@ function Test-LocFleetAgentLatency {
         Error      = $errorMsg
         ProbedAt   = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
     }
-    return New-ApiResult -Success $probeOk -Message $msg -Data $payload
+    # Always Success=true when the endpoint works; ProbeOk says whether ICMP succeeded (avoids UI API WARN spam).
+    return New-ApiResult -Success $true -Message $msg -Data $payload
 }
 
 function Queue-LocFleetCommand {
@@ -333,14 +334,20 @@ function Queue-LocFleetCommand {
 }
 
 function Claim-LocFleetCommands {
-    param([Parameter(Mandatory)] [string]$AgentId)
+    param(
+        [Parameter(Mandatory)] [string]$AgentId,
+        [int]$MaxClaim = 1
+    )
 
     $agent = Get-LocFleetAgentRecord -AgentId $AgentId
     if (-not $agent -or $agent.Revoked) {
         return New-ApiResult -Success $false -Message "Unknown or revoked agent" -StatusCode 403
     }
 
-    $claimed = @()
+    if ($MaxClaim -lt 1) { $MaxClaim = 1 }
+
+    # ArrayList so Add() works inside the lock scriptblock (+= would create a local copy).
+    $claimedList = New-Object System.Collections.ArrayList
     $now = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
 
     Invoke-LocFleetFileLock -Name "commands" -Action {
@@ -348,24 +355,40 @@ function Claim-LocFleetCommands {
         $list = @()
         if ($data.commands) { $list = @($data.commands) }
 
+        # Do not pile up Running jobs while a long command (e.g. SFC) is in flight.
+        $hasRunning = $false
+        foreach ($c in $list) {
+            if ([string]$c.AgentId -eq $AgentId -and [string]$c.Status -eq "Running") {
+                $hasRunning = $true
+                break
+            }
+        }
+        if ($hasRunning) {
+            Write-LocFleetJson -FileName "commands.json" -Data @{ commands = $list }
+            return
+        }
+
+        $taken = 0
         for ($i = 0; $i -lt $list.Count; $i++) {
+            if ($taken -ge $MaxClaim) { break }
             $c = $list[$i]
             if ([string]$c.AgentId -eq $AgentId -and [string]$c.Status -eq "Pending") {
                 $c.Status = "Running"
                 $c.ClaimedAt = $now
                 $list[$i] = $c
-                $claimed += [PSCustomObject]@{
+                [void]$claimedList.Add([PSCustomObject]@{
                     Id      = $c.Id
                     Type    = $c.Type
                     Payload = $c.Payload
-                }
+                })
+                $taken++
             }
         }
 
         Write-LocFleetJson -FileName "commands.json" -Data @{ commands = $list }
     }
 
-    return New-ApiResult -Success $true -Message "Poll" -Data @($claimed)
+    return New-ApiResult -Success $true -Message "Poll" -Data @($claimedList.ToArray())
 }
 
 function Complete-LocFleetCommand {

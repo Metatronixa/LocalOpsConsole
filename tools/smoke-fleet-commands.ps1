@@ -81,6 +81,22 @@ if ($Live) {
             $q2 = Invoke-RestMethod -Uri "$BaseUrl/fleet/commands" -Method POST -Body $body2 -ContentType "application/json" -TimeoutSec 20
             Assert-True "queue GetProcesses" ([bool]$q2.Success) ([string]$q2.Message)
 
+            # Claim path (same as agent poll) must return claimed commands, not empty
+            . (Join-Path $Root "core\Response.ps1")
+            . (Join-Path $Root "core\Settings.ps1")
+            . (Join-Path $Root "core\Logger.ps1")
+            . (Join-Path $Root "core\FleetStore.ps1")
+            . (Join-Path $Root "core\FleetAuth.ps1")
+            . (Join-Path $Root "core\Fleet.ps1")
+            Initialize-LocSettings -RootPath $Root
+            Initialize-LocLogger -RootPath $Root
+            Initialize-LocFleetStore
+            $claim = Claim-LocFleetCommands -AgentId $AgentId -MaxClaim 1
+            Assert-True "claim returns at least one command" ($claim.Success -and @($claim.Data).Count -ge 1) ("count=" + @($claim.Data).Count)
+            if (@($claim.Data).Count -ge 1) {
+                Assert-True "claim has Type" (-not [string]::IsNullOrWhiteSpace([string]$claim.Data[0].Type))
+            }
+
             $body3 = @{ AgentId = $AgentId; Type = "NotARealCommand"; Payload = @{} } | ConvertTo-Json -Compress
             try {
                 Invoke-RestMethod -Uri "$BaseUrl/fleet/commands" -Method POST -Body $body3 -ContentType "application/json" -TimeoutSec 20 | Out-Null

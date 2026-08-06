@@ -223,13 +223,29 @@ const FleetView = {
         const netSmoke = this.latestResultData(cmds, 'NetHealthSmoke');
         const lat = this._lastLatency;
 
+        const pending = cmds.filter((c) => c.Status === 'Pending');
+        const running = cmds.filter((c) => c.Status === 'Running');
+        let stuckPending = false;
+        const now = Date.now();
+        for (const c of pending) {
+            const t = Date.parse(c.CreatedAt);
+            if (!isNaN(t) && (now - t) > 60000) { stuckPending = true; break; }
+        }
+        const ver = String(a.AgentVersion || '');
+        const verOld = ver && ver !== '2.1.5' && !/^2\.1\.[5-9]|^2\.[2-9]|^[3-9]/.test(ver);
+
         box.innerHTML = `
             <h3 class="text-sm font-bold text-slate-100">${this.escape(a.ComputerName || agentId)}</h3>
             <div class="flex flex-wrap gap-2 text-[11px]">
                 <span class="badge ${a.Online ? 'badge-ok' : 'badge-muted'}">${a.Online ? 'online' : 'offline'}</span>
                 <span class="badge badge-muted">${this.escape(a.IPv4 || 'no IP')}</span>
                 <span class="badge badge-muted">${this.escape(a.UserName || '')}</span>
+                <span class="badge badge-muted">agent ${this.escape(ver || '?')}</span>
             </div>
+            ${!a.Online ? `<p class="text-[11px] text-rose-400 font-semibold">Agent offline — commands stay Pending until the LocalOpsAgent task is running and can reach ServerUrl.</p>` : ''}
+            ${a.Online && stuckPending ? `<p class="text-[11px] text-amber-400 font-semibold">Commands Pending &gt;60s while online — agent may not be polling. On the PC: restart scheduled task LocalOpsAgent; check C:\\ProgramData\\LocalOpsAgent\\logs and config ServerUrl.</p>` : ''}
+            ${a.Online && running.length ? `<p class="text-[11px] text-slate-400">Running: ${this.escape(running.map((c) => c.Type).join(', '))} (long jobs like SFC block the next command until finished).</p>` : ''}
+            ${verOld ? `<p class="text-[11px] text-amber-400 font-semibold">Agent version ${this.escape(ver)} is outdated — reinstall LocalOpsAgent-2.1.5.zip for Processes / Net smoke / SFC / CHKDSK.</p>` : ''}
             <div class="grid grid-cols-2 gap-2 text-xs font-mono">
                 <div>CPU: ${this.fmtPct(a.CpuPct)}</div>
                 <div>RAM: ${this.fmtPct(a.RamPct)}</div>
@@ -238,7 +254,7 @@ const FleetView = {
                 <div>Last: ${this.escape(a.LastSeen || '—')}</div>
                 <div>Agent→net: ${a.InternetOk === true ? 'OK' : (a.InternetOk === false ? 'DOWN' : '—')}</div>
             </div>
-            ${lat ? `<div class="text-[11px] text-cyan-300">Console→PC latency: ${lat.ProbeOk || lat.Success ? `avg ${lat.AvgMs} ms (min ${lat.MinMs}, max ${lat.MaxMs}) to ${this.escape(lat.TargetHost)}` : this.escape(lat.Error || 'failed')}</div>` : ''}
+            ${lat ? `<div class="text-[11px] text-cyan-300">Console→PC latency: ${lat.ProbeOk ? `avg ${lat.AvgMs} ms (min ${lat.MinMs}, max ${lat.MaxMs}) to ${this.escape(lat.TargetHost)}` : this.escape(lat.Error || 'ICMP failed / blocked')}</div>` : ''}
             ${netSmoke ? `<div class="text-[11px] text-emerald-300">Agent internet: ping ${netSmoke.PingOk ? netSmoke.InternetLatencyMs + ' ms' : 'fail'} · download smoke ${netSmoke.DownloadOk ? netSmoke.DownloadMbps + ' Mbps' : 'fail'}</div>` : ''}
 
             <div class="flex flex-wrap gap-2 pt-2 border-t border-slate-800">
@@ -332,13 +348,13 @@ const FleetView = {
     async pingAgent() {
         if (!this._selected) return;
         LiveConsole.log('Probing console→agent latency…', 'INFO');
-        const res = await API.request(`fleet/agents/${this._selected}/latency`, 'GET', null, 20000);
-        if (res.Data) {
+        const res = await API.request(`fleet/agents/${this._selected}/latency`, 'GET', null, 20000, { silent: true });
+        if (res.Success && res.Data) {
             this._lastLatency = res.Data;
-            if (res.Success) {
+            if (res.Data.ProbeOk) {
                 LiveConsole.log(`Latency avg ${res.Data.AvgMs} ms to ${res.Data.TargetHost}`, 'SUCCESS');
             } else {
-                LiveConsole.log(res.Message || 'Latency probe failed', 'WARN');
+                LiveConsole.log(res.Data.Error || res.Message || 'ICMP failed (endpoint OK)', 'WARN');
             }
             await this.loadDetail(this._selected, true);
         } else {

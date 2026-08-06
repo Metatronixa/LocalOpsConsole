@@ -127,24 +127,16 @@ function Invoke-AgentEnroll {
 function Get-AgentDiskIoMBps {
     $read = $null
     $write = $null
+    # Prefer CIM formatted counters (no 1s Get-Counter sample that stalls the poll loop).
     try {
-        $counters = Get-Counter '\PhysicalDisk(_Total)\Disk Read Bytes/sec', '\PhysicalDisk(_Total)\Disk Write Bytes/sec' -SampleInterval 1 -MaxSamples 1 -ErrorAction Stop
-        foreach ($s in @($counters.CounterSamples)) {
-            if ($s.Path -match 'Disk Read Bytes') { $read = [math]::Round(([double]$s.CookedValue) / 1MB, 2) }
-            if ($s.Path -match 'Disk Write Bytes') { $write = [math]::Round(([double]$s.CookedValue) / 1MB, 2) }
+        $perf = Get-CimInstance Win32_PerfFormattedData_PerfDisk_PhysicalDisk -ErrorAction SilentlyContinue |
+            Where-Object { $_.Name -eq '_Total' } | Select-Object -First 1
+        if ($perf) {
+            $read = [math]::Round(([double]$perf.DiskReadBytesPerSec) / 1MB, 2)
+            $write = [math]::Round(([double]$perf.DiskWriteBytesPerSec) / 1MB, 2)
         }
     }
-    catch {
-        try {
-            $perf = Get-CimInstance Win32_PerfFormattedData_PerfDisk_PhysicalDisk -ErrorAction SilentlyContinue |
-                Where-Object { $_.Name -eq '_Total' } | Select-Object -First 1
-            if ($perf) {
-                $read = [math]::Round(([double]$perf.DiskReadBytesPerSec) / 1MB, 2)
-                $write = [math]::Round(([double]$perf.DiskWriteBytesPerSec) / 1MB, 2)
-            }
-        }
-        catch { }
-    }
+    catch { }
     return @{ Read = $read; Write = $write }
 }
 
