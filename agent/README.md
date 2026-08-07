@@ -59,7 +59,7 @@ Open **Computers**, click a PC row — a side drawer shows live telemetry and gr
 - **Network** — Flush DNS, Net smoke (ping + download + upload), Ping PC (console→agent latency)
 - **Windows Update** — Check pending status; install pending updates (no KB uninstall yet)
 - **Remote Support** — RustDesk status; silent install (requires `rustDeskInstallerUrl` HTTPS in settings)
-- **Software** — Install from curated catalog (`data/fleet/packages.json`); winget preferred, else HTTPS URL; opens `ProgramData\LocalOpsAgent\installs\{id}\`
+- **Software** — Install from catalog (Computers → Manage software catalog): winget preferred, then local installers under `data/fleet/software/{id}/` (HMAC download), else HTTPS URL; opens `ProgramData\LocalOpsAgent\installs\{id}\`
 - **Event Log** — Tail System / Application / Security
 - **Services / Print** — Restart Spooler, Get Services, Restart Service
 - **Inventory / Inspect** — Collect Inventory, Processes (End), Printers, Run Script

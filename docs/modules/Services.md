@@ -21,7 +21,10 @@ inventory · diagnostics · monitoring · remediation · automation
 
 ## Automation
 
-Event rules may opt into `restart-service` (see Spooler crash rule). Disabled by default.
+Opt-in on the **Automation** page (disabled by default):
+
+- `service-down` — `restart-service` from the event payload (Careful)
+- `eventlog-health` — notify-only acknowledgement (Notify; no auto-restart of EventLog)
 
 ## Permissions
 

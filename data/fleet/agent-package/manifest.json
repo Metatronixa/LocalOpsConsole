@@ -1,7 +1,7 @@
 ﻿{
-    "Version":  "2.3.0",
-    "Sha256":  "618e8aaf85a864dac3e3a89d92c3987b95497aef0a9fd0285cbcbd9e77e86e38",
-    "FileName":  "LocalOpsAgent.ps1",
-    "SizeBytes":  54774,
-    "PublishedAt":  "2026-08-07T07:39:03Z"
+  "Version": "2.3.0",
+  "Sha256": "d88b4660bb28ac314a7bfb8704560bacb9caacb06063f328b6741feb79b02a23",
+  "FileName": "LocalOpsAgent.ps1",
+  "SizeBytes": 66858,
+  "PublishedAt": "2026-08-07T16:36:45Z"
 }

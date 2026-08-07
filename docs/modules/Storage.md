@@ -20,7 +20,7 @@ inventory · diagnostics · monitoring · remediation · automation · reporting
 
 ## Automation
 
-Rules may opt into `disk-cleanup`. Disabled unless enabled in rule JSON.
+`low-disk` ships a **Safe** `disk-cleanup` playbook (old temp files). Off by default — enable on the **Automation** page (prefs under `data/automation/`, not rule JSON).
 
 ## Permissions
 

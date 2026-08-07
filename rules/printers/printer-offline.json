@@ -9,5 +9,12 @@
   "incident": "Printer Offline",
   "category": "printers",
   "suppressSeconds": 3600,
-  "notify": true
+  "notify": true,
+  "automation": {
+    "enabled": false,
+    "action": "clear-print-queue",
+    "closeOnSuccess": false,
+    "risk": "Careful",
+    "description": "Clear stuck print jobs when a printer goes offline (opt-in)"
+  }
 }

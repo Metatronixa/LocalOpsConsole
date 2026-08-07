@@ -41,7 +41,7 @@
     <article class="docs-content">
       <div class="page-hero" style="padding-top:2rem">
         <h1>User Guide</h1>
-        <p>Complete operator manual for <strong>LocalOpsConsole v2.1.7</strong> — how every major surface works, and exactly what you must do to install, run, and manage Windows endpoints safely.</p>
+        <p>Complete operator manual for <strong>LocalOpsConsole v2.1.8</strong> — how every major surface works, and exactly what you must do to install, run, and manage Windows endpoints safely.</p>
       </div>
 
       <div class="callout">
@@ -158,7 +158,7 @@ cd LocalOpsConsole
           <tr><td>Inventory</td><td>What is on the box</td><td>Devices, users, graphics, storage, startup, power</td></tr>
           <tr><td>Incidents</td><td>Correlated problems</td><td>Open, review, resolve Event Intelligence incidents</td></tr>
           <tr><td>Monitoring</td><td>Alerts + timeline</td><td>Notification Center, Event Timeline</td></tr>
-          <tr><td>Automation</td><td>Opt-in playbooks</td><td>Review history; enable only via rules</td></tr>
+          <tr><td>Automation</td><td>Central hub playbooks</td><td>Enable, set scope (This PC/Fleet/Both), Run now</td></tr>
           <tr><td>Settings</td><td>Preferences</td><td>Quiet hours, channels, Event Intel options</td></tr>
         </tbody>
       </table>
@@ -178,7 +178,7 @@ cd LocalOpsConsole
         <li><strong>Rules</strong> under <code>rules/</code> evaluate normalized events</li>
         <li><strong>Correlation</strong> opens or updates an <strong>incident</strong></li>
         <li><strong>Notifications</strong> respect severity, selected channels, quiet hours, and maintenance windows</li>
-        <li><strong>Automation</strong> runs only when a rule sets <code>automation.enabled: true</code></li>
+        <li><strong>Automation</strong> runs only when you enable the playbook on the <strong>Automation</strong> page (toggles apply immediately)</li>
       </ol>
       <div class="callout">
         <strong>Event ID 4104</strong> (PowerShell Script Block Logging) may appear when the console starts <code>api\server.ps1</code>. That is Windows logging the host process — not automatically an attack.
@@ -192,10 +192,12 @@ cd LocalOpsConsole
       <h3>Security Baseline</h3>
       <ol>
         <li>Open <strong>Security → Security Baseline</strong></li>
-        <li>Click <strong>Audit</strong> (read-only — does not change the system)</li>
+        <li>Choose <strong>This PC</strong> or an enrolled fleet agent</li>
+        <li>Click <strong>Run Audit</strong> (read-only — does not change the system)</li>
         <li>Review score, risk rating, per-control results, and recommendations</li>
       </ol>
-      <p>Controls typically cover Defender, Firewall, BitLocker, TPM, Secure Boot, UAC, SMBv1, RDP, WinRM, logging, and related posture checks.</p>
+      <p>This PC uses the full module audit. Fleet queues <code>AuditSecurityBaseline</code> (agent 2.2.0+). Apply hardening-basic stays on <strong>Computers → Policy</strong>. You can open this page with an agent preselected from the drawer.</p>
+      <p>Controls typically cover Defender, Firewall, BitLocker, TPM, Secure Boot, and related posture checks (fleet audit is a compact set of those controls).</p>
       <h3>Security module &amp; Event Log</h3>
       <p>Dedicated views paint the UI first, then load data asynchronously with <strong>bounded</strong> WinEvent queries. “Access denied” on the Security channel without elevation is normal.</p>
       <h3>Integrity gate</h3>
@@ -248,7 +250,9 @@ cd LocalOpsConsole
       <p>Audio device diagnostics for workstation support.</p>
 
       <h3>Automation</h3>
-      <p>Opt-in playbooks (restart → verify → notify → close style flows). Automation does <strong>not</strong> run unless a rule enables it. Review history here; edit rules under <code>rules/</code> for behavior changes.</p>
+      <p><strong>Central hub:</strong> opt-in playbooks with scope <strong>This PC / Fleet / Both</strong>, optional agent multi-select, and <strong>Run now</strong> (sticky status). Event Intel auto still remediates This PC when scope includes local. High-CPU fleet spikes can auto-run the high-CPU snapshot playbook when enabled for fleet. Full agent Event Log auto-remediation is Hub v2.</p>
+      <p><strong>Risk badges:</strong> Safe (observe/cleanup) · Careful (may restart services, clear jobs, or briefly disrupt network) · Notify (timeline only).</p>
+      <p>Built-in pack includes Spooler recovery, low-disk cleanup, monitored service restart, clear print queue, network soft repair (DNS/DHCP), update stack restart, high-CPU process snapshot, and notify-only playbooks for Event Log / Defender / firewall / unexpected reboot. Authors can still add definitions under <code>rules/custom/</code>.</p>
 
       <h2 id="fleet">11. Computers (fleet) — deep guide</h2>
       <p>Fleet is <strong>optional</strong>. The console is fully useful offline on one PC. Agents are outbound-only — no inbound listener on managed desktops.</p>
@@ -303,13 +307,13 @@ cd LocalOpsConsole
           <tr><td>Network</td><td>Flush DNS, Net smoke, Ping PC</td><td>Net smoke = ping + short download + upload; Ping PC = console→agent latency</td></tr>
           <tr><td>Windows Update</td><td>Check / Install pending</td><td>No KB uninstall yet</td></tr>
           <tr><td>Remote Support</td><td>RustDesk status / install</td><td>Needs HTTPS installer URL in settings</td></tr>
-          <tr><td>Software</td><td>Install from catalog</td><td><code>data/fleet/packages.json</code>; winget or HTTPS</td></tr>
+          <tr><td>Software</td><td>Install from catalog</td><td>Manage catalog on Computers: winget, local (<code>data/fleet/software/{id}/</code> + HMAC download), or HTTPS. You set SilentArgs.</td></tr>
           <tr><td>Event Log</td><td>Tail System / Application / Security</td><td>Bounded tails</td></tr>
           <tr><td>Services / Print</td><td>Restart Spooler, Get/Restart services</td><td></td></tr>
-          <tr><td>Inventory / Inspect</td><td>Inventory, Processes (End), Printers, Run Script</td><td></td></tr>
+          <tr><td>Inventory / Inspect</td><td>Inventory, Processes (End), Printers, <strong>Startup apps</strong> (opens Startup page), Run Script</td><td>Startup results stay on the Startup page with sticky status</td></tr>
           <tr><td>Message</td><td>Message user</td><td>Shows on the remote session</td></tr>
           <tr><td>Repair</td><td>SFC, CHKDSK scan, CHKDSK schedule /F</td><td>Schedule fix does not auto-reboot</td></tr>
-          <tr><td>Policy</td><td>Audit / Apply hardening-basic</td><td>Pack under <code>data/fleet/policy-packs/</code></td></tr>
+          <tr><td>Policy</td><td>Audit / Apply hardening-basic; Open Security Baseline</td><td>Pack under <code>data/fleet/policy-packs/</code>; full page can target this agent</td></tr>
           <tr><td>Danger</td><td>Restart PC (60s), Remove agent</td><td>Confirm carefully</td></tr>
         </tbody>
       </table>
@@ -328,12 +332,20 @@ cd LocalOpsConsole
         <li>Agent downloads over HMAC, verifies hash, replaces Program Files script, restarts the task</li>
       </ol>
 
+      <h3>11.6b Software catalog (local packages)</h3>
+      <ol>
+        <li>Copy installer to <code>data/fleet/software/{Id}/</code> on the console (e.g. <code>wintax/WintaxSetup.exe</code>)</li>
+        <li>Computers → <strong>Manage software catalog</strong> → Add local → Register (computes SHA-256)</li>
+        <li>PC drawer → Software → Install. Agent GETs <code>/api/v1/fleet/packages/{id}/content</code> with HMAC, verifies hash, runs SilentArgs</li>
+      </ol>
+      <p>Seed catalog includes Chrome, Edge, Firefox, Reader, 7-Zip, VC++ redist, <strong>WinRAR</strong>, and <strong>WinDirStat</strong> (winget). Multipart browser upload of huge ISOs is out of scope — drop files on disk.</p>
+
       <h3>11.7 Uninstall agent</h3>
       <pre>.\Uninstall-LocalOpsAgent.ps1</pre>
       <p>Or use <strong>Remove agent</strong> from the drawer (deletes the fleet record on the console).</p>
 
       <h2 id="network-map">12. Network Map</h2>
-      <p>Under Operations, <strong>Network Map</strong> shows enrolled agents and discovered LAN neighbors arranged by IP/gateway context. Use it to see spatial/fleet topology at a glance, then open Computers for actions.</p>
+      <p>Under Operations, <strong>Network Map</strong> shows enrolled agents and discovered LAN neighbors grouped by <strong>gateway cluster</strong> (agents on an inner ring, LAN on outer rings that grow with node count). This is not a fixed star topology — crowded maps get more space, and you can switch to <strong>List</strong> for a sortable table. Use the Agents / LAN / Offline filters on either view, then open Computers for actions.</p>
 
       <h2 id="syncme">13. SyncMe</h2>
       <p>SyncMe integration expects a local SyncMe install path.</p>
@@ -354,7 +366,7 @@ cd LocalOpsConsole
           <tr><td>Users</td><td>Local user related inventory</td></tr>
           <tr><td>Graphics</td><td>GPU / display related data</td></tr>
           <tr><td>Storage</td><td>Volumes and capacity (also under Operations)</td></tr>
-          <tr><td>Startup</td><td>Startup entries</td></tr>
+          <tr><td>Startup</td><td>Startup entries / scheduled tasks on <strong>This PC</strong> or a fleet PC (sticky Pending/Running on the page)</td></tr>
           <tr><td>Power</td><td>Power / battery oriented info</td></tr>
         </tbody>
       </table>
@@ -439,7 +451,7 @@ cd LocalOpsConsole
       <ul>
         <li>Default bind is <strong>localhost only</strong></li>
         <li>Privileged actions are declared per module</li>
-        <li>Automation is off unless a rule enables it</li>
+        <li>Automation is off unless enabled on the Automation page</li>
         <li>Packaged builds enforce module integrity</li>
         <li>Do not expose the API to the public internet</li>
         <li>See <code>SECURITY.md</code> in the repository</li>

@@ -10,15 +10,18 @@ V2 is the product. Fleet agents enroll outbound to the console; remote ops live 
 | Network | Flush DNS, net smoke (ping + download + upload Mbps), console→agent latency |
 | Windows Update | Status (pending list) + install pending updates |
 | RustDesk | Status + silent install (HTTPS URL from `settings.json`) |
-| Software | Curated catalog (`data/fleet/packages.json`) + `InstallPackage` (winget or HTTPS URL/MSI); opens `ProgramData\LocalOpsAgent\installs\{id}\` |
+| Software | Curated catalog + `InstallPackage`: winget, **local** (`data/fleet/software/{id}/` via HMAC), or HTTPS URL; opens `ProgramData\LocalOpsAgent\installs\{id}\` |
 | Event Log | Tail System / Application / Security |
 | Spike forensics | CPU/RAM ≥90% → `GetResourceOffenders` → Alerts inbox + NotificationManager + table SPIKE cue |
 | Agent self-update | Publish package from console `agent/`; drawer **Update agent** (`SelfUpdate`) over HMAC + SHA-256 |
 | Repair | SFC, CHKDSK scan, CHKDSK schedule `/F` |
-| Inventory | Collect inventory, processes (end), printers, services, scripts, message user |
+| Inventory | Collect inventory, processes (end), printers, services, scripts, message user; **Startup apps / scheduled tasks** via Inventory → Startup (fleet target) |
 | Queue UX | Click command history → result panel; Clear stuck; Running auto-timeout 45m |
-| Network Map | Separate dash: agents + LAN discovery by gateway (`GET /fleet/topology`) |
-| Policy | `AuditSecurityBaseline` + `ApplySecurityPolicy` (`hardening-basic`: firewall + Defender realtime). Wallpaper lockdown deferred |
+| Network Map | Separate dash: agents + LAN discovery by gateway (`GET /fleet/topology`); gateway clusters + List mode |
+| Policy | `AuditSecurityBaseline` + `ApplySecurityPolicy` (`hardening-basic`: firewall + Defender realtime). Security Baseline page can target This PC or a fleet agent. Wallpaper lockdown deferred |
+| Startup remote | `GetStartupApps`, `GetScheduledTasks` (agent 2.3.0+) |
+| Hub playbooks | Automation scope + Run now → fleet commands (`DiskCleanup`, `ClearPrintQueue`, `NetworkSoftRepair`, `RestartUpdateStack`, `CaptureProcessSnapshot`, …); HighCpu spike can auto-run `high-cpu` playbook |
+| Local software catalog | Drop installers in `data/fleet/software/{id}/`, register in Computers → Manage catalog; agents pull via HMAC `GET …/packages/{id}/content` (works on LAN `http://`) |
 
 ## Enrollment security
 
@@ -37,9 +40,9 @@ V2 is the product. Fleet agents enroll outbound to the console; remote ops live 
 
 ### Playbooks & inventory
 
-- Playbooks-on-PC (agent-side runbooks)
+- Agent Event Intelligence → scoped auto playbooks (Hub v2)
 - Fuller structured inventory summary
-- Clear Temp / Reset Network Stack one-clicks
+- Clear Temp / Reset Network Stack one-clicks (module pages)
 - Multi-select bulk fleet actions (including bulk self-update)
 
 ### Clients & hooks
@@ -53,7 +56,8 @@ V2 is the product. Fleet agents enroll outbound to the console; remote ops live 
 - Configurable spike thresholds
 - CPU/RAM sparklines from heartbeat history
 - Overview fleet health tile
-- Disk-by-volume, startup/tasks summary
+- Disk-by-volume summary
+- Fuller structured inventory summary
 
 ## Out of scope (for now)
 

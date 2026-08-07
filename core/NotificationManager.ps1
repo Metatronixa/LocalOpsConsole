@@ -229,43 +229,45 @@ function Invoke-LocChannelSend {
     switch ($Channel.ToLower()) {
         "desktop" {
             if (Get-Command Send-LocNotifyDesktop -ErrorAction SilentlyContinue) {
-                Send-LocNotifyDesktop -Alert $Alert -Incident $Incident -Config $cfg
+                return Send-LocNotifyDesktop -Alert $Alert -Incident $Incident -Config $cfg
             }
         }
         "email" {
             if (Get-Command Send-LocNotifyEmail -ErrorAction SilentlyContinue) {
-                Send-LocNotifyEmail -Alert $Alert -Incident $Incident -Config $cfg
+                return Send-LocNotifyEmail -Alert $Alert -Incident $Incident -Config $cfg
             }
         }
         "teams" {
             if (Get-Command Send-LocNotifyTeams -ErrorAction SilentlyContinue) {
-                Send-LocNotifyTeams -Alert $Alert -Incident $Incident -Config $cfg
+                return Send-LocNotifyTeams -Alert $Alert -Incident $Incident -Config $cfg
             }
         }
         "slack" {
             if (Get-Command Send-LocNotifySlack -ErrorAction SilentlyContinue) {
-                Send-LocNotifySlack -Alert $Alert -Incident $Incident -Config $cfg
+                return Send-LocNotifySlack -Alert $Alert -Incident $Incident -Config $cfg
             }
         }
         "discord" {
             if (Get-Command Send-LocNotifyDiscord -ErrorAction SilentlyContinue) {
-                Send-LocNotifyDiscord -Alert $Alert -Incident $Incident -Config $cfg
+                return Send-LocNotifyDiscord -Alert $Alert -Incident $Incident -Config $cfg
             }
         }
         "webhook" {
             if (Get-Command Send-LocNotifyWebhook -ErrorAction SilentlyContinue) {
-                Send-LocNotifyWebhook -Alert $Alert -Incident $Incident -Config $cfg
+                return Send-LocNotifyWebhook -Alert $Alert -Incident $Incident -Config $cfg
             }
         }
         "syslog" {
             if (Get-Command Send-LocNotifySyslog -ErrorAction SilentlyContinue) {
-                Send-LocNotifySyslog -Alert $Alert -Incident $Incident -Config $cfg
+                return Send-LocNotifySyslog -Alert $Alert -Incident $Incident -Config $cfg
             }
         }
         "snmp" {
             Write-LocLog -Module "EVENTINTEL" -Action "Notify" -Level "INFO" -Message "SNMP trap not implemented"
+            return @{ Success = $false; Message = "SNMP not implemented" }
         }
     }
+    return @{ Success = $false; Message = "channel handler missing" }
 }
 
 function Invoke-LocIncidentNotify {
@@ -345,7 +347,7 @@ function Invoke-LocIncidentNotify {
 }
 
 function Get-LocNotificationPrefs {
-    $ei = Get-LocEventIntelSettings
+    $ei = Get-LocEventIntelSettingsForApi
     return [PSCustomObject]@{
         notifyLevel       = $ei.notifyLevel
         notifyCategories  = @($ei.notifyCategories)
@@ -355,5 +357,48 @@ function Get-LocNotificationPrefs {
         channels          = $ei.channels
         channelConfig     = $ei.channelConfig
         snmp              = [PSCustomObject]@{ implemented = $false; note = "SNMP Trap deferred" }
+    }
+}
+
+function Test-LocNotifyChannel {
+    param(
+        [Parameter(Mandatory)][string]$Channel
+    )
+    Import-LocNotificationChannels
+    $name = $Channel.Trim().ToLower()
+    $allowed = @('desktop', 'dashboard', 'email', 'teams', 'slack', 'discord', 'webhook', 'syslog')
+    if ($allowed -notcontains $name) {
+        return New-ApiResult -Success $false -Message "Unknown channel: $Channel" -StatusCode 400
+    }
+
+    $incident = [PSCustomObject]@{
+        Id       = "test-$(Get-Date -Format 'yyyyMMddHHmmss')"
+        Title    = "LocalOpsConsole test ($name)"
+        Message  = "Test notification from Settings"
+        Severity = "Info"
+        Category = "Test"
+        Score    = 0
+    }
+    $alert = New-LocAlertRecord -Incident $incident -Message "This is a test notification for the $name channel."
+
+    if ($name -eq 'dashboard') {
+        Add-LocAlert -Alert $alert
+        return New-ApiResult -Success $true -Message "Test alert added to dashboard inbox" -Data @{ Channel = $name; AlertId = $alert.Id }
+    }
+
+    try {
+        $result = Invoke-LocChannelSend -Channel $name -Alert $alert -Incident $incident
+        if ($null -eq $result) {
+            return New-ApiResult -Success $false -Message "Channel handler returned nothing (is it configured?)" -StatusCode 400
+        }
+        if ($result -is [hashtable]) {
+            $ok = [bool]$result.Success
+            $msg = if ($result.Message) { [string]$result.Message } else { if ($ok) { "sent" } else { "failed" } }
+            return New-ApiResult -Success $ok -Message $msg -Data @{ Channel = $name } -StatusCode $(if ($ok) { 200 } else { 400 })
+        }
+        return New-ApiResult -Success $true -Message "Test sent" -Data @{ Channel = $name }
+    }
+    catch {
+        return New-ApiResult -Success $false -Message $_.Exception.Message -StatusCode 500
     }
 }

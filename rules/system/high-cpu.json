@@ -9,5 +9,12 @@
   "incident": "High CPU Usage",
   "category": "system",
   "healthMetric": "cpu",
-  "notify": true
+  "notify": true,
+  "automation": {
+    "enabled": false,
+    "action": "capture-process-snapshot",
+    "closeOnSuccess": false,
+    "risk": "Safe",
+    "description": "Capture top processes by CPU/memory into the incident timeline (no kill) (opt-in)"
+  }
 }

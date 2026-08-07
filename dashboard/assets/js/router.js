@@ -19,6 +19,9 @@ const Router = {
         if (typeof FleetView !== 'undefined' && FleetView.stopPoll) {
             FleetView.stopPoll();
         }
+        if (typeof FleetTarget !== 'undefined' && FleetTarget.stopPoll) {
+            FleetTarget.stopPoll();
+        }
         if (typeof AlertsView !== 'undefined' && AlertsView.stopPoll) {
             AlertsView.stopPoll();
         }
@@ -53,6 +56,7 @@ const Router = {
             storage: typeof StorageView !== 'undefined' ? StorageView : null,
             configuration: typeof ConfigurationView !== 'undefined' ? ConfigurationView : null,
             printers: typeof PrintersView !== 'undefined' ? PrintersView : null,
+            startup: typeof StartupView !== 'undefined' ? StartupView : null,
             remotesupport: typeof RemoteSupportView !== 'undefined' ? RemoteSupportView : null,
             remote: typeof RemoteView !== 'undefined' ? RemoteView : null,
             internetslow: typeof InternetHealthView !== 'undefined' ? InternetHealthView : null,

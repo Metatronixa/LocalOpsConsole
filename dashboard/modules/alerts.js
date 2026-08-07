@@ -73,11 +73,20 @@ const AlertsView = {
         box.innerHTML = items.map((a) => {
             const ack = a.Acknowledged ? 'opacity-50' : '';
             const repeat = a.RepeatCount > 1 ? `<span class="text-[10px] text-slate-500">×${a.RepeatCount}</span>` : '';
+            const fleet = typeof isLocFleetAlert === 'function' && isLocFleetAlert(a);
+            const pc = typeof locFleetPcFromAlert === 'function' ? locFleetPcFromAlert(a) : '';
+            const fleetClass = fleet
+                ? `alert-card-fleet ${typeof locFleetSevClass === 'function' ? locFleetSevClass(a.Severity) : ''}`
+                : this.sevClass(a.Severity);
+            const chips = fleet
+                ? `<span class="alert-chip-fleet">Fleet</span>${pc ? `<span class="alert-chip-fleet alert-chip-fleet-pc">${this.escape(pc)}</span>` : ''}`
+                : '';
             return `
-                <div class="p-3 rounded-xl border ${this.sevClass(a.Severity)} ${ack} flex items-start justify-between gap-3">
+                <div class="p-3 rounded-xl border ${fleetClass} ${ack} flex items-start justify-between gap-3">
                     <div class="flex items-start gap-3 min-w-0">
                         <span class="mt-1.5 w-2.5 h-2.5 rounded-full shrink-0 ${this.sevDot(a.Severity)}"></span>
                         <div class="min-w-0">
+                            ${chips ? `<div class="flex items-center gap-1.5 flex-wrap mb-1">${chips}</div>` : ''}
                             <div class="text-sm font-semibold text-slate-100 truncate">${this.escape(a.Title)}</div>
                             <div class="text-xs text-slate-400 mt-0.5">${this.escape(a.Message || '')}</div>
                             <div class="text-[11px] text-slate-500 mt-1 flex gap-2 flex-wrap">

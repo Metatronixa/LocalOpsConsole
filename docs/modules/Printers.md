@@ -18,7 +18,10 @@ Spooler restart/kill, clear queue, job control, TCP/IP port recreate, ghost prin
 
 ## Automation
 
-`rules/printers/spooler-crash.json` defines opt-in restart → verify → close.
+Opt-in playbooks (enable on the **Automation** page; do not edit JSON to opt in):
+
+- `spooler-crash` / `spooler-crash-7034` — restart Spooler → verify → close (Careful)
+- `printer-offline` — clear stuck print jobs (Careful)
 
 ## Permissions
 

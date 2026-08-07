@@ -50,13 +50,23 @@
         </div>
     </div>
 
+    <div id="alert-toast" class="hidden alert-toast shrink-0" role="status" aria-live="polite">
+        <div class="alert-toast-inner">
+            <span id="alert-toast-text">New alert</span>
+            <div class="flex items-center gap-2">
+                <button type="button" class="action-btn cyan" onclick="openAlertToastTarget()">View</button>
+                <button type="button" class="action-btn slate" onclick="dismissAlertToast()">Dismiss</button>
+            </div>
+        </div>
+    </div>
+
     <header class="h-14 border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md flex items-center justify-between px-6 shrink-0 z-20">
         <div class="flex items-center gap-3">
             <div class="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
                 <i data-lucide="shield-alert" class="w-5 h-5"></i>
             </div>
             <div>
-                <h1 class="font-bold text-sm tracking-wide">LOCALOPS<em class="text-cyan-400 not-italic">CONSOLE</em> <span id="app-version" class="text-slate-500 font-mono">v2.1.7</span></h1>
+                <h1 class="font-bold text-sm tracking-wide">LOCALOPS<em class="text-cyan-400 not-italic">CONSOLE</em> <span id="app-version" class="text-slate-500 font-mono">v2.1.8</span></h1>
                 <p class="text-[11px] text-slate-400 font-mono">OPERATIONS PLATFORM · <span id="host-name">LOCAL-PC</span></p>
             </div>
         </div>
@@ -115,6 +125,7 @@
     <script src="assets/js/console.log.js"></script>
     <script src="assets/js/results.js"></script>
     <script src="assets/js/view.js"></script>
+    <script src="assets/js/fleet-target.js"></script>
     <script src="assets/js/router.js"></script>
     <script src="assets/js/sparkline.js"></script>
     <script src="assets/js/app.js"></script>
@@ -122,6 +133,7 @@
     <script src="modules/network.js"></script>
     <script src="modules/storage.js"></script>
     <script src="modules/services.js"></script>
+    <script src="modules/startup.js"></script>
     <script src="modules/tools.js"></script>
     <script src="modules/configuration.js"></script>
     <script src="modules/printers.js"></script>
@@ -143,6 +155,7 @@
     <script src="modules/securitybaseline.js"></script>
 </body>
 </html>
+
 
 
 

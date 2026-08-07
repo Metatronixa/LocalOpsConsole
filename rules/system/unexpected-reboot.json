@@ -8,5 +8,12 @@
   "score": 85,
   "incident": "Unexpected Reboot / Kernel-Power",
   "category": "system",
-  "notify": true
+  "notify": true,
+  "automation": {
+    "enabled": false,
+    "action": "notify-only",
+    "closeOnSuccess": false,
+    "risk": "Notify",
+    "description": "Record unexpected reboot on the automation timeline for fleet awareness (opt-in)"
+  }
 }

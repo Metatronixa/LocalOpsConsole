@@ -24,7 +24,7 @@ try {
 }
 catch {
     if (Test-LocRemoteTimeoutError -Exception $_.Exception) {
-        return New-ApiResult -Success $false -Message "Open files timed out on ${ComputerName}. Check admin rights plus firewall/RPC/WMI/SMB access on the target." -StatusCode 504
+        return New-ApiResult -Success $false -Message "Open files timed out on ${ComputerName}. Prefer LAN IP; needs admin + firewall allowing WMI/RPC/SMB (Explorer share browse alone is not enough)." -StatusCode 504
     }
     return New-ApiResult -Success $false -Message "Open files failed on ${ComputerName}: $($_.Exception.Message). Requires admin rights and File Server role/SMB."
 }

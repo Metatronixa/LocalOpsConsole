@@ -1,5 +1,29 @@
 # Changelog
 
+## 2.1.8 — 2026-08-07
+
+### Features
+
+- **Local software catalog**: drop installers under `data/fleet/software/{id}/`, register from Computers → Manage software catalog (winget / local / HTTPS). Agents download local packages over HMAC (LAN `http://` works). Seed includes WinRAR and WinDirStat.
+- **Security Baseline fleet target**: same This PC / agent picker as Startup. Run Audit on an enrolled PC via `AuditSecurityBaseline`; sticky status on the page. Open Security Baseline from the Computers drawer. Apply hardening stays on the drawer.
+- **Agent baseline audit**: BitLocker, TPM, and Secure Boot checks added alongside Defender and Firewall.
+- **Automation Hub playbooks**, Network Map gateway clusters, Startup fleet target, and related polish from the 2.1.8 wave.
+
+### Docs / legal
+
+- User guide and roadmap updated for catalog + Security Baseline fleet.
+- Website legal page (POPIA-oriented privacy + limitation of liability); marketing meta tags; version bump.
+
+### Verify
+
+```powershell
+.\tools\smoke-bind.ps1
+.\tools\smoke-api.ps1
+.\tools\smoke-fleet-commands.ps1 -Live
+```
+
+**Ops:** Publish agent package, then Update agent on PCs that need local software installs or richer baseline checks.
+
 ## 2.1.7 — 2026-08-07
 
 ### Bugs fixed

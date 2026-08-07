@@ -34,6 +34,8 @@ function Assert-True {
 
 $required = @(
     'FlushDns', 'RestartSpooler', 'GetProcesses', 'EndProcess', 'GetPrinters',
+    'GetStartupApps', 'GetScheduledTasks',
+    'DiskCleanup', 'ClearPrintQueue', 'NetworkSoftRepair', 'RestartUpdateStack', 'CaptureProcessSnapshot',
     'NetHealthSmoke', 'SfcScannow', 'ChkdskScan', 'ChkdskScheduleFix', 'CollectInventory', 'Message',
     'AuditSecurityBaseline', 'ApplySecurityPolicy', 'SelfUpdate'
 )

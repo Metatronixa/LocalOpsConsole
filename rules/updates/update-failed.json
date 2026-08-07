@@ -8,5 +8,12 @@
   "score": 55,
   "incident": "Windows Update Installation Failed",
   "category": "updates",
-  "notify": true
+  "notify": true,
+  "automation": {
+    "enabled": false,
+    "action": "restart-update-stack",
+    "closeOnSuccess": false,
+    "risk": "Careful",
+    "description": "Restart wuauserv and BITS after an update failure (does not install updates) (opt-in)"
+  }
 }

@@ -6,7 +6,7 @@
 [![PowerShell](https://img.shields.io/badge/PowerShell-5.1+-5391FE?style=flat-square&logo=powershell&logoColor=white)](https://github.com/Metatronixa/LocalOpsConsole)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-059669?style=flat-square)](CONTRIBUTING.md)
 
-**Local-first Windows Operations Platform** (v2.1.7) for IT professionals, MSPs, and power users — diagnostics, Event Intelligence, incidents, security baseline, and safe remediation.
+**Local-first Windows Operations Platform** (v2.1.8) for IT professionals, MSPs, and power users — diagnostics, Event Intelligence, incidents, security baseline, and safe remediation.
 
 PowerShell HttpListener API + offline SPA. Plugin modules via `module.json`. **Overview** answers “Is this computer healthy?” using health score, security posture, and active incidents — not raw Event Viewer dumps.
 
@@ -62,11 +62,12 @@ Opens `http://localhost:8787/` on **Overview**.
 |------|----------------|
 | **Overview** | Health + security scores and active incidents at a glance |
 | **Event Intelligence** | Watchers, JSON rules, correlation, incidents, notifications, timeline |
-| **Security Baseline** | Defender, Firewall, BitLocker, TPM, Secure Boot, UAC, SMBv1, RDP, WinRM, logging, … |
+| **Security Baseline** | Defender, Firewall, BitLocker, TPM, Secure Boot, … on This PC or a fleet agent |
 | **Integrity gate** | Manifest + SHA-256 + elevation + path jail before module execution |
-| **Automation** | Opt-in playbooks (restart → verify → notify → close) |
-| **Computers (fleet)** | Optional LocalOps Agent — heartbeat, commands, scripts, repair |
-| **Network Map** | Spatial view of agents + LAN neighbors |
+| **Automation** | Opt-in Hub playbooks (local / fleet / both + Run now) |
+| **Computers (fleet)** | Optional LocalOps Agent — heartbeat, commands, scripts, repair, self-update |
+| **Software catalog** | Winget, local installers on the console disk (HMAC download), or HTTPS URL |
+| **Network Map** | Gateway clusters of agents + LAN neighbors; Map or List |
 | **Internet Health** | DNS, latency, connectivity, repairs |
 | **Services / Storage / Printers / Updates** | Inventory, monitoring, remediation, reporting |
 | **Access** | Standard users: diagnostics · Elevated: remediations |

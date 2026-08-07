@@ -3,7 +3,8 @@
 $script:LocFleetCommandTypes = @(
     'RestartSpooler', 'FlushDns', 'RestartService', 'RunScript', 'Message',
     'CollectInventory', 'RestartComputer', 'GetServices', 'GetProcesses',
-    'EndProcess', 'GetPrinters', 'NetHealthSmoke',
+    'EndProcess', 'GetPrinters', 'GetStartupApps', 'GetScheduledTasks', 'NetHealthSmoke',
+    'DiskCleanup', 'ClearPrintQueue', 'NetworkSoftRepair', 'RestartUpdateStack', 'CaptureProcessSnapshot',
     'SfcScannow', 'ChkdskScan', 'ChkdskScheduleFix',
     'GetWindowsUpdateStatus', 'InstallWindowsUpdates',
     'GetRustDeskStatus', 'InstallRustDesk',
@@ -342,6 +343,159 @@ function Get-LocLanDiscoveryRows {
     return @($rows)
 }
 
+function Get-LocDeviceTypeOverridesPath {
+    return (Join-Path (Get-LocRoot) "data\fleet\device-types.json")
+}
+
+function Get-LocDeviceTypeOverrides {
+    $path = Get-LocDeviceTypeOverridesPath
+    $dir = Split-Path $path -Parent
+    if (-not (Test-Path $dir)) {
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+    }
+    if (-not (Test-Path $path)) { return [PSCustomObject]@{} }
+    try {
+        $raw = Get-Content $path -Raw -Encoding UTF8
+        if ([string]::IsNullOrWhiteSpace($raw)) { return [PSCustomObject]@{} }
+        $obj = $raw | ConvertFrom-Json
+        if ($null -eq $obj) { return [PSCustomObject]@{} }
+        return $obj
+    }
+    catch {
+        Write-LocLog -Module "FLEET" -Action "DeviceTypes" -Level "WARN" -Message $_.Exception.Message
+        return [PSCustomObject]@{}
+    }
+}
+
+function Save-LocDeviceTypeOverrides {
+    param([object]$Prefs)
+    $path = Get-LocDeviceTypeOverridesPath
+    $dir = Split-Path $path -Parent
+    if (-not (Test-Path $dir)) {
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+    }
+    try {
+        $json = ($Prefs | ConvertTo-Json -Depth 6 -Compress:$false)
+        $tmp = "$path.tmp"
+        [System.IO.File]::WriteAllText($tmp, $json, [System.Text.UTF8Encoding]::new($false))
+        if (Test-Path $path) { Remove-Item $path -Force }
+        Move-Item $tmp $path -Force
+        return $true
+    }
+    catch {
+        Write-LocLog -Module "FLEET" -Action "DeviceTypes" -Level "ERROR" -Message $_.Exception.Message
+        return $false
+    }
+}
+
+function Normalize-LocMacKey {
+    param([string]$Mac)
+    if ([string]::IsNullOrWhiteSpace($Mac)) { return "" }
+    return (($Mac -replace '[^0-9A-Fa-f]', '').ToLowerInvariant())
+}
+
+function Resolve-LocDeviceTypeInferred {
+    param(
+        [string]$Kind,
+        [string]$Label,
+        [string]$IPv4
+    )
+    $k = if ($Kind) { $Kind.ToLowerInvariant() } else { "" }
+    if ($k -eq "gateway") { return "router" }
+    if ($k -eq "console" -or $k -eq "agent") { return "pc" }
+
+    $hay = ("{0} {1}" -f $Label, $IPv4).ToLowerInvariant()
+    if ($hay -match 'playstation|\bps5\b|\bps4\b|\bps[345]\b') { return "playstation" }
+    if ($hay -match 'xbox|xboxone|series[- ]?[xs]\b') { return "xbox" }
+    if ($hay -match '\bnas\b|synology|qnap|truenas|freenas|unraid|netgear.?ready') { return "nas" }
+    if ($hay -match 'switch|\bsw[-_]|nexus|catalyst|unifi[- ]?sw|procurve') { return "switch" }
+    if ($hay -match 'router|gateway|\bfw[-_]|firewall|mikrotik|edgeos|opnsense|pfsense|asus[-_]|tplink|tp[- ]?link|netgear|access.?point|\bap[-_]|unifi[- ]?ap|\beap\b') {
+        return "router"
+    }
+    return "unknown"
+}
+
+function Get-LocDeviceTypeOverrideForNode {
+    param(
+        [object]$Overrides,
+        [string]$NodeId,
+        [string]$MacAddress,
+        [string]$IPv4
+    )
+    if (-not $Overrides) { return $null }
+    $keys = @()
+    $macKey = Normalize-LocMacKey $MacAddress
+    if ($macKey) { $keys += "mac:$macKey" }
+    if ($NodeId) { $keys += "id:$NodeId" }
+    if ($IPv4) { $keys += "ip:$IPv4" }
+    foreach ($key in $keys) {
+        if ($Overrides.PSObject.Properties[$key]) {
+            $entry = $Overrides.$key
+            if ($null -eq $entry) { continue }
+            if ($entry -is [string]) { return [string]$entry }
+            if ($entry.PSObject.Properties['deviceType']) { return [string]$entry.deviceType }
+            if ($entry -is [hashtable] -and $entry.ContainsKey('deviceType')) { return [string]$entry['deviceType'] }
+        }
+    }
+    return $null
+}
+
+function Set-LocFleetDeviceType {
+    param(
+        [Parameter(Mandatory)][string]$NodeId,
+        [Parameter(Mandatory)][string]$DeviceType,
+        [string]$MacAddress = "",
+        [string]$IPv4 = "",
+        [string]$Operator = "operator"
+    )
+    $allowed = @('pc', 'router', 'switch', 'nas', 'playstation', 'xbox', 'unknown', 'auto')
+    $dt = $DeviceType.Trim().ToLowerInvariant()
+    if ($allowed -notcontains $dt) {
+        return New-ApiResult -Success $false -Message "Invalid deviceType" -StatusCode 400
+    }
+
+    $prefs = Get-LocDeviceTypeOverrides
+    if (-not $prefs) { $prefs = [PSCustomObject]@{} }
+
+    $keys = New-Object System.Collections.ArrayList
+    $macKey = Normalize-LocMacKey $MacAddress
+    if ($macKey) { [void]$keys.Add("mac:$macKey") }
+    if ($NodeId) { [void]$keys.Add("id:$NodeId") }
+    if ($IPv4) { [void]$keys.Add("ip:$IPv4") }
+    if ($keys.Count -eq 0) {
+        return New-ApiResult -Success $false -Message "NodeId required" -StatusCode 400
+    }
+
+    if ($dt -eq "auto") {
+        foreach ($key in $keys) {
+            if ($prefs.PSObject.Properties[$key]) {
+                $prefs.PSObject.Properties.Remove($key)
+            }
+        }
+    }
+    else {
+        $entry = [PSCustomObject]@{
+            deviceType = $dt
+            nodeId     = $NodeId
+            updatedAt  = (Get-Date).ToUniversalTime().ToString('o')
+            updatedBy  = $Operator
+        }
+        foreach ($key in $keys) {
+            $prefs | Add-Member -NotePropertyName $key -NotePropertyValue $entry -Force
+        }
+    }
+
+    if (-not (Save-LocDeviceTypeOverrides -Prefs $prefs)) {
+        return New-ApiResult -Success $false -Message "Failed to save device type" -StatusCode 500
+    }
+
+    return New-ApiResult -Success $true -Message "Device type saved" -Data ([PSCustomObject]@{
+        NodeId     = $NodeId
+        DeviceType = $(if ($dt -eq 'auto') { $null } else { $dt })
+        Cleared    = ($dt -eq 'auto')
+    })
+}
+
 function Get-LocFleetTopology {
     $agentsResult = Get-LocFleetAgents
     if (-not $agentsResult.Success) { return $agentsResult }
@@ -372,6 +526,7 @@ function Get-LocFleetTopology {
                 [void]$NodeList.Add([PSCustomObject]@{
                     Id = $hid; Kind = "gateway"; Label = "LAN"; IPv4 = $null; Gateway = $null
                     Online = $true; UserName = $null; WindowsVersion = $null; AgentId = $null; MACAddress = $null
+                    Source = $null; NeighborState = $null
                 })
             }
             return $hid
@@ -382,6 +537,7 @@ function Get-LocFleetTopology {
             [void]$NodeList.Add([PSCustomObject]@{
                 Id = $hid; Kind = "gateway"; Label = "GW $GatewayIp"; IPv4 = $GatewayIp; Gateway = $null
                 Online = $true; UserName = $null; WindowsVersion = $null; AgentId = $null; MACAddress = $null
+                Source = $null; NeighborState = $null
             })
         }
         return $hid
@@ -392,6 +548,7 @@ function Get-LocFleetTopology {
         Id = $consoleId; Kind = "console"; Label = [string]$env:COMPUTERNAME
         IPv4 = $consoleIp; Gateway = $consoleGw; Online = $true
         UserName = $null; WindowsVersion = $null; AgentId = $null; MACAddress = $null
+        Source = "console"; NeighborState = $null
     })
 
     $defaultHub = & $ensureHub -GatewayIp $consoleGw -HubMap $hubIds -NodeList $nodes
@@ -416,6 +573,7 @@ function Get-LocFleetTopology {
             IPv4 = $ip; Gateway = $gw; Online = $online
             UserName = [string]$a.UserName; WindowsVersion = [string]$a.WindowsVersion
             AgentId = $aid; MACAddress = $null
+            Source = "fleet-agent"; NeighborState = $null
         })
         [void]$edges.Add([PSCustomObject]@{ From = $id; To = [string]$hub; Kind = "agent" })
     }
@@ -436,15 +594,28 @@ function Get-LocFleetTopology {
         $nid = if ($ip) { "lan-$($ip -replace '\.', '-')" } else { "lan-$([guid]::NewGuid().ToString('N').Substring(0, 8))" }
         $online = $false
         try { $online = [bool]$r.Online } catch { $online = $false }
+        $src = if ($r.Source) { [string]$r.Source } else { "discovery" }
+        $neigh = if ($r.NeighborState) { [string]$r.NeighborState } else { $null }
         [void]$nodes.Add([PSCustomObject]@{
             Id = $nid; Kind = "lan"
             Label = $(if ($nm -and $nm -ne $ip) { $nm } else { $ip })
             IPv4 = $ip; Gateway = $null; Online = $online
             UserName = $null; WindowsVersion = $null; AgentId = $null
             MACAddress = [string]$r.MACAddress
+            Source = $src; NeighborState = $neigh
         })
         [void]$edges.Add([PSCustomObject]@{ From = $nid; To = [string]$defaultHub; Kind = "lan" })
         $lanCount++
+    }
+
+    $overrides = Get-LocDeviceTypeOverrides
+    foreach ($node in @($nodes.ToArray())) {
+        $inferred = Resolve-LocDeviceTypeInferred -Kind $node.Kind -Label $node.Label -IPv4 $node.IPv4
+        $over = Get-LocDeviceTypeOverrideForNode -Overrides $overrides -NodeId $node.Id -MacAddress $node.MACAddress -IPv4 $node.IPv4
+        $effective = if ($over) { $over } else { $inferred }
+        $node | Add-Member -NotePropertyName DeviceType -NotePropertyValue $effective -Force
+        $node | Add-Member -NotePropertyName DeviceTypeInferred -NotePropertyValue $inferred -Force
+        $node | Add-Member -NotePropertyName DeviceTypeOverride -NotePropertyValue $over -Force
     }
 
     return New-ApiResult -Success $true -Message "Topology" -Data ([PSCustomObject]@{
@@ -599,10 +770,28 @@ function Queue-LocFleetCommand {
         }
         $payloadHash.PackageId = [string]$pkg.Id
         $payloadHash.Name = [string]$pkg.Name
+        $src = Get-LocFleetPackageSource -Package $pkg
+        $payloadHash.Source = $src
         if ($pkg.WingetId) { $payloadHash.WingetId = [string]$pkg.WingetId }
         if ($pkg.Url) { $payloadHash.Url = [string]$pkg.Url }
         if ($pkg.SilentArgs) { $payloadHash.SilentArgs = [string]$pkg.SilentArgs }
         if ($pkg.Sha256) { $payloadHash.Sha256 = [string]$pkg.Sha256 }
+        if ($pkg.FileName) { $payloadHash.FileName = [string]$pkg.FileName }
+        if ($src -eq 'local') {
+            $payloadHash.LocalSource = $true
+            if ([string]::IsNullOrWhiteSpace([string]$pkg.FileName)) {
+                return New-ApiResult -Success $false -Message "Local package $pkgId is missing FileName" -StatusCode 400
+            }
+            $pkgDir = Join-Path (Get-LocFleetSoftwareDir) ([string]$pkg.Id)
+            $safeName = Resolve-LocFleetInstallerFileName -FileName ([string]$pkg.FileName)
+            if (-not $safeName) {
+                return New-ApiResult -Success $false -Message "Invalid FileName for package $pkgId" -StatusCode 400
+            }
+            $installerPath = Join-Path $pkgDir $safeName
+            if (-not (Test-Path -LiteralPath $installerPath)) {
+                return New-ApiResult -Success $false -Message "Installer missing on console: data/fleet/software/$($pkg.Id)/$safeName" -StatusCode 400
+            }
+        }
     }
 
     if ($Type -eq 'ApplySecurityPolicy') {
@@ -1182,20 +1371,28 @@ function Evaluate-LocHeartbeatAlerts {
 
     if ($spike) {
         try {
-            $recent = @(Get-LocFleetCommandsForAgent -AgentId $AgentId -Limit 15)
-            $busy = $false
-            foreach ($c in $recent) {
-                if ([string]$c.Type -ne 'GetResourceOffenders') { continue }
-                if ($c.Status -in @('Pending', 'Running')) { $busy = $true; break }
-                if ($c.Status -eq 'Completed' -and $c.CompletedAt) {
-                    try {
-                        if (((Get-Date) - [datetime]$c.CompletedAt).TotalSeconds -lt 300) { $busy = $true; break }
-                    }
-                    catch { }
-                }
+            # Prefer hub playbook auto for high-cpu when enabled (CaptureProcessSnapshot); else legacy offenders.
+            $hubQueued = $false
+            if ($null -ne $cpu -and $cpu -ge 90 -and (Get-Command Invoke-LocPlaybookFleetAutoForAgent -ErrorAction SilentlyContinue)) {
+                $auto = Invoke-LocPlaybookFleetAutoForAgent -RuleId "high-cpu" -AgentId $AgentId -Reason "HighCpu"
+                if ($auto -and $auto.Success) { $hubQueued = $true }
             }
-            if (-not $busy) {
-                Queue-LocFleetCommand -AgentId $AgentId -Type 'GetResourceOffenders' -Payload @{ Top = 8 } | Out-Null
+            if (-not $hubQueued) {
+                $recent = @(Get-LocFleetCommandsForAgent -AgentId $AgentId -Limit 15)
+                $busy = $false
+                foreach ($c in $recent) {
+                    if ([string]$c.Type -notin @('GetResourceOffenders', 'CaptureProcessSnapshot')) { continue }
+                    if ($c.Status -in @('Pending', 'Running')) { $busy = $true; break }
+                    if ($c.Status -eq 'Completed' -and $c.CompletedAt) {
+                        try {
+                            if (((Get-Date) - [datetime]$c.CompletedAt).TotalSeconds -lt 300) { $busy = $true; break }
+                        }
+                        catch { }
+                    }
+                }
+                if (-not $busy) {
+                    Queue-LocFleetCommand -AgentId $AgentId -Type 'GetResourceOffenders' -Payload @{ Top = 8 } | Out-Null
+                }
             }
         }
         catch { }
@@ -1355,19 +1552,93 @@ function Get-LocFleetPolicyPacks {
     return New-ApiResult -Success $true -Message "Policy packs" -Data @($list)
 }
 
+function Test-LocFleetPackageId {
+    param([Parameter(Mandatory)][string]$PackageId)
+    return [bool]($PackageId -match '^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$')
+}
+
+function Get-LocFleetSoftwareDir {
+    $dir = Join-Path (Get-LocFleetDir) 'software'
+    if (-not (Test-Path $dir)) {
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+    }
+    return $dir
+}
+
+function Resolve-LocFleetInstallerFileName {
+    param([string]$FileName)
+    if ([string]::IsNullOrWhiteSpace($FileName)) { return $null }
+    $name = [System.IO.Path]::GetFileName($FileName.Trim())
+    if ([string]::IsNullOrWhiteSpace($name)) { return $null }
+    if ($name -match '[\\/]' -or $name -eq '.' -or $name -eq '..') { return $null }
+    return $name
+}
+
+function Get-LocFleetPackageSource {
+    param([Parameter(Mandatory)]$Package)
+    $src = ''
+    try {
+        if ($null -ne $Package.Source) { $src = [string]$Package.Source }
+    }
+    catch { }
+    if (-not [string]::IsNullOrWhiteSpace($src)) {
+        return $src.Trim().ToLowerInvariant()
+    }
+    $winget = ''
+    $fileName = ''
+    $url = ''
+    try { if ($null -ne $Package.WingetId) { $winget = [string]$Package.WingetId } } catch { }
+    try { if ($null -ne $Package.FileName) { $fileName = [string]$Package.FileName } } catch { }
+    try { if ($null -ne $Package.Url) { $url = [string]$Package.Url } } catch { }
+    if (-not [string]::IsNullOrWhiteSpace($winget)) { return 'winget' }
+    if (-not [string]::IsNullOrWhiteSpace($fileName)) { return 'local' }
+    if (-not [string]::IsNullOrWhiteSpace($url)) { return 'url' }
+    return 'unknown'
+}
+
+function ConvertTo-LocFleetPackageHashtable {
+    param([Parameter(Mandatory)]$Package)
+    $h = [ordered]@{
+        Id       = [string]$Package.Id
+        Name     = [string]$Package.Name
+        Category = if ($Package.Category) { [string]$Package.Category } else { '' }
+        Source   = Get-LocFleetPackageSource -Package $Package
+    }
+    if ($Package.WingetId) { $h.WingetId = [string]$Package.WingetId }
+    if ($Package.Url) { $h.Url = [string]$Package.Url }
+    if ($Package.FileName) { $h.FileName = [string]$Package.FileName }
+    if ($Package.SilentArgs) { $h.SilentArgs = [string]$Package.SilentArgs }
+    if ($Package.Sha256) { $h.Sha256 = [string]$Package.Sha256 }
+    return $h
+}
+
+function Get-LocFleetDefaultPackages {
+    return @(
+        @{ Id = 'chrome'; Name = 'Google Chrome'; WingetId = 'Google.Chrome'; Category = 'Browser'; Source = 'winget' }
+        @{ Id = 'edge'; Name = 'Microsoft Edge'; WingetId = 'Microsoft.Edge'; Category = 'Browser'; Source = 'winget' }
+        @{ Id = 'firefox'; Name = 'Mozilla Firefox'; WingetId = 'Mozilla.Firefox'; Category = 'Browser'; Source = 'winget' }
+        @{ Id = 'adobe-reader'; Name = 'Adobe Acrobat Reader'; WingetId = 'Adobe.Acrobat.Reader.64-bit'; Category = 'Productivity'; Source = 'winget' }
+        @{ Id = '7zip'; Name = '7-Zip'; WingetId = '7zip.7zip'; Category = 'Utility'; Source = 'winget' }
+        @{ Id = 'vcredist'; Name = 'Visual C++ Redistributable 2015-2022'; WingetId = 'Microsoft.VCRedist.2015+.x64'; Category = 'Runtime'; Source = 'winget' }
+        @{ Id = 'winrar'; Name = 'WinRAR'; WingetId = 'RARLab.WinRAR'; Category = 'Utility'; Source = 'winget' }
+        @{ Id = 'windirstat'; Name = 'WinDirStat'; WingetId = 'WinDirStat.WinDirStat'; Category = 'Utility'; Source = 'winget' }
+    )
+}
+
+function Save-LocFleetPackages {
+    param([Parameter(Mandatory)][object[]]$Packages)
+    $normalized = @($Packages | ForEach-Object { ConvertTo-LocFleetPackageHashtable -Package $_ })
+    Invoke-LocFleetFileLock -Name 'packages' -Action {
+        Write-LocFleetJson -FileName 'packages.json' -Data @{ packages = $normalized }
+    }
+    return $normalized
+}
+
 function Get-LocFleetPackages {
+    $null = Get-LocFleetSoftwareDir
     $path = Join-Path (Get-LocFleetDir) 'packages.json'
     if (-not (Test-Path $path)) {
-        $seed = @{
-            packages = @(
-                @{ Id = 'chrome'; Name = 'Google Chrome'; WingetId = 'Google.Chrome'; Category = 'Browser' }
-                @{ Id = 'edge'; Name = 'Microsoft Edge'; WingetId = 'Microsoft.Edge'; Category = 'Browser' }
-                @{ Id = 'firefox'; Name = 'Mozilla Firefox'; WingetId = 'Mozilla.Firefox'; Category = 'Browser' }
-                @{ Id = 'adobe-reader'; Name = 'Adobe Acrobat Reader'; WingetId = 'Adobe.Acrobat.Reader.64-bit'; Category = 'Productivity' }
-                @{ Id = '7zip'; Name = '7-Zip'; WingetId = '7zip.7zip'; Category = 'Utility' }
-                @{ Id = 'vcredist'; Name = 'Visual C++ Redistributable 2015-2022'; WingetId = 'Microsoft.VCRedist.2015+.x64'; Category = 'Runtime' }
-            )
-        }
+        $seed = @{ packages = @(Get-LocFleetDefaultPackages) }
         $dir = Split-Path $path -Parent
         if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
         ($seed | ConvertTo-Json -Depth 6) | Set-Content -Path $path -Encoding UTF8
@@ -1375,7 +1646,9 @@ function Get-LocFleetPackages {
     try {
         $raw = Get-Content $path -Raw -Encoding UTF8 | ConvertFrom-Json
         $list = @()
-        if ($raw.packages) { $list = @($raw.packages) }
+        if ($raw.packages) {
+            $list = @($raw.packages | ForEach-Object { ConvertTo-LocFleetPackageHashtable -Package $_ })
+        }
         return New-ApiResult -Success $true -Message 'Packages' -Data @($list)
     }
     catch {
@@ -1388,6 +1661,180 @@ function Get-LocFleetPackageById {
     $res = Get-LocFleetPackages
     if (-not $res.Success) { return $null }
     return @($res.Data) | Where-Object { [string]$_.Id -eq $PackageId } | Select-Object -First 1
+}
+
+function Register-LocFleetPackage {
+    param(
+        [Parameter(Mandatory)][string]$Id,
+        [string]$Name = '',
+        [string]$Category = '',
+        [string]$Source = '',
+        [string]$WingetId = '',
+        [string]$Url = '',
+        [string]$FileName = '',
+        [string]$SilentArgs = '',
+        [string]$Sha256 = ''
+    )
+
+    $pkgId = $Id.Trim()
+    if (-not (Test-LocFleetPackageId -PackageId $pkgId)) {
+        return New-ApiResult -Success $false -Message 'Invalid package Id (letters, digits, . _ - ; 1-64 chars)' -StatusCode 400
+    }
+
+    $src = if ($Source) { $Source.Trim().ToLowerInvariant() } else { '' }
+    if ([string]::IsNullOrWhiteSpace($src)) {
+        if (-not [string]::IsNullOrWhiteSpace($WingetId)) { $src = 'winget' }
+        elseif (-not [string]::IsNullOrWhiteSpace($FileName)) { $src = 'local' }
+        elseif (-not [string]::IsNullOrWhiteSpace($Url)) { $src = 'url' }
+        else {
+            return New-ApiResult -Success $false -Message 'Provide WingetId, local FileName, or Url' -StatusCode 400
+        }
+    }
+    if ($src -notin @('winget', 'local', 'url')) {
+        return New-ApiResult -Success $false -Message 'Source must be winget, local, or url' -StatusCode 400
+    }
+
+    $entry = [ordered]@{
+        Id       = $pkgId
+        Name     = if ($Name) { $Name.Trim() } else { $pkgId }
+        Category = if ($Category) { $Category.Trim() } else { '' }
+        Source   = $src
+    }
+
+    switch ($src) {
+        'winget' {
+            if ([string]::IsNullOrWhiteSpace($WingetId)) {
+                return New-ApiResult -Success $false -Message 'WingetId required for winget packages' -StatusCode 400
+            }
+            $entry.WingetId = $WingetId.Trim()
+        }
+        'url' {
+            $u = if ($Url) { $Url.Trim() } else { '' }
+            if ($u -notmatch '^https://') {
+                return New-ApiResult -Success $false -Message 'Url must be HTTPS' -StatusCode 400
+            }
+            $entry.Url = $u
+            if (-not [string]::IsNullOrWhiteSpace($SilentArgs)) { $entry.SilentArgs = $SilentArgs.Trim() }
+            if (-not [string]::IsNullOrWhiteSpace($Sha256)) { $entry.Sha256 = $Sha256.Trim().ToLowerInvariant() }
+        }
+        'local' {
+            $safeName = Resolve-LocFleetInstallerFileName -FileName $FileName
+            if (-not $safeName) {
+                return New-ApiResult -Success $false -Message 'FileName required (basename only, e.g. Setup.exe)' -StatusCode 400
+            }
+            $pkgDir = Join-Path (Get-LocFleetSoftwareDir) $pkgId
+            $installerPath = Join-Path $pkgDir $safeName
+            if (-not (Test-Path -LiteralPath $installerPath)) {
+                return New-ApiResult -Success $false -Message "Installer not found. Place file at data/fleet/software/$pkgId/$safeName then register." -StatusCode 400
+            }
+            $hash = (Get-FileHash -Path $installerPath -Algorithm SHA256).Hash.ToLowerInvariant()
+            $entry.FileName = $safeName
+            $entry.Sha256 = $hash
+            if (-not [string]::IsNullOrWhiteSpace($SilentArgs)) { $entry.SilentArgs = $SilentArgs.Trim() }
+            else { $entry.SilentArgs = '/S' }
+        }
+    }
+
+    $res = Get-LocFleetPackages
+    if (-not $res.Success) { return $res }
+    $list = [System.Collections.ArrayList]@($res.Data)
+    $idx = -1
+    for ($i = 0; $i -lt $list.Count; $i++) {
+        if ([string]$list[$i].Id -eq $pkgId) { $idx = $i; break }
+    }
+    if ($idx -ge 0) { $list[$idx] = $entry } else { [void]$list.Add($entry) }
+
+    $saved = Save-LocFleetPackages -Packages @($list)
+    $out = @($saved) | Where-Object { [string]$_.Id -eq $pkgId } | Select-Object -First 1
+    Add-LocFleetAudit -Action 'PackageRegistered' -Detail $entry
+    Write-LocLog -Module 'FLEET' -Action 'RegisterPackage' -Level 'INFO' -Message ("Registered package {0} ({1})" -f $pkgId, $src)
+    return New-ApiResult -Success $true -Message 'Package registered' -Data $out
+}
+
+function Remove-LocFleetPackage {
+    param(
+        [Parameter(Mandatory)][string]$PackageId,
+        [switch]$DeleteFiles
+    )
+
+    $pkgId = $PackageId.Trim()
+    if (-not (Test-LocFleetPackageId -PackageId $pkgId)) {
+        return New-ApiResult -Success $false -Message 'Invalid package Id' -StatusCode 400
+    }
+
+    $res = Get-LocFleetPackages
+    if (-not $res.Success) { return $res }
+    $before = @($res.Data)
+    $after = @($before | Where-Object { [string]$_.Id -ne $pkgId })
+    if ($after.Count -eq $before.Count) {
+        return New-ApiResult -Success $false -Message "Package not found: $pkgId" -StatusCode 404
+    }
+
+    Save-LocFleetPackages -Packages $after | Out-Null
+
+    if ($DeleteFiles) {
+        $pkgDir = Join-Path (Get-LocFleetSoftwareDir) $pkgId
+        if (Test-Path -LiteralPath $pkgDir) {
+            try { Remove-Item -LiteralPath $pkgDir -Recurse -Force -ErrorAction Stop } catch { }
+        }
+    }
+
+    Add-LocFleetAudit -Action 'PackageRemoved' -Detail @{ PackageId = $pkgId; DeleteFiles = [bool]$DeleteFiles }
+    return New-ApiResult -Success $true -Message 'Package removed' -Data @{ PackageId = $pkgId; DeleteFiles = [bool]$DeleteFiles }
+}
+
+function Get-LocFleetPackageContent {
+    param([Parameter(Mandatory)][string]$PackageId)
+
+    $pkgId = $PackageId.Trim()
+    if (-not (Test-LocFleetPackageId -PackageId $pkgId)) {
+        return New-ApiResult -Success $false -Message 'Invalid package Id' -StatusCode 400
+    }
+
+    $pkg = Get-LocFleetPackageById -PackageId $pkgId
+    if (-not $pkg) {
+        return New-ApiResult -Success $false -Message "Package not found: $pkgId" -StatusCode 404
+    }
+
+    $src = Get-LocFleetPackageSource -Package $pkg
+    if ($src -ne 'local') {
+        return New-ApiResult -Success $false -Message 'Content download is only for local packages' -StatusCode 400
+    }
+
+    $safeName = Resolve-LocFleetInstallerFileName -FileName ([string]$pkg.FileName)
+    if (-not $safeName) {
+        return New-ApiResult -Success $false -Message 'Package FileName missing or invalid' -StatusCode 400
+    }
+
+    $softwareRoot = [System.IO.Path]::GetFullPath((Get-LocFleetSoftwareDir))
+    $installerPath = [System.IO.Path]::GetFullPath((Join-Path (Join-Path $softwareRoot $pkgId) $safeName))
+    if (-not $installerPath.StartsWith($softwareRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+        return New-ApiResult -Success $false -Message 'Invalid installer path' -StatusCode 400
+    }
+    if (-not (Test-Path -LiteralPath $installerPath)) {
+        return New-ApiResult -Success $false -Message "Installer file missing: $safeName" -StatusCode 404
+    }
+
+    try {
+        $bytes = [System.IO.File]::ReadAllBytes($installerPath)
+        $sha = (Get-FileHash -Path $installerPath -Algorithm SHA256).Hash.ToLowerInvariant()
+        $expected = if ($pkg.Sha256) { ([string]$pkg.Sha256).ToLowerInvariant() } else { '' }
+        if ($expected -and $expected -ne $sha) {
+            return New-ApiResult -Success $false -Message 'Catalog Sha256 does not match installer on disk; re-register the package' -StatusCode 409
+        }
+        return New-ApiResult -Success $true -Message 'Package content' -Data @{
+            PackageId     = $pkgId
+            Name          = [string]$pkg.Name
+            FileName      = $safeName
+            Sha256        = $sha
+            SizeBytes     = $bytes.Length
+            SilentArgs    = if ($pkg.SilentArgs) { [string]$pkg.SilentArgs } else { '/S' }
+            ContentBase64 = [Convert]::ToBase64String($bytes)
+        }
+    }
+    catch {
+        return New-ApiResult -Success $false -Message $_.Exception.Message -StatusCode 500
+    }
 }
 
 function Revoke-LocAgent {

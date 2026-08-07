@@ -136,6 +136,32 @@ document.addEventListener('DOMContentLoaded', async () => {
     setInterval(refreshAlertsBellCount, 15000);
 });
 
+let __locAlertUnreadPrev = null;
+let __locAlertToastTimer = null;
+
+function isLocFleetAlert(a) {
+    if (!a) return false;
+    const cat = String(a.Category || a.category || '').toLowerCase();
+    const src = String(a.Source || a.source || '').toLowerCase();
+    const title = String(a.Title || a.title || '');
+    return cat === 'fleet' || src === 'fleet' || /^fleet[\s:]/i.test(title);
+}
+
+function locFleetPcFromAlert(a) {
+    if (!a) return '';
+    if (a.ComputerName || a.computerName) return String(a.ComputerName || a.computerName);
+    const title = String(a.Title || a.title || '');
+    const m = title.match(/^Fleet\s+[^:]+:\s*(.+)$/i);
+    return m ? m[1].trim() : '';
+}
+
+function locFleetSevClass(sev) {
+    const s = String(sev || '').toLowerCase();
+    if (s === 'critical') return 'sev-critical';
+    if (s === 'warning') return 'sev-warning';
+    return 'sev-info';
+}
+
 function ensureAlertsBell() {
     if (document.getElementById('btn-alerts')) return;
     const adminBadge = document.getElementById('admin-badge');
@@ -170,7 +196,7 @@ function ensureAlertsBell() {
         const drop = document.getElementById('alerts-bell-drop');
         if (drop) drop.classList.add('hidden');
     });
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined' && lucide.createIcons) lucide.createIcons();
 }
 
 async function refreshAlertsBellDropdown() {
@@ -187,35 +213,91 @@ async function refreshAlertsBellDropdown() {
     drop.innerHTML = items.map((a) => {
         const color = String(a.Severity).toLowerCase() === 'critical' ? 'text-rose-400' :
             String(a.Severity).toLowerCase() === 'warning' ? 'text-amber-400' : 'text-sky-400';
-        return `<button type="button" class="w-full text-left p-2 rounded-lg hover:bg-slate-800/80" onclick="Router.loadModuleView('alerts')">
+        const fleet = isLocFleetAlert(a);
+        const pc = locFleetPcFromAlert(a);
+        const fleetBits = fleet
+            ? `<span class="alert-chip-fleet">Fleet</span>${pc ? ` <span class="alert-chip-fleet alert-chip-fleet-pc">${esc(pc)}</span>` : ''}`
+            : '';
+        return `<button type="button" class="w-full text-left p-2 rounded-lg hover:bg-slate-800/80 ${fleet ? 'alert-bell-fleet' : ''}" onclick="Router.loadModuleView('alerts')">
+            <div class="flex items-center gap-1.5 flex-wrap mb-0.5">${fleetBits}</div>
             <div class="text-xs font-semibold ${color}">${esc(a.Severity)} · ${esc(a.Title)}</div>
             <div class="text-[11px] text-slate-500 truncate">${esc(a.Message || '')}</div>
         </button>`;
     }).join('') + `<button type="button" class="action-btn cyan w-full text-[11px] mt-1" onclick="Router.loadModuleView('alerts')">Open Notification Center</button>`;
 }
 
-function refreshAlertsBell(count) {
+function refreshAlertsBell(count, latestTitle) {
     const badge = document.getElementById('alerts-bell-badge');
+    const btn = document.getElementById('btn-alerts');
     if (!badge) return;
     const n = Number(count) || 0;
     if (n > 0) {
         badge.textContent = n > 99 ? '99+' : String(n);
         badge.classList.remove('hidden');
+        badge.classList.add('has-unread');
+        if (btn) btn.classList.add('has-unread');
     } else {
         badge.classList.add('hidden');
+        badge.classList.remove('has-unread');
+        if (btn) btn.classList.remove('has-unread');
     }
+
+    if (__locAlertUnreadPrev != null && n > __locAlertUnreadPrev) {
+        const delta = n - __locAlertUnreadPrev;
+        const fleetish = !!(latestTitle && /^Fleet[\s:]/i.test(latestTitle));
+        const label = latestTitle
+            ? (fleetish ? `Fleet · ${latestTitle}` : `New alert: ${latestTitle}`)
+            : (delta === 1 ? 'New alert in inbox' : `${delta} new alerts in inbox`);
+        showAlertToast(label, fleetish);
+    }
+    __locAlertUnreadPrev = n;
+}
+
+function showAlertToast(message, isFleet) {
+    const banner = document.getElementById('alert-toast');
+    const text = document.getElementById('alert-toast-text');
+    if (!banner || !text) return;
+    text.textContent = message || 'New alert';
+    banner.classList.toggle('is-fleet', !!isFleet);
+    banner.classList.remove('hidden');
+    if (__locAlertToastTimer) clearTimeout(__locAlertToastTimer);
+    __locAlertToastTimer = setTimeout(() => dismissAlertToast(), 12000);
+}
+
+function dismissAlertToast() {
+    const banner = document.getElementById('alert-toast');
+    if (banner) {
+        banner.classList.add('hidden');
+        banner.classList.remove('is-fleet');
+    }
+    if (__locAlertToastTimer) {
+        clearTimeout(__locAlertToastTimer);
+        __locAlertToastTimer = null;
+    }
+}
+
+function openAlertToastTarget() {
+    dismissAlertToast();
+    if (typeof Router !== 'undefined' && Router.loadModuleView) Router.loadModuleView('alerts');
 }
 
 async function refreshAlertsBellCount() {
     const res = await API.request('alerts', 'GET', null, 8000, { silent: true });
     if (!res.Success) return;
+    let unread = 0;
+    let latestTitle = '';
     if (res.Data && (res.Data.Unread != null || res.Data.unread != null)) {
-        refreshAlertsBell(res.Data.Unread != null ? res.Data.Unread : res.Data.unread);
-        return;
+        unread = res.Data.Unread != null ? res.Data.Unread : res.Data.unread;
+        const items = API.asArray(res.Data.Items || res.Data.items);
+        const firstUnread = items.find((a) => !(a.Acknowledged || a.acknowledged));
+        if (firstUnread) latestTitle = firstUnread.Title || firstUnread.title || '';
+    } else {
+        const alerts = API.asArray(res.Data);
+        const unacked = alerts.filter((a) => !(a.Acknowledged || a.acknowledged));
+        unread = unacked.length;
+        if (unacked[0]) latestTitle = unacked[0].Title || unacked[0].title || '';
     }
-    const alerts = API.asArray(res.Data);
-    const unacked = alerts.filter((a) => !(a.Acknowledged || a.acknowledged)).length;
-    refreshAlertsBell(unacked);
+    refreshAlertsBell(unread, latestTitle);
 }
 
 async function checkForUpdates() {

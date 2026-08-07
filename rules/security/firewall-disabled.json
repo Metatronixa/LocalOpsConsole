@@ -8,5 +8,12 @@
   "score": 85,
   "incident": "Firewall Disabled",
   "category": "security",
-  "notify": true
+  "notify": true,
+  "automation": {
+    "enabled": false,
+    "action": "notify-only",
+    "closeOnSuccess": false,
+    "risk": "Notify",
+    "description": "Escalate firewall-disabled incidents to the automation timeline (no auto-enable) (opt-in)"
+  }
 }

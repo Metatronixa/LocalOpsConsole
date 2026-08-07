@@ -1,9 +1,9 @@
 {
   "id": "remote",
   "name": "Remote",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "icon": "network",
-  "description": "Discover network PCs, select a target, then list shares / open files / sessions",
+  "description": "Discover network PCs, select by LAN IP when possible, then list shares / open files / sessions",
   "order": 25,
   "tier": 4,
   "profiles": ["systems_administrator", "network_administrator", "power_user"],

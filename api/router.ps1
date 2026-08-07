@@ -235,7 +235,8 @@ function Invoke-LocFleetRouter {
     $agentPkgSub = if ($agentSub) { $agentSub.ToLower() } else { '' }
     $needsHmac = ($subLower -in $agentRoutes) `
         -or ($subLower -eq 'scripts' -and $agentSub -and $Segments.Count -ge 6 -and $Segments[5].ToLower() -eq 'content') `
-        -or ($subLower -eq 'agent-package' -and $agentPkgSub -in @('manifest', 'content'))
+        -or ($subLower -eq 'agent-package' -and $agentPkgSub -in @('manifest', 'content')) `
+        -or ($subLower -eq 'packages' -and $agentSub -and $Segments.Count -ge 6 -and $Segments[5].ToLower() -eq 'content')
 
     $body = ""
     $bodyHash = @{}
@@ -328,8 +329,23 @@ function Invoke-LocFleetRouter {
             return
         }
         'topology' {
+            $topoSub = if ($agentSub) { $agentSub.ToLower() } else { "" }
+            if ($method -eq "POST" -and $topoSub -eq "device-type") {
+                $nodeId = if ($bodyHash.NodeId) { [string]$bodyHash.NodeId } elseif ($bodyHash.nodeId) { [string]$bodyHash.nodeId } else { "" }
+                $dtype = if ($bodyHash.DeviceType) { [string]$bodyHash.DeviceType } elseif ($bodyHash.deviceType) { [string]$bodyHash.deviceType } else { "" }
+                $mac = if ($bodyHash.MACAddress) { [string]$bodyHash.MACAddress } elseif ($bodyHash.macAddress) { [string]$bodyHash.macAddress } else { "" }
+                $ip = if ($bodyHash.IPv4) { [string]$bodyHash.IPv4 } elseif ($bodyHash.ipv4) { [string]$bodyHash.ipv4 } else { "" }
+                if ([string]::IsNullOrWhiteSpace($nodeId) -or [string]::IsNullOrWhiteSpace($dtype)) {
+                    Send-JsonResponse -Context $Context -Success $false -Message "NodeId and DeviceType required" -StatusCode 400
+                    return
+                }
+                $result = Set-LocFleetDeviceType -NodeId $nodeId -DeviceType $dtype -MacAddress $mac -IPv4 $ip -Operator "operator"
+                $status = if ($result.StatusCode) { [int]$result.StatusCode } else { 200 }
+                Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data -StatusCode $status
+                return
+            }
             if ($method -ne "GET") {
-                Send-JsonResponse -Context $Context -Success $false -Message "Topology requires GET" -StatusCode 405
+                Send-JsonResponse -Context $Context -Success $false -Message "Use GET /fleet/topology or POST /fleet/topology/device-type" -StatusCode 405
                 return
             }
             $result = Get-LocFleetTopology
@@ -479,12 +495,54 @@ function Invoke-LocFleetRouter {
             return
         }
         'packages' {
-            if ($method -ne "GET") {
-                Send-JsonResponse -Context $Context -Success $false -Message "Packages require GET" -StatusCode 405
+            $pkgId = if ($agentSub) { [string]$agentSub } else { '' }
+            $pkgAction = if ($Segments.Count -ge 6) { $Segments[5].ToLower() } else { '' }
+
+            if ($pkgAction -eq 'content') {
+                if ($method -ne "GET") {
+                    Send-JsonResponse -Context $Context -Success $false -Message "Package content requires GET" -StatusCode 405
+                    return
+                }
+                $result = Get-LocFleetPackageContent -PackageId $pkgId
+                $status = if ($result.StatusCode) { [int]$result.StatusCode } else { 200 }
+                Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data -StatusCode $status
                 return
             }
-            $result = Get-LocFleetPackages
-            Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data
+
+            if ($method -eq "GET" -and -not $pkgId) {
+                $result = Get-LocFleetPackages
+                Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data
+                return
+            }
+
+            if ($method -eq "POST" -and -not $pkgId) {
+                $id = if ($bodyHash.Id) { [string]$bodyHash.Id } else { '' }
+                $name = if ($bodyHash.Name) { [string]$bodyHash.Name } else { '' }
+                $category = if ($bodyHash.Category) { [string]$bodyHash.Category } else { '' }
+                $source = if ($bodyHash.Source) { [string]$bodyHash.Source } else { '' }
+                $wingetId = if ($bodyHash.WingetId) { [string]$bodyHash.WingetId } else { '' }
+                $url = if ($bodyHash.Url) { [string]$bodyHash.Url } else { '' }
+                $fileName = if ($bodyHash.FileName) { [string]$bodyHash.FileName } else { '' }
+                $silentArgs = if ($bodyHash.SilentArgs) { [string]$bodyHash.SilentArgs } else { '' }
+                $sha256 = if ($bodyHash.Sha256) { [string]$bodyHash.Sha256 } else { '' }
+                $result = Register-LocFleetPackage -Id $id -Name $name -Category $category -Source $source `
+                    -WingetId $wingetId -Url $url -FileName $fileName -SilentArgs $silentArgs -Sha256 $sha256
+                $status = if ($result.StatusCode) { [int]$result.StatusCode } else { 200 }
+                Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data -StatusCode $status
+                return
+            }
+
+            if ($method -eq "DELETE" -and $pkgId) {
+                $deleteFiles = $false
+                $dfRaw = $request.QueryString["deleteFiles"]
+                if ($dfRaw -and ($dfRaw -eq "1" -or $dfRaw -match '^(?i)true|yes$')) { $deleteFiles = $true }
+                $result = Remove-LocFleetPackage -PackageId $pkgId -DeleteFiles:$deleteFiles
+                $status = if ($result.StatusCode) { [int]$result.StatusCode } else { 200 }
+                Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data -StatusCode $status
+                return
+            }
+
+            Send-JsonResponse -Context $Context -Success $false -Message "Use GET/POST /fleet/packages or DELETE /fleet/packages/{id}" -StatusCode 405
             return
         }
         'agent-package' {
@@ -679,19 +737,108 @@ function Invoke-LocRouter {
         return
     }
 
-    # Built-in: automation status
+    # Built-in: automation status + playbook toggles
     if ($resource -eq "automation") {
         $sub = if ($segments.Count -ge 4) { $segments[3].ToLower() } else { "status" }
+        $playbookId = if ($segments.Count -ge 5) { [uri]::UnescapeDataString($segments[4]) } else { "" }
+
         if ($sub -eq "status") {
             Send-JsonResponse -Context $Context -Success $true -Message "Automation status" -Data (Get-LocAutomationStatus)
             return
         }
-        Send-JsonResponse -Context $Context -Success $false -Message "Use /api/v1/automation/status" -StatusCode 400
+        if ($sub -eq "playbooks" -and $method -eq "POST" -and $playbookId) {
+            $body = Read-LocRequestBody -Request $request
+            $parsed = Parse-LocJsonBody -Body $body
+            if ($null -eq $parsed) { $parsed = @{} }
+
+            $runNow = $false
+            if ($segments.Count -ge 6 -and $segments[5].ToLower() -eq "run") { $runNow = $true }
+
+            if ($runNow) {
+                $overrideIds = $null
+                if ($parsed -is [hashtable]) {
+                    if ($parsed.ContainsKey("agentIds")) { $overrideIds = @($parsed["agentIds"]) }
+                    elseif ($parsed.ContainsKey("AgentIds")) { $overrideIds = @($parsed["AgentIds"]) }
+                }
+                elseif ($parsed.PSObject.Properties['agentIds']) { $overrideIds = @($parsed.agentIds) }
+                elseif ($parsed.PSObject.Properties['AgentIds']) { $overrideIds = @($parsed.AgentIds) }
+                $result = Invoke-LocPlaybookRunNow -RuleId $playbookId -AgentIds $overrideIds -Operator "operator"
+                $status = if ($result.StatusCode) { [int]$result.StatusCode } else { 200 }
+                Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data -StatusCode $status
+                return
+            }
+
+            if ($parsed -isnot [hashtable] -and -not ($parsed.PSObject.Properties.Name -contains 'enabled' -or $parsed.PSObject.Properties.Name -contains 'Enabled')) {
+                # keep hashtable path below
+            }
+            $enabledRaw = $null
+            if ($parsed -is [hashtable]) {
+                if ($parsed.ContainsKey("enabled")) { $enabledRaw = $parsed["enabled"] }
+                elseif ($parsed.ContainsKey("Enabled")) { $enabledRaw = $parsed["Enabled"] }
+            }
+            else {
+                if ($parsed.PSObject.Properties['enabled']) { $enabledRaw = $parsed.enabled }
+                elseif ($parsed.PSObject.Properties['Enabled']) { $enabledRaw = $parsed.Enabled }
+            }
+            if ($null -eq $enabledRaw) {
+                Send-JsonResponse -Context $Context -Success $false -Message "enabled (true|false) required" -StatusCode 400
+                return
+            }
+            $enabledBool = $false
+            if ($enabledRaw -is [bool]) { $enabledBool = $enabledRaw }
+            elseif ("$enabledRaw" -match '^(?i)(true|1|yes)$') { $enabledBool = $true }
+            elseif ("$enabledRaw" -match '^(?i)(false|0|no)$') { $enabledBool = $false }
+            else {
+                Send-JsonResponse -Context $Context -Success $false -Message "enabled must be true or false" -StatusCode 400
+                return
+            }
+            $scopeVal = $null
+            $agentIdsVal = $null
+            if ($parsed -is [hashtable]) {
+                if ($parsed.ContainsKey("scope")) { $scopeVal = [string]$parsed["scope"] }
+                elseif ($parsed.ContainsKey("Scope")) { $scopeVal = [string]$parsed["Scope"] }
+                if ($parsed.ContainsKey("agentIds")) { $agentIdsVal = @($parsed["agentIds"]) }
+                elseif ($parsed.ContainsKey("AgentIds")) { $agentIdsVal = @($parsed["AgentIds"]) }
+            }
+            else {
+                if ($parsed.PSObject.Properties['scope']) { $scopeVal = [string]$parsed.scope }
+                elseif ($parsed.PSObject.Properties['Scope']) { $scopeVal = [string]$parsed.Scope }
+                if ($parsed.PSObject.Properties['agentIds']) { $agentIdsVal = @($parsed.agentIds) }
+                elseif ($parsed.PSObject.Properties['AgentIds']) { $agentIdsVal = @($parsed.AgentIds) }
+            }
+            $result = Set-LocPlaybookEnabled -RuleId $playbookId -Enabled $enabledBool -Scope $scopeVal -AgentIds $agentIdsVal -Operator "operator"
+            $status = if ($result.StatusCode) { [int]$result.StatusCode } else { 200 }
+            Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data -StatusCode $status
+            return
+        }
+        Send-JsonResponse -Context $Context -Success $false -Message "Use GET /api/v1/automation/status, POST /api/v1/automation/playbooks/{ruleId}, or POST .../playbooks/{ruleId}/run" -StatusCode 400
         return
     }
 
-    # Built-in: settings (GET full / POST eventIntel prefs)
+    # Built-in: settings (GET full / POST eventIntel prefs / POST test-channel)
     if ($resource -eq "settings") {
+        $settingsSub = if ($segments.Count -ge 4) { $segments[3].ToLower() } else { "" }
+
+        if ($method -eq "POST" -and $settingsSub -eq "test-channel") {
+            $body = Read-LocRequestBody -Request $request
+            $parsed = Parse-LocJsonBody -Body $body
+            if ($null -eq $parsed) {
+                Send-JsonResponse -Context $Context -Success $false -Message "Invalid JSON" -StatusCode 400
+                return
+            }
+            $channel = $null
+            if ($parsed.ContainsKey("channel")) { $channel = [string]$parsed["channel"] }
+            elseif ($parsed.ContainsKey("Channel")) { $channel = [string]$parsed["Channel"] }
+            if ([string]::IsNullOrWhiteSpace($channel)) {
+                Send-JsonResponse -Context $Context -Success $false -Message "channel required" -StatusCode 400
+                return
+            }
+            $result = Test-LocNotifyChannel -Channel $channel
+            $status = if ($result.StatusCode) { [int]$result.StatusCode } else { 200 }
+            Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data -StatusCode $status
+            return
+        }
+
         if ($method -eq "GET") {
             $s = Get-LocSettings
             $safe = [PSCustomObject]@{
@@ -701,7 +848,7 @@ function Invoke-LocRouter {
                 bindHost            = $s.bindHost
                 integrityMode       = if ($s.integrityMode) { $s.integrityMode } else { "warn" }
                 eventIntelEnabled   = (Test-LocEventIntelEnabled)
-                eventIntel          = (Get-LocEventIntelSettings)
+                eventIntel          = (Get-LocEventIntelSettingsForApi)
                 fleetEnabled        = if ($null -ne $s.fleetEnabled) { [bool]$s.fleetEnabled } else { $true }
             }
             Send-JsonResponse -Context $Context -Success $true -Message "Settings" -Data $safe
@@ -727,14 +874,14 @@ function Invoke-LocRouter {
             }
             $ok = Update-LocEventIntelPrefs -Prefs $prefs
             if ($ok) {
-                Send-JsonResponse -Context $Context -Success $true -Message "Settings saved" -Data (Get-LocEventIntelSettings)
+                Send-JsonResponse -Context $Context -Success $true -Message "Settings saved" -Data (Get-LocEventIntelSettingsForApi)
             }
             else {
                 Send-JsonResponse -Context $Context -Success $false -Message "Failed to save settings" -StatusCode 500
             }
             return
         }
-        Send-JsonResponse -Context $Context -Success $false -Message "Use GET or POST /api/v1/settings" -StatusCode 405
+        Send-JsonResponse -Context $Context -Success $false -Message "Use GET or POST /api/v1/settings (or POST /api/v1/settings/test-channel)" -StatusCode 405
         return
     }
 

@@ -14,6 +14,9 @@
     "enabled": false,
     "action": "restart-service",
     "service": "Spooler",
-    "closeOnSuccess": true
+    "verify": "service",
+    "closeOnSuccess": true,
+    "risk": "Careful",
+    "description": "Restart Spooler after unexpected stop → verify Running → close incident (opt-in)"
   }
 }

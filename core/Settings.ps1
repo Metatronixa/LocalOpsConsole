@@ -90,7 +90,22 @@ function Get-LocEventIntelSettings {
         }
     }
     if (-not $s -or -not $s.eventIntel) { return $defaults }
-    return $s.eventIntel
+
+    $ei = $s.eventIntel
+    # Ensure inbox/desktop defaults stay on when keys are missing from older settings.json
+    $ch = if ($ei.channels) { $ei.channels } else { [PSCustomObject]@{} }
+    $mergedChannels = [PSCustomObject]@{
+        desktop  = if ($null -ne $ch.PSObject.Properties['desktop']) { [bool]$ch.desktop } else { $true }
+        dashboard = if ($null -ne $ch.PSObject.Properties['dashboard']) { [bool]$ch.dashboard } else { $true }
+        email    = if ($null -ne $ch.PSObject.Properties['email']) { [bool]$ch.email } else { $false }
+        teams    = if ($null -ne $ch.PSObject.Properties['teams']) { [bool]$ch.teams } else { $false }
+        slack    = if ($null -ne $ch.PSObject.Properties['slack']) { [bool]$ch.slack } else { $false }
+        discord  = if ($null -ne $ch.PSObject.Properties['discord']) { [bool]$ch.discord } else { $false }
+        webhook  = if ($null -ne $ch.PSObject.Properties['webhook']) { [bool]$ch.webhook } else { $false }
+        syslog   = if ($null -ne $ch.PSObject.Properties['syslog']) { [bool]$ch.syslog } else { $false }
+    }
+    $ei | Add-Member -NotePropertyName channels -NotePropertyValue $mergedChannels -Force
+    return $ei
 }
 
 function Test-LocEventIntelEnabled {
@@ -120,6 +135,82 @@ function Save-LocSettings {
     }
 }
 
+function ConvertTo-LocPlainObject {
+    param($InputObject)
+    if ($null -eq $InputObject) { return $null }
+    if ($InputObject -is [hashtable]) {
+        $o = [PSCustomObject]@{}
+        foreach ($k in $InputObject.Keys) {
+            $o | Add-Member -NotePropertyName ([string]$k) -NotePropertyValue (ConvertTo-LocPlainObject $InputObject[$k]) -Force
+        }
+        return $o
+    }
+    if ($InputObject -is [System.Collections.IEnumerable] -and -not ($InputObject -is [string])) {
+        $arr = @()
+        foreach ($item in $InputObject) { $arr += ,(ConvertTo-LocPlainObject $item) }
+        return $arr
+    }
+    if ($InputObject -is [PSCustomObject] -or ($null -ne $InputObject.PSObject -and $InputObject.PSObject.Properties.Count -gt 0 -and -not ($InputObject -is [ValueType]) -and -not ($InputObject -is [string]))) {
+        if ($InputObject -is [ValueType] -or $InputObject -is [string]) { return $InputObject }
+        $o = [PSCustomObject]@{}
+        foreach ($p in $InputObject.PSObject.Properties) {
+            $o | Add-Member -NotePropertyName $p.Name -NotePropertyValue (ConvertTo-LocPlainObject $p.Value) -Force
+        }
+        return $o
+    }
+    return $InputObject
+}
+
+function Merge-LocChannelConfig {
+    param(
+        $Existing,
+        $Incoming
+    )
+    $base = if ($Existing) { ConvertTo-LocPlainObject $Existing } else {
+        [PSCustomObject]@{
+            email = [PSCustomObject]@{}; teams = [PSCustomObject]@{}; slack = [PSCustomObject]@{}
+            discord = [PSCustomObject]@{}; webhook = [PSCustomObject]@{}; syslog = [PSCustomObject]@{}
+        }
+    }
+    if (-not $Incoming) { return $base }
+
+    $inObj = ConvertTo-LocPlainObject $Incoming
+    foreach ($chName in @('email', 'teams', 'slack', 'discord', 'webhook', 'syslog')) {
+        if (-not $inObj.PSObject.Properties[$chName]) { continue }
+        $inCh = $inObj.$chName
+        if ($null -eq $inCh) { continue }
+        $exCh = if ($base.PSObject.Properties[$chName]) { $base.$chName } else { [PSCustomObject]@{} }
+        if (-not $exCh) { $exCh = [PSCustomObject]@{} }
+        foreach ($p in $inCh.PSObject.Properties) {
+            $val = $p.Value
+            # Blank / placeholder password keeps the stored secret
+            if ($p.Name -eq 'password') {
+                $s = if ($null -eq $val) { '' } else { [string]$val }
+                if ([string]::IsNullOrWhiteSpace($s) -or $s -eq '********') { continue }
+            }
+            $exCh | Add-Member -NotePropertyName $p.Name -NotePropertyValue $val -Force
+        }
+        $base | Add-Member -NotePropertyName $chName -NotePropertyValue $exCh -Force
+    }
+    return $base
+}
+
+function Get-LocEventIntelSettingsForApi {
+    $ei = Get-LocEventIntelSettings
+    $clone = ConvertTo-LocPlainObject $ei
+    if (-not $clone) { return $ei }
+    $cc = $clone.channelConfig
+    if ($cc -and $cc.email) {
+        $hasPass = $false
+        if ($cc.email.PSObject.Properties['password'] -and -not [string]::IsNullOrWhiteSpace([string]$cc.email.password)) {
+            $hasPass = $true
+        }
+        $cc.email | Add-Member -NotePropertyName password -NotePropertyValue '' -Force
+        $cc.email | Add-Member -NotePropertyName passwordSet -NotePropertyValue $hasPass -Force
+    }
+    return $clone
+}
+
 function Update-LocEventIntelPrefs {
     param([hashtable]$Prefs)
     $s = Get-LocSettings
@@ -129,7 +220,14 @@ function Update-LocEventIntelPrefs {
     }
     $ei = $s.eventIntel
     foreach ($key in $Prefs.Keys) {
-        $ei | Add-Member -NotePropertyName $key -NotePropertyValue $Prefs[$key] -Force
+        if ($key -eq 'channelConfig') {
+            $merged = Merge-LocChannelConfig -Existing $ei.channelConfig -Incoming $Prefs[$key]
+            $ei | Add-Member -NotePropertyName channelConfig -NotePropertyValue $merged -Force
+            continue
+        }
+        $val = $Prefs[$key]
+        if ($val -is [hashtable]) { $val = ConvertTo-LocPlainObject $val }
+        $ei | Add-Member -NotePropertyName $key -NotePropertyValue $val -Force
     }
     $s | Add-Member -NotePropertyName eventIntel -NotePropertyValue $ei -Force
     return (Save-LocSettings -Settings $s)

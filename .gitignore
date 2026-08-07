@@ -18,11 +18,16 @@ tools/.chrome-capture-profile/
 LocalOpsConsole-server-*.log
 data/fleet/*.json
 data/fleet/*.jsonl
+# Local software catalog binaries (keep folder + .gitkeep only)
+data/fleet/software/**
+!data/fleet/software/
+!data/fleet/software/.gitkeep
 data/events/*.json
 data/events/*.jsonl
 data/incidents/**/*.json
 data/storage/*.jsonl
 data/syncme/*.json
+data/automation/*.json
 data/integrity/module-hashes.json
 !data/.gitkeep
 !data/fleet/.gitkeep
@@ -30,6 +35,7 @@ data/integrity/module-hashes.json
 !data/incidents/.gitkeep
 !data/storage/.gitkeep
 !data/syncme/.gitkeep
+!data/automation/.gitkeep
 !data/integrity/.gitkeep
 # Marketing site + update feed stay local / hosted on opsconsole.co.za — not on GitHub
 website/

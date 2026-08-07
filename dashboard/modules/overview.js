@@ -33,6 +33,18 @@ const OverviewView = {
                     </div>
                 </div>
 
+                <div class="glass-panel p-4">
+                    <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+                        <h3 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                            <i data-lucide="bell" class="w-4 h-4 text-cyan-400"></i>
+                            Recent alerts
+                        </h3>
+                        <button type="button" class="text-[11px] text-cyan-400 hover:underline"
+                                onclick="Router.loadModuleView('alerts')">Open Notification Centre</button>
+                    </div>
+                    <div id="ov-recent-alerts" class="space-y-2 text-xs max-h-64 overflow-y-auto"></div>
+                </div>
+
                 <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
                     <div class="glass-panel p-4">
                         <div class="flex items-center justify-between mb-3">
@@ -133,6 +145,86 @@ const OverviewView = {
         if (s === 'critical') return 'border-rose-500/40 bg-rose-500/10';
         if (s === 'warning') return 'border-amber-500/40 bg-amber-500/10';
         return 'border-slate-700 bg-slate-950/40';
+    },
+
+    sevText(sev) {
+        const s = String(sev || '').toLowerCase();
+        if (s === 'critical') return 'text-rose-400';
+        if (s === 'warning') return 'text-amber-400';
+        return 'text-sky-400';
+    },
+
+    relTime(ts) {
+        try {
+            const d = new Date(ts);
+            const sec = Math.max(0, Math.floor((Date.now() - d.getTime()) / 1000));
+            if (sec < 60) return sec + 's ago';
+            if (sec < 3600) return Math.floor(sec / 60) + ' min ago';
+            if (sec < 86400) return Math.floor(sec / 3600) + 'h ago';
+            return d.toLocaleString();
+        } catch { return ts || ''; }
+    },
+
+    async ackAlert(id) {
+        if (!id) return;
+        await API.request(`alerts/${encodeURIComponent(id)}/ack`, 'POST', {});
+        if (typeof refreshAlertsBellCount === 'function') refreshAlertsBellCount();
+        await this.refresh(true);
+    },
+
+    renderRecentAlerts(alertRes) {
+        const box = document.getElementById('ov-recent-alerts');
+        if (!box) return;
+        if (!alertRes || !alertRes.Success) {
+            box.innerHTML = `<p class="text-slate-500">Could not load alerts.</p>`;
+            return;
+        }
+        const items = API.asArray(alertRes.Data && alertRes.Data.Items ? alertRes.Data.Items : alertRes.Data);
+        const unread = items.filter((a) => !(a.Acknowledged || a.acknowledged));
+        const show = (unread.length ? unread : items).slice(0, 8);
+        if (!show.length) {
+            box.innerHTML = `
+                <div class="rounded-lg border border-slate-800 bg-slate-950/40 p-3 space-y-2">
+                    <p class="text-slate-400">No alerts in the dashboard inbox yet.</p>
+                    <p class="text-[11px] text-slate-500">
+                        Enable <span class="text-slate-300">Settings → Notifications → Dashboard inbox</span>
+                        and keep Event Intelligence on. New incidents will appear here, in the header Alerts bell,
+                        and in Notification Centre.
+                    </p>
+                    <button type="button" class="action-btn slate text-[11px]"
+                            onclick="Router.loadModuleView('settings')">Open Settings</button>
+                </div>`;
+            return;
+        }
+        box.innerHTML = show.map((a) => {
+            const id = this.escape(a.Id || a.id || '');
+            const acked = !!(a.Acknowledged || a.acknowledged);
+            const fleet = typeof isLocFleetAlert === 'function' && isLocFleetAlert(a);
+            const pc = typeof locFleetPcFromAlert === 'function' ? locFleetPcFromAlert(a) : '';
+            const cardClass = fleet
+                ? `alert-card-fleet ${typeof locFleetSevClass === 'function' ? locFleetSevClass(a.Severity) : ''}`
+                : this.sevClass(a.Severity);
+            const chips = fleet
+                ? `<span class="alert-chip-fleet">Fleet</span>${pc ? `<span class="alert-chip-fleet alert-chip-fleet-pc">${this.escape(pc)}</span>` : ''}`
+                : '';
+            return `
+                <div class="flex items-start justify-between gap-3 p-3 rounded-lg border ${cardClass} ${acked ? 'opacity-50' : ''}">
+                    <button type="button" class="min-w-0 text-left flex-1"
+                            onclick="Router.loadModuleView('alerts')">
+                        ${chips ? `<div class="flex items-center gap-1.5 flex-wrap mb-1">${chips}</div>` : ''}
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="font-semibold ${this.sevText(a.Severity)}">${this.escape(a.Severity || '')}</span>
+                            <span class="text-slate-100 font-medium truncate">${this.escape(a.Title || '')}</span>
+                        </div>
+                        <div class="text-slate-500 mt-1 truncate">${this.escape(a.Message || '')}</div>
+                        <div class="text-[11px] text-slate-500 mt-1">${this.escape(this.relTime(a.Timestamp || a.timestamp))}</div>
+                    </button>
+                    ${acked
+                        ? '<span class="text-[10px] text-slate-500 shrink-0 mt-1">ACK</span>'
+                        : `<button type="button" class="action-btn emerald text-[11px] shrink-0"
+                                   onclick="event.stopPropagation(); OverviewView.ackAlert('${id}')">Ack</button>`}
+                </div>`;
+        }).join('');
     },
 
     async refresh(silent) {
@@ -238,5 +330,6 @@ const OverviewView = {
                     .filter((a) => !(a.Acknowledged || a.acknowledged)).length;
             alertCount.textContent = unread ? `${unread} unread` : 'Inbox clear';
         }
+        this.renderRecentAlerts(alertRes);
     }
 };

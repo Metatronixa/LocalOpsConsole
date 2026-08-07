@@ -10,5 +10,12 @@
   "category": "services",
   "messageContains": "EventLog",
   "suppressSeconds": 600,
-  "notify": true
+  "notify": true,
+  "automation": {
+    "enabled": false,
+    "action": "notify-only",
+    "closeOnSuccess": false,
+    "risk": "Notify",
+    "description": "Acknowledge Event Log service health incident on the timeline (no auto-restart) (opt-in)"
+  }
 }

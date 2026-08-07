@@ -10,5 +10,12 @@
   "category": "network",
   "healthMetric": "networkDown",
   "suppressSeconds": 600,
-  "notify": true
+  "notify": true,
+  "automation": {
+    "enabled": false,
+    "action": "network-soft-repair",
+    "closeOnSuccess": false,
+    "risk": "Careful",
+    "description": "Flush DNS then DHCP release/renew (no Winsock reset) when network is down (opt-in)"
+  }
 }

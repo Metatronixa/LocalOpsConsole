@@ -489,6 +489,152 @@ function Invoke-AgentCommand {
                 $message = "Found $(@($printers).Count) printer(s)"
                 $success = $true
             }
+            "GetStartupApps" {
+                $items = @()
+                $runKeys = @(
+                    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
+                    "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
+                    "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Run"
+                )
+                foreach ($key in $runKeys) {
+                    if (-not (Test-Path $key)) { continue }
+                    $props = Get-ItemProperty -Path $key -ErrorAction SilentlyContinue
+                    if (-not $props) { continue }
+                    foreach ($p in $props.PSObject.Properties) {
+                        if ($p.Name -in @("PSPath", "PSParentPath", "PSChildName", "PSDrive", "PSProvider")) { continue }
+                        $items += [PSCustomObject]@{
+                            Name     = $p.Name
+                            Command  = [string]$p.Value
+                            Location = $key
+                            Source   = "Registry"
+                            Enabled  = $true
+                        }
+                    }
+                }
+                $startupFolder = [Environment]::GetFolderPath("Startup")
+                if (Test-Path $startupFolder) {
+                    Get-ChildItem $startupFolder -ErrorAction SilentlyContinue | ForEach-Object {
+                        $items += [PSCustomObject]@{
+                            Name     = $_.Name
+                            Command  = $_.FullName
+                            Location = $startupFolder
+                            Source   = "StartupFolder"
+                            Enabled  = $true
+                        }
+                    }
+                }
+                $data = @($items)
+                $message = ("{0} startup item(s)" -f $items.Count)
+                $success = $true
+            }
+            "GetScheduledTasks" {
+                $search = ""
+                if ($Payload -and $Payload.Search) { $search = [string]$Payload.Search }
+                $tasks = @(Get-ScheduledTask -ErrorAction Stop)
+                if ($search) {
+                    $tasks = @($tasks | Where-Object { $_.TaskName -like "*$search*" -or $_.TaskPath -like "*$search*" })
+                }
+                $data = @($tasks | Select-Object -First 100 | ForEach-Object {
+                        [PSCustomObject]@{
+                            TaskName = $_.TaskName
+                            TaskPath = $_.TaskPath
+                            State    = [string]$_.State
+                            Author   = $_.Author
+                        }
+                    })
+                $message = ("{0} task(s)" -f $data.Count)
+                $success = $true
+            }
+            "DiskCleanup" {
+                $temp = $env:TEMP
+                $removed = 0
+                Get-ChildItem -Path $temp -File -ErrorAction SilentlyContinue |
+                    Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-7) } |
+                    Select-Object -First 200 |
+                    ForEach-Object {
+                        try { Remove-Item $_.FullName -Force -ErrorAction Stop; $removed++ } catch { }
+                    }
+                $data = @{ Removed = $removed }
+                $message = "Removed $removed old temp file(s)"
+                $success = $true
+            }
+            "ClearPrintQueue" {
+                $removed = 0
+                $printers = @(Get-Printer -ErrorAction SilentlyContinue)
+                foreach ($p in $printers) {
+                    $jobs = @(Get-PrintJob -PrinterName $p.Name -ErrorAction SilentlyContinue)
+                    foreach ($j in $jobs) {
+                        try {
+                            Remove-PrintJob -PrinterName $j.PrinterName -ID $j.Id -ErrorAction Stop
+                            $removed++
+                        }
+                        catch { }
+                    }
+                }
+                $data = @{ Removed = $removed; PrinterCount = $printers.Count }
+                $message = "Cleared $removed print job(s) across $($printers.Count) printer(s)"
+                $success = $true
+            }
+            "NetworkSoftRepair" {
+                $steps = @()
+                try {
+                    Clear-DnsClientCache -ErrorAction Stop
+                    $steps += "Clear-DnsClientCache"
+                }
+                catch {
+                    $null = ipconfig /flushdns 2>&1
+                    $steps += "ipconfig /flushdns"
+                }
+                $null = ipconfig /flushdns 2>&1
+                if ($steps -notcontains "ipconfig /flushdns") { $steps += "ipconfig /flushdns" }
+                $null = ipconfig /release 2>&1
+                $steps += "ipconfig /release"
+                Start-Sleep -Seconds 1
+                $null = ipconfig /renew 2>&1
+                $steps += "ipconfig /renew"
+                $data = @{ Steps = @($steps) }
+                $message = ("Network soft repair: {0}" -f ($steps -join " → "))
+                $success = $true
+            }
+            "RestartUpdateStack" {
+                $names = @("wuauserv", "bits")
+                $ok = @(); $fail = @()
+                foreach ($svcName in $names) {
+                    try {
+                        Restart-Service -Name $svcName -Force -ErrorAction Stop
+                        Start-Sleep -Seconds 1
+                        $svc = Get-Service -Name $svcName -ErrorAction Stop
+                        if ($svc.Status -eq "Running") { $ok += $svcName }
+                        else { $fail += "$svcName=$($svc.Status)" }
+                    }
+                    catch { $fail += "$svcName=$($_.Exception.Message)" }
+                }
+                $data = @{ Ok = @($ok); Failed = @($fail) }
+                if ($fail.Count -eq 0) {
+                    $message = ("Restarted update stack: {0}" -f ($ok -join ", "))
+                    $success = $true
+                }
+                else {
+                    $message = ("Update stack restart issues. OK: {0}; Failed: {1}" -f ($ok -join ", "), ($fail -join "; "))
+                    $success = ($ok.Count -gt 0)
+                }
+            }
+            "CaptureProcessSnapshot" {
+                $procs = @(Get-Process -ErrorAction SilentlyContinue |
+                    Sort-Object -Property @{ Expression = 'CPU'; Descending = $true }, @{ Expression = 'WorkingSet64'; Descending = $true } |
+                    Select-Object -First 15)
+                $rows = foreach ($p in $procs) {
+                    [PSCustomObject]@{
+                        Name         = $p.ProcessName
+                        Id           = $p.Id
+                        CpuSeconds   = if ($null -eq $p.CPU) { 0 } else { [math]::Round([double]$p.CPU, 1) }
+                        WorkingSetMB = [math]::Round(($p.WorkingSet64 / 1MB), 1)
+                    }
+                }
+                $data = @($rows)
+                $message = ("{0} process(es) captured" -f $rows.Count)
+                $success = $true
+            }
             "NetHealthSmoke" {
                 $latencyMs = $null
                 $pingOk = $false
@@ -748,6 +894,10 @@ function Invoke-AgentCommand {
                 $url = if ($Payload -and $Payload.Url) { [string]$Payload.Url } else { '' }
                 $silent = if ($Payload -and $Payload.SilentArgs) { [string]$Payload.SilentArgs } else { '' }
                 $sha = if ($Payload -and $Payload.Sha256) { [string]$Payload.Sha256 } else { '' }
+                $fileName = if ($Payload -and $Payload.FileName) { [string]$Payload.FileName } else { '' }
+                $localSource = $false
+                if ($Payload -and $Payload.LocalSource) { $localSource = [bool]$Payload.LocalSource }
+                elseif ($Payload -and $Payload.Source -and ([string]$Payload.Source).ToLowerInvariant() -eq 'local') { $localSource = $true }
                 $work = Join-Path $ConfigDir "installs\$pkgId"
                 if (-not (Test-Path $work)) { New-Item -ItemType Directory -Path $work -Force | Out-Null }
                 try { Start-Process explorer.exe -ArgumentList $work -ErrorAction SilentlyContinue } catch { }
@@ -769,8 +919,38 @@ function Invoke-AgentCommand {
                         $data = @{ PackageId = $pkgId; Name = $name; Method = $method; ExitCode = $exitCode; WorkDir = $work }
                     }
                 }
+                if (-not $method -and $localSource) {
+                    $method = 'local'
+                    Add-Log "Downloading local package $pkgId via fleet API"
+                    $contentResp = Invoke-AgentApi -Method GET -Path ("/api/v1/fleet/packages/{0}/content" -f [uri]::EscapeDataString($pkgId)) -Signed -TimeoutSec 600
+                    if (-not $contentResp.Success) { throw ("Local package download failed: {0}" -f $contentResp.Message) }
+                    $respFile = if ($contentResp.Data.FileName) { [System.IO.Path]::GetFileName([string]$contentResp.Data.FileName) } else { '' }
+                    if ([string]::IsNullOrWhiteSpace($respFile)) {
+                        $respFile = if ($fileName) { [System.IO.Path]::GetFileName($fileName) } else { 'setup.exe' }
+                    }
+                    $tmp = Join-Path $work $respFile
+                    $b64 = [string]$contentResp.Data.ContentBase64
+                    if ([string]::IsNullOrWhiteSpace($b64)) { throw 'Package content missing ContentBase64' }
+                    [System.IO.File]::WriteAllBytes($tmp, [Convert]::FromBase64String($b64))
+                    $expected = if ($sha) { $sha.ToLowerInvariant() } elseif ($contentResp.Data.Sha256) { ([string]$contentResp.Data.Sha256).ToLowerInvariant() } else { '' }
+                    $actual = (Get-FileHash -Path $tmp -Algorithm SHA256).Hash.ToLowerInvariant()
+                    if ($expected -and $actual -ne $expected) { throw "SHA-256 mismatch for local package $pkgId" }
+                    if ([string]::IsNullOrWhiteSpace($silent) -and $contentResp.Data.SilentArgs) {
+                        $silent = [string]$contentResp.Data.SilentArgs
+                    }
+                    if ([string]::IsNullOrWhiteSpace($silent)) { $silent = '/S' }
+                    $argList = @()
+                    if ($silent -match '\s') { $argList = $silent.Split(' ', [System.StringSplitOptions]::RemoveEmptyEntries) }
+                    elseif ($silent) { $argList = @($silent) }
+                    Add-Log ("Running local installer {0} {1}" -f $tmp, $silent)
+                    $proc = Start-Process -FilePath $tmp -ArgumentList $argList -Wait -PassThru -ErrorAction Stop
+                    $exitCode = [int]$proc.ExitCode
+                    $success = ($exitCode -eq 0)
+                    $message = "local install $name exit $exitCode"
+                    $data = @{ PackageId = $pkgId; Name = $name; Method = $method; ExitCode = $exitCode; WorkDir = $work; FileName = $respFile }
+                }
                 if (-not $method) {
-                    if ([string]::IsNullOrWhiteSpace($url)) { throw "No winget and no Url for package $pkgId" }
+                    if ([string]::IsNullOrWhiteSpace($url)) { throw "No winget, local source, or Url for package $pkgId" }
                     if ($url -notmatch '^https://') { throw "Package Url must be HTTPS" }
                     $method = 'url'
                     $ext = [System.IO.Path]::GetExtension(($url -split '\?')[0])
@@ -1002,6 +1182,44 @@ function Invoke-AgentCommand {
                     }
                 }
                 catch { Add-AgentCheck 'Windows Firewall' 'Unknown' $_.Exception.Message }
+
+                try {
+                    $vols = @(Get-BitLockerVolume -ErrorAction Stop | Where-Object { $_.VolumeType -eq 'OperatingSystem' })
+                    if ($vols.Count -eq 0) {
+                        Add-AgentCheck 'BitLocker' 'Warning' 'No OS volume reported'
+                    }
+                    else {
+                        $prot = @($vols | Where-Object { $_.ProtectionStatus -eq 'On' })
+                        if ($prot.Count -eq $vols.Count) {
+                            Add-AgentCheck 'BitLocker' 'Pass' 'OS volume protected'
+                        }
+                        else {
+                            Add-AgentCheck 'BitLocker' 'Fail' 'OS volume not fully protected'
+                        }
+                    }
+                }
+                catch { Add-AgentCheck 'BitLocker' 'Unknown' $_.Exception.Message }
+
+                try {
+                    $tpm = Get-Tpm -ErrorAction Stop
+                    if ($tpm -and $tpm.TpmPresent -and $tpm.TpmReady) {
+                        Add-AgentCheck 'TPM' 'Pass' 'TPM present and ready'
+                    }
+                    elseif ($tpm -and $tpm.TpmPresent) {
+                        Add-AgentCheck 'TPM' 'Warning' 'TPM present but not ready'
+                    }
+                    else {
+                        Add-AgentCheck 'TPM' 'Fail' 'TPM not present'
+                    }
+                }
+                catch { Add-AgentCheck 'TPM' 'Unknown' $_.Exception.Message }
+
+                try {
+                    $sb = Confirm-SecureBootUEFI -ErrorAction Stop
+                    if ($sb) { Add-AgentCheck 'Secure Boot' 'Pass' 'Secure Boot enabled' }
+                    else { Add-AgentCheck 'Secure Boot' 'Fail' 'Secure Boot disabled' }
+                }
+                catch { Add-AgentCheck 'Secure Boot' 'Unknown' $_.Exception.Message }
 
                 $total = $checks.Count
                 $score = if ($total -gt 0) {

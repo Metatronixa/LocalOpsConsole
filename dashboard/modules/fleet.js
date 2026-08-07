@@ -56,6 +56,41 @@ const FleetView = {
                     <p id="fleet-bind-warn" class="hidden text-[11px] text-rose-400 font-semibold mt-1"></p>
                 </details>
 
+                <details class="fleet-catalog glass-panel p-4">
+                    <summary class="text-sm font-bold text-slate-100 cursor-pointer select-none">Manage software catalog</summary>
+                    <p class="text-[10px] text-slate-500 mt-2">Winget IDs, HTTPS installers, or local files under <code class="text-slate-400">data/fleet/software/{id}/</code>. Agents download local packages over HMAC (LAN <code class="text-slate-400">http://</code> works). You set SilentArgs.</p>
+                    <div id="fleet-catalog-list" class="mt-3 overflow-x-auto max-h-40 overflow-y-auto border border-slate-800 rounded-lg"></div>
+                    <div class="mt-3 grid grid-cols-1 lg:grid-cols-3 gap-3 text-xs">
+                        <div class="p-2 rounded-lg bg-slate-950/50 border border-slate-800 space-y-1.5">
+                            <div class="text-[11px] font-semibold text-cyan-300">Add winget</div>
+                            <input id="cat-wg-id" placeholder="Id (e.g. winrar)" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-slate-200" />
+                            <input id="cat-wg-name" placeholder="Display name" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-slate-200" />
+                            <input id="cat-wg-winget" placeholder="WingetId (e.g. RARLab.WinRAR)" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-slate-200" />
+                            <input id="cat-wg-cat" placeholder="Category" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-slate-200" />
+                            <button type="button" class="action-btn cyan text-[11px]" onclick="FleetView.addCatalogWinget()">Add</button>
+                        </div>
+                        <div class="p-2 rounded-lg bg-slate-950/50 border border-slate-800 space-y-1.5">
+                            <div class="text-[11px] font-semibold text-cyan-300">Add local</div>
+                            <input id="cat-loc-id" placeholder="Id (folder name)" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-slate-200" />
+                            <input id="cat-loc-name" placeholder="Display name" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-slate-200" />
+                            <input id="cat-loc-file" placeholder="FileName (e.g. Setup.exe)" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-slate-200" />
+                            <input id="cat-loc-silent" placeholder="SilentArgs (default /S)" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-slate-200" />
+                            <input id="cat-loc-cat" placeholder="Category" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-slate-200" />
+                            <p class="text-[10px] text-slate-500">Place installer in <code class="text-slate-400">data/fleet/software/{Id}/</code> then Register.</p>
+                            <button type="button" class="action-btn amber text-[11px]" onclick="FleetView.addCatalogLocal()">Register</button>
+                        </div>
+                        <div class="p-2 rounded-lg bg-slate-950/50 border border-slate-800 space-y-1.5">
+                            <div class="text-[11px] font-semibold text-cyan-300">Add URL</div>
+                            <input id="cat-url-id" placeholder="Id" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-slate-200" />
+                            <input id="cat-url-name" placeholder="Display name" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-slate-200" />
+                            <input id="cat-url-url" placeholder="https://… installer URL" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-slate-200" />
+                            <input id="cat-url-silent" placeholder="SilentArgs" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-slate-200" />
+                            <input id="cat-url-sha" placeholder="Sha256 (optional)" class="w-full px-2 py-1 rounded bg-slate-950 border border-slate-700 text-slate-200" />
+                            <button type="button" class="action-btn cyan text-[11px]" onclick="FleetView.addCatalogUrl()">Add</button>
+                        </div>
+                    </div>
+                </details>
+
                 <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
                     <div class="flex items-center justify-between mb-3 gap-2 flex-wrap">
                         <h3 class="text-sm font-bold text-slate-100">Managed computers</h3>
@@ -95,6 +130,7 @@ const FleetView = {
         await this.loadEnrollInfo();
         await this.loadScripts();
         await this.loadPackages();
+        this.renderCatalogList();
         await this.loadAgentPackage();
         await this.refresh();
         this.startPoll();
@@ -192,6 +228,134 @@ const FleetView = {
         }
     },
 
+    renderCatalogList() {
+        const el = document.getElementById('fleet-catalog-list');
+        if (!el) return;
+        const pkgs = this._packages || [];
+        if (!pkgs.length) {
+            el.innerHTML = '<p class="p-2 text-[11px] text-slate-500">No packages yet.</p>';
+            return;
+        }
+        el.innerHTML = `<table class="w-full text-[11px]">
+            <thead><tr class="text-slate-500 text-left border-b border-slate-800">
+                <th class="p-1.5">Id</th><th class="p-1.5">Name</th><th class="p-1.5">Source</th><th class="p-1.5"></th>
+            </tr></thead>
+            <tbody>${pkgs.map((p) => {
+                const src = this.escape(p.Source || (p.WingetId ? 'winget' : (p.FileName ? 'local' : (p.Url ? 'url' : '?'))));
+                const detail = p.WingetId ? p.WingetId : (p.FileName || p.Url || '');
+                return `<tr class="border-t border-slate-800/80">
+                    <td class="p-1.5 font-mono text-slate-300">${this.escape(p.Id)}</td>
+                    <td class="p-1.5 text-slate-200">${this.escape(p.Name || p.Id)}<div class="text-[10px] text-slate-500 truncate max-w-[14rem]" title="${this.escape(detail)}">${this.escape(detail)}</div></td>
+                    <td class="p-1.5 text-cyan-300/90">${src}</td>
+                    <td class="p-1.5 text-right"><button type="button" class="action-btn rose text-[10px]" onclick="FleetView.deleteCatalogPackage('${this.escape(p.Id)}')">Delete</button></td>
+                </tr>`;
+            }).join('')}</tbody></table>`;
+    },
+
+    async refreshPackagesUi() {
+        await this.loadPackages();
+        this.renderCatalogList();
+        const pick = document.getElementById('fleet-pkg-pick');
+        if (pick) {
+            const cur = pick.value;
+            pick.innerHTML = this._packages.length
+                ? this._packages.map((p) => `<option value="${this.escape(p.Id)}">${this.escape(p.Name || p.Id)}</option>`).join('')
+                : '<option value="">No packages in catalog</option>';
+            if (cur && this._packages.some((p) => p.Id === cur)) pick.value = cur;
+        }
+    },
+
+    async addCatalogWinget() {
+        const Id = (document.getElementById('cat-wg-id') || {}).value || '';
+        const Name = (document.getElementById('cat-wg-name') || {}).value || '';
+        const WingetId = (document.getElementById('cat-wg-winget') || {}).value || '';
+        const Category = (document.getElementById('cat-wg-cat') || {}).value || '';
+        if (!Id.trim() || !WingetId.trim()) {
+            LiveConsole.log('Winget Id and WingetId are required', 'WARN');
+            return;
+        }
+        const res = await API.request('fleet/packages', 'POST', {
+            Id: Id.trim(), Name: Name.trim() || Id.trim(), WingetId: WingetId.trim(), Category: Category.trim(), Source: 'winget'
+        }, 15000);
+        if (res.Success) {
+            LiveConsole.log(`Catalog: added winget ${Id.trim()}`, 'SUCCESS');
+            ['cat-wg-id', 'cat-wg-name', 'cat-wg-winget', 'cat-wg-cat'].forEach((id) => {
+                const n = document.getElementById(id); if (n) n.value = '';
+            });
+            await this.refreshPackagesUi();
+        } else {
+            LiveConsole.log(res.Message || 'Failed to add package', 'ERROR');
+        }
+    },
+
+    async addCatalogLocal() {
+        const Id = (document.getElementById('cat-loc-id') || {}).value || '';
+        const Name = (document.getElementById('cat-loc-name') || {}).value || '';
+        const FileName = (document.getElementById('cat-loc-file') || {}).value || '';
+        const SilentArgs = (document.getElementById('cat-loc-silent') || {}).value || '';
+        const Category = (document.getElementById('cat-loc-cat') || {}).value || '';
+        if (!Id.trim() || !FileName.trim()) {
+            LiveConsole.log('Local Id and FileName are required', 'WARN');
+            return;
+        }
+        const res = await API.request('fleet/packages', 'POST', {
+            Id: Id.trim(),
+            Name: Name.trim() || Id.trim(),
+            FileName: FileName.trim(),
+            SilentArgs: SilentArgs.trim() || '/S',
+            Category: Category.trim(),
+            Source: 'local'
+        }, 30000);
+        if (res.Success) {
+            LiveConsole.log(`Catalog: registered local ${Id.trim()} (SHA verified)`, 'SUCCESS');
+            ['cat-loc-id', 'cat-loc-name', 'cat-loc-file', 'cat-loc-silent', 'cat-loc-cat'].forEach((id) => {
+                const n = document.getElementById(id); if (n) n.value = '';
+            });
+            await this.refreshPackagesUi();
+        } else {
+            LiveConsole.log(res.Message || 'Register failed — is the file under data/fleet/software/{Id}/?', 'ERROR');
+        }
+    },
+
+    async addCatalogUrl() {
+        const Id = (document.getElementById('cat-url-id') || {}).value || '';
+        const Name = (document.getElementById('cat-url-name') || {}).value || '';
+        const Url = (document.getElementById('cat-url-url') || {}).value || '';
+        const SilentArgs = (document.getElementById('cat-url-silent') || {}).value || '';
+        const Sha256 = (document.getElementById('cat-url-sha') || {}).value || '';
+        if (!Id.trim() || !Url.trim()) {
+            LiveConsole.log('URL Id and Url are required', 'WARN');
+            return;
+        }
+        const body = {
+            Id: Id.trim(), Name: Name.trim() || Id.trim(), Url: Url.trim(), Source: 'url'
+        };
+        if (SilentArgs.trim()) body.SilentArgs = SilentArgs.trim();
+        if (Sha256.trim()) body.Sha256 = Sha256.trim();
+        const res = await API.request('fleet/packages', 'POST', body, 15000);
+        if (res.Success) {
+            LiveConsole.log(`Catalog: added URL package ${Id.trim()}`, 'SUCCESS');
+            ['cat-url-id', 'cat-url-name', 'cat-url-url', 'cat-url-silent', 'cat-url-sha'].forEach((id) => {
+                const n = document.getElementById(id); if (n) n.value = '';
+            });
+            await this.refreshPackagesUi();
+        } else {
+            LiveConsole.log(res.Message || 'Failed to add URL package', 'ERROR');
+        }
+    },
+
+    async deleteCatalogPackage(packageId) {
+        if (!packageId) return;
+        if (!confirm(`Remove "${packageId}" from the catalog? (Installer files on disk are kept.)`)) return;
+        const res = await API.request(`fleet/packages/${encodeURIComponent(packageId)}`, 'DELETE', null, 15000);
+        if (res.Success) {
+            LiveConsole.log(`Catalog: removed ${packageId}`, 'SUCCESS');
+            await this.refreshPackagesUi();
+        } else {
+            LiveConsole.log(res.Message || 'Delete failed', 'ERROR');
+        }
+    },
+
     async loadAgentPackage() {
         try {
             const res = await API.request('fleet/agent-package', 'GET', null, 15000, { silent: true });
@@ -239,6 +403,13 @@ const FleetView = {
             NetHealthSmoke: '2.1.5',
             EndProcess: '2.1.5',
             GetPrinters: '2.1.5',
+            GetStartupApps: '2.3.0',
+            GetScheduledTasks: '2.3.0',
+            DiskCleanup: '2.3.0',
+            ClearPrintQueue: '2.3.0',
+            NetworkSoftRepair: '2.3.0',
+            RestartUpdateStack: '2.3.0',
+            CaptureProcessSnapshot: '2.3.0',
             Message: '2.1.5',
             SfcScannow: '2.1.5',
             ChkdskScan: '2.1.5',
@@ -600,6 +771,7 @@ const FleetView = {
                     <p class="text-[10px] text-slate-500 mb-2">Remote security hardening (firewall + Defender). Wallpaper/theme lockdown is not included.</p>
                     <div class="flex flex-wrap gap-2 mb-2">
                         ${this.cmdBtn('AuditSecurityBaseline', 'Audit baseline')}
+                        <button type="button" class="action-btn cyan text-[11px]" onclick="FleetView.openSecurityBaselinePage()">Open Security Baseline</button>
                         ${this.supportsCommand(ver, 'ApplySecurityPolicy')
                             ? `<button type="button" class="action-btn amber text-[11px]" onclick="FleetView.applyHardeningBasic()">Apply hardening-basic</button>`
                             : `<button type="button" class="action-btn amber text-[11px] opacity-40 cursor-not-allowed" disabled title="Requires agent 2.2.0+">Apply hardening-basic</button>`}
@@ -640,7 +812,7 @@ const FleetView = {
                         <button type="button" class="action-btn amber text-[11px]" onclick="FleetView.installPackage()">Install</button>
                     </div>
                     ${installPkg ? `<p class="text-[11px] text-slate-400 mt-1">${this.escape(installPkg.Name || installPkg.PackageId || '')} via ${this.escape(installPkg.Method || '?')} · exit ${this.escape(installPkg.ExitCode)}</p>` : ''}
-                    <p class="text-[10px] text-slate-600 mt-1">Edit data/fleet/packages.json to add favorites. Agent opens ProgramData\\LocalOpsAgent\\installs\\{id}\\</p>
+                    <p class="text-[10px] text-slate-600 mt-1">Manage catalog on the Computers page. Order: winget → local (HMAC) → HTTPS. Local installs need agent 2.3.0+.</p>
                 </div>
 
                 <div>
@@ -682,6 +854,7 @@ const FleetView = {
                         <button type="button" class="action-btn cyan text-[11px]" onclick="FleetView.queueCmd('CollectInventory')">Collect Inventory</button>
                         <button type="button" class="action-btn cyan text-[11px]" onclick="FleetView.queueCmd('GetProcesses')">Processes</button>
                         <button type="button" class="action-btn cyan text-[11px]" onclick="FleetView.queueCmd('GetPrinters')">Printers</button>
+                        <button type="button" class="action-btn cyan text-[11px]" onclick="FleetView.openStartupPage()">Startup apps</button>
                     </div>
                     <div class="flex flex-wrap items-end gap-2">
                         <div class="flex-1 min-w-[10rem]">
@@ -840,6 +1013,36 @@ const FleetView = {
             await this.loadDrawer(this._selected);
         } else {
             LiveConsole.log(res.Message || 'Queue failed', 'ERROR');
+        }
+    },
+
+    /** Handoff to Startup page with current drawer agent preselected (results stay on that page). */
+    openStartupPage() {
+        const agentId = this._selected;
+        if (!agentId) return;
+        if (typeof StartupView !== 'undefined' && StartupView.openForAgent) {
+            StartupView.openForAgent(agentId);
+        }
+        if (typeof FleetTarget !== 'undefined') {
+            FleetTarget.openForAgent(agentId);
+        }
+        if (typeof Router !== 'undefined' && Router.loadModuleView) {
+            Router.loadModuleView('startup');
+        }
+    },
+
+    /** Handoff to Security Baseline page with current drawer agent preselected. */
+    openSecurityBaselinePage() {
+        const agentId = this._selected;
+        if (!agentId) return;
+        if (typeof SecurityBaselineView !== 'undefined' && SecurityBaselineView.openForAgent) {
+            SecurityBaselineView.openForAgent(agentId);
+        }
+        if (typeof FleetTarget !== 'undefined') {
+            FleetTarget.openForAgent(agentId);
+        }
+        if (typeof Router !== 'undefined' && Router.loadModuleView) {
+            Router.loadModuleView('securitybaseline');
         }
     },
 

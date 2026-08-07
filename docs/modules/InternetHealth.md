@@ -18,7 +18,7 @@ DNS set/reset, Winsock/TCP reset, adapter restart, DHCP release, proxy reset (ad
 
 ## Automation
 
-Network-down rules notify by default; remediations remain operator-driven unless a rule enables automation.
+`network-down` ships a **Careful** `network-soft-repair` playbook (DNS flush + DHCP release/renew). Off by default — enable on the **Automation** page. Does not run Winsock/TCP reset.
 
 ## Permissions
 

@@ -94,6 +94,45 @@ Test-Api -Name "health-score" -Path "health-score"
 Test-Api -Name "security-score" -Path "security-score"
 Test-Api -Name "incidents" -Path "incidents?status=active"
 Test-Api -Name "alerts" -Path "alerts"
+Test-Api -Name "automation status" -Path "automation/status" -Extra {
+    param($j)
+    $d = $j.Data
+    if (-not $d) { return $false }
+    $handlers = @($d.Handlers)
+    $rules = @($d.Rules)
+    $needHandlers = @(
+        "clear-print-queue",
+        "network-soft-repair",
+        "restart-update-stack",
+        "capture-process-snapshot"
+    )
+    foreach ($h in $needHandlers) {
+        if ($handlers -notcontains $h) { return $false }
+    }
+    if ($rules.Count -lt 10) { return $false }
+    $ids = @($rules | ForEach-Object { [string]$_.RuleId })
+    $needRules = @(
+        "spooler-crash",
+        "low-disk",
+        "service-down",
+        "printer-offline",
+        "network-down",
+        "update-failed",
+        "eventlog-health",
+        "defender-disabled",
+        "firewall-disabled",
+        "unexpected-reboot",
+        "high-cpu"
+    )
+    foreach ($id in $needRules) {
+        if ($ids -notcontains $id) { return $false }
+    }
+    $sample = $rules | Where-Object { $_.RuleId -eq "high-cpu" } | Select-Object -First 1
+    if (-not $sample) { return $false }
+    if (-not $sample.PSObject.Properties['Scope']) { return $false }
+    if (-not $sample.PSObject.Properties['SupportsFleet']) { return $false }
+    $true
+}
 
 Write-Host ""
 $color = if ($script:fail -eq 0) { "Green" } else { "Red" }

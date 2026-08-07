@@ -39,7 +39,7 @@ try {
         }
         catch {
             $msg = if (Test-LocRemoteTimeoutError -Exception $cimErr) {
-                "ListShares timed out on ${ComputerName}. Verify firewall/RPC/WMI/SMB access and that you selected the right PC."
+                "ListShares timed out on ${ComputerName}. Prefer the LAN IP (\\\\x.x.x.x). Also verify firewall/RPC/WMI/SMB and that you selected the right PC."
             } else {
                 "Cannot list shares on ${ComputerName}. $($cimErr.Message) / $($_.Exception.Message)"
             }

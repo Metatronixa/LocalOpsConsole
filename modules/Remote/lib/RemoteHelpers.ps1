@@ -35,8 +35,18 @@ function New-LocRemoteCimSession {
         [int]$OperationTimeoutSec = 5
     )
 
-    $opt = New-CimSessionOption -Protocol Dcom -OperationTimeoutSec $OperationTimeoutSec -ErrorAction Stop
-    return New-CimSession -ComputerName $ComputerName -SessionOption $opt -ErrorAction Stop
+    $lastErr = $null
+    foreach ($proto in @('Dcom', 'Wsman')) {
+        try {
+            $opt = New-CimSessionOption -Protocol $proto -OperationTimeoutSec $OperationTimeoutSec -ErrorAction Stop
+            return New-CimSession -ComputerName $ComputerName -SessionOption $opt -ErrorAction Stop
+        }
+        catch {
+            $lastErr = $_
+        }
+    }
+    if ($lastErr) { throw $lastErr }
+    throw "Failed to create CIM session to $ComputerName"
 }
 
 function Test-LocRemoteTimeoutError {

@@ -13,6 +13,8 @@
   "automation": {
     "enabled": false,
     "action": "disk-cleanup",
-    "closeOnSuccess": false
+    "closeOnSuccess": false,
+    "risk": "Safe",
+    "description": "Remove temp files older than 7 days (up to 200) when disk is low (opt-in)"
   }
 }

@@ -20,7 +20,7 @@ diagnostics · monitoring · remediation · reporting
 
 ## Automation
 
-None by default. Pair with `rules/updates/` detections.
+`update-failed` ships a **Careful** `restart-update-stack` playbook (restart `wuauserv` + BITS only). Off by default — enable on the **Automation** page. Does not clear SoftwareDistribution or install updates.
 
 ## Permissions
 

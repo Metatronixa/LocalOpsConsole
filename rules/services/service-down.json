@@ -13,6 +13,8 @@
   "automation": {
     "enabled": false,
     "action": "restart-service",
-    "closeOnSuccess": false
+    "closeOnSuccess": false,
+    "risk": "Careful",
+    "description": "Restart the downed monitored service from the event payload (opt-in)"
   }
 }
