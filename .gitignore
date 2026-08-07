@@ -23,10 +23,12 @@ data/events/*.json
 data/events/*.jsonl
 data/incidents/**/*.json
 data/storage/*.jsonl
+data/syncme/*.json
 data/integrity/module-hashes.json
 !data/.gitkeep
 !data/fleet/.gitkeep
 !data/events/.gitkeep
 !data/incidents/.gitkeep
 !data/storage/.gitkeep
+!data/syncme/.gitkeep
 !data/integrity/.gitkeep

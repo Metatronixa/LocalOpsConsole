@@ -88,7 +88,9 @@ Use the console’s LAN IP, **Tailscale IP**, or `fleetPublicUrl` — **not** `1
 
 ### Remote actions (Computers)
 
-Select an online PC → detail panel: Flush DNS, Restart Spooler, Inventory, Processes (End), Printers, Ping PC, Net smoke, Message, SFC, CHKDSK scan / schedule `/F`. Update the agent on the remote PC to 2.1.5+ for new commands.
+Select an online PC → detail panel: Flush DNS, Restart Spooler, Inventory, Processes (End), Printers, Ping PC, Net smoke, Message, SFC, CHKDSK, Policy (audit / apply hardening-basic). Use **Network Map** under Operations for a spatial view of agents + LAN neighbors.
+
+Click a **Command history** row to open its result in the **Command result** panel (no scrolling required). If one command stays **Running**, newer work stays **Pending** until it finishes, times out (45 minutes), or you click **Clear stuck**.
 
 ## Troubleshooting
 
@@ -98,7 +100,7 @@ Select an online PC → detail panel: Flush DNS, Restart Spooler, Inventory, Pro
 - Set `integrityMode` to `warn` during local module development
 - Run `.\tools\smoke-api.ps1` with the server running
 - Remote agents: `fleetPublicUrl` (LAN or Tailscale IP) + `bindHost: 0.0.0.0`; if start fails with “conflicts with an existing registration”, free port 8787 / check `netsh http show urlacl`
-- Commands stuck **Pending**: agent is not polling — restart task **LocalOpsAgent**, check `C:\ProgramData\LocalOpsAgent\logs`, confirm `ServerUrl`. **Failed** with “Unknown command type” means an old agent after claim — install Agent 2.1.5+
+- Commands stuck **Pending**: often a stuck **Running** command is blocking the queue (see Command history). Use **Clear stuck**, or wait for the 45m Running timeout. Also restart task **LocalOpsAgent**, check `C:\ProgramData\LocalOpsAgent\logs`, confirm `ServerUrl`. **Failed** with “Unknown command type” means an old agent — install Agent **2.3.0+** for policy commands
 - Event Log “Access denied” on the Security channel is normal without elevation
 
 See also `CHANGELOG.md` and `SECURITY.md`.

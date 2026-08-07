@@ -93,6 +93,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const health = await API.request('health');
+    if (typeof LocSplash !== 'undefined') LocSplash.markReady(!!health.Success);
     if (health.Success) {
         document.getElementById('app-version').innerText = `v${health.Data.Version}`;
         document.getElementById('host-name').innerText = (health.Data.Windows || 'LOCAL').split('(')[0].trim() || 'LOCAL';
@@ -283,7 +284,7 @@ function renderSidebar(modules) {
         if (['system'].includes(id)) return 'Performance';
         if (['devices', 'users', 'graphics', 'storage', 'startup', 'power'].includes(id)) return 'Inventory';
         if (['services', 'tools', 'updates', 'configuration', 'audio', 'printers', 'syncme',
-            'network', 'vpn', 'internetslow', 'remote', 'remotesupport', 'fleet'].includes(id)) {
+            'network', 'vpn', 'internetslow', 'remote', 'remotesupport', 'fleet', 'networkmap'].includes(id)) {
             return 'Operations';
         }
         return 'Operations';

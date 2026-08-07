@@ -1,7 +1,7 @@
 try {
     $path = Get-SyncMePath
     if (-not $path) {
-        return New-ApiResult -Success $false -Message "SyncMe path not found. Set syncMePath in settings.json."
+        return New-ApiResult -Success $false -Message "SyncMe path not found. Let SyncMe auto-register on this PC, or set syncMePath in settings.json."
     }
 
     $bat = Join-Path $path "SyncMe.bat"

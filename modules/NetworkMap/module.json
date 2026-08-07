@@ -1,0 +1,22 @@
+{
+  "id": "networkmap",
+  "name": "Network Map",
+  "version": "1.0.0",
+  "icon": "share-2",
+  "description": "Plot enrolled agents and LAN discovery hosts by IP and gateway",
+  "order": 6,
+  "tier": 2,
+  "profiles": [
+    "helpdesk",
+    "desktop_support",
+    "systems_administrator",
+    "network_administrator",
+    "developer",
+    "power_user"
+  ],
+  "depends": [],
+  "diagnostics": [],
+  "actions": [],
+  "requiresAdmin": [],
+  "hidden": false
+}

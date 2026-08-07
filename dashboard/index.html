@@ -6,8 +6,39 @@
     <title>LocalOpsConsole</title>
     <link rel="stylesheet" href="assets/css/tailwind.min.css">
     <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="assets/css/splash.css">
 </head>
 <body class="h-full flex flex-col antialiased overflow-hidden select-none">
+
+    <div id="loc-splash" aria-live="polite">
+      <div class="loc-splash-inner">
+        <div class="loc-splash-stage">
+          <div class="loc-splash-ring"></div>
+          <div class="loc-splash-orbit">
+            <span class="loc-splash-node"></span>
+            <span class="loc-splash-node"></span>
+            <span class="loc-splash-node"></span>
+          </div>
+          <div class="loc-splash-shield">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="M12 8v4"/><path d="M12 16h.01"/>
+            </svg>
+          </div>
+          <div class="loc-splash-scan"></div>
+        </div>
+        <h1 class="loc-splash-brand">LOCALOPS<em>CONSOLE</em></h1>
+        <p class="loc-splash-tag">Windows Operations Platform</p>
+        <div class="loc-splash-status" id="loc-splash-status">Starting engine…</div>
+        <div class="loc-splash-bar" aria-hidden="true"><span></span></div>
+        <div class="loc-splash-metrics">
+          <div>CPU <span>●</span></div>
+          <div>RAM <span>●</span></div>
+          <div>DISK <span>●</span></div>
+          <div>FLEET <span>●</span></div>
+        </div>
+      </div>
+    </div>
 
     <div id="update-banner" class="hidden update-banner shrink-0">
         <div class="update-banner-inner">
@@ -78,6 +109,7 @@
     </div>
 
     <script src="assets/js/lucide.min.js"></script>
+    <script src="assets/js/splash.js"></script>
     <script src="assets/js/api.js"></script>
     <script src="assets/js/console.log.js"></script>
     <script src="assets/js/results.js"></script>
@@ -96,6 +128,7 @@
     <script src="modules/remotesupport.js"></script>
     <script src="modules/internetslow.js"></script>
     <script src="modules/fleet.js"></script>
+    <script src="modules/networkmap.js"></script>
     <script src="modules/overview.js"></script>
     <script src="modules/security.js"></script>
     <script src="modules/eventlog.js"></script>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Architecture — LocalOpsConsole Docs</title>
+  <title>Architecture. LocalOpsConsole Docs</title>
   <link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="../assets/css/site.css" />
 </head>
@@ -44,11 +44,11 @@
 
       <h2>Layers</h2>
       <ul>
-        <li><strong>Dashboard</strong> (<code>dashboard/</code>) — vanilla JS SPA: <code>app.js</code> sidebar/profiles, <code>router.js</code> views, custom module views + generic <code>ModuleView</code>.</li>
-        <li><strong>API</strong> (<code>api/</code>) — thin router: health, modules, settings, telemetry, Event Intel, fleet, then <code>{module}/diagnostics|actions/{name}</code>.</li>
-        <li><strong>Core</strong> (<code>core/</code>) — settings, security gate, modules, telemetry, Event Intelligence, fleet, updater, automation.</li>
-        <li><strong>Modules</strong> (<code>modules/*/module.json</code>) — diagnostics &amp; actions as PowerShell scripts.</li>
-        <li><strong>Rules / notifications</strong> — Event Intel rules under <code>rules/</code>; channel plugins under <code>notifications/</code>.</li>
+        <li><strong>Dashboard</strong> (<code>dashboard/</code>), vanilla JS SPA: <code>app.js</code> sidebar/profiles, <code>router.js</code> views, custom module views + generic <code>ModuleView</code>.</li>
+        <li><strong>API</strong> (<code>api/</code>), thin router: health, modules, settings, telemetry, Event Intel, fleet, then <code>{module}/diagnostics|actions/{name}</code>.</li>
+        <li><strong>Core</strong> (<code>core/</code>), settings, security gate, modules, telemetry, Event Intelligence, fleet, updater, automation.</li>
+        <li><strong>Modules</strong> (<code>modules/*/module.json</code>), diagnostics &amp; actions as PowerShell scripts.</li>
+        <li><strong>Rules / notifications</strong>, Event Intel rules under <code>rules/</code>; channel plugins under <code>notifications/</code>.</li>
       </ul>
 
       <h2>Core bootstrap order</h2>
@@ -71,14 +71,14 @@
       <p>Automation playbooks run only when a rule sets <code>automation.enabled: true</code> (opt-in, audited).</p>
 
       <h2>Fleet (optional)</h2>
-      <p>Outbound LocalOps Agent enrolls with a token, then heartbeats and polls commands with HMAC. Console default bind is localhost — remote agents need <code>bindHost: 0.0.0.0</code> (or LAN IP) plus a reachable <code>ServerUrl</code> / <code>fleetPublicUrl</code>. See <a href="installation.html">Installation</a>.</p>
+      <p>Outbound LocalOps Agent enrolls with a token, then heartbeats and polls commands with HMAC. Console default bind is localhost. Remote agents need <code>bindHost: 0.0.0.0</code> (or LAN IP) plus a reachable <code>ServerUrl</code> / <code>fleetPublicUrl</code>. See <a href="installation.html">Installation</a>.</p>
 
       <h2>Data on disk</h2>
       <ul>
-        <li><code>data/events/</code>, <code>data/incidents/</code> — Event Intel persistence</li>
-        <li><code>data/fleet/</code> — agents, commands, audit</li>
-        <li><code>data/integrity/</code> — module hashes (packaged builds)</li>
-        <li><code>logs/</code> — daily operational logs</li>
+        <li><code>data/events/</code>, <code>data/incidents/</code>, Event Intel persistence</li>
+        <li><code>data/fleet/</code>, agents, commands, audit</li>
+        <li><code>data/integrity/</code>, module hashes (packaged builds)</li>
+        <li><code>logs/</code>, daily operational logs</li>
       </ul>
     </article>
   </main>

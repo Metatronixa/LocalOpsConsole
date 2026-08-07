@@ -112,11 +112,13 @@ function Test-LocModuleIntegrity {
         $expectedManifest = $null
         if ($modEntry.manifestSha256) { $expectedManifest = [string]$modEntry.manifestSha256 }
         if ($expectedManifest -and $actualManifest -ne $expectedManifest.ToLowerInvariant()) {
-            $result.Ok = $false
             $result.Expected = $expectedManifest
             $result.Actual = $actualManifest
             $result.Path = $Module.ManifestPath
             $result.Message = "Manifest hash mismatch for $($Module.Id)"
+            if ($script:LocIntegrityMode -eq "enforce") {
+                $result.Ok = $false
+            }
             return $result
         }
     }
@@ -156,8 +158,10 @@ function Test-LocModuleIntegrity {
         }
 
         if ($actual -ne $expected.ToLowerInvariant()) {
-            $result.Ok = $false
             $result.Message = "SHA-256 mismatch for $rel"
+            if ($script:LocIntegrityMode -eq "enforce") {
+                $result.Ok = $false
+            }
             return $result
         }
     }

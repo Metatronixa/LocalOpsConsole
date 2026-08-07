@@ -1,0 +1,16 @@
+{
+  "id": "hardening-basic",
+  "name": "Basic hardening",
+  "version": "1.0.0",
+  "description": "Enable Windows Firewall on all profiles and Defender realtime protection. No wallpaper/theme lockdown.",
+  "controls": [
+    {
+      "id": "firewall-enable-all",
+      "description": "Enable Windows Firewall (Domain, Private, Public)"
+    },
+    {
+      "id": "defender-realtime-on",
+      "description": "Enable Microsoft Defender realtime protection"
+    }
+  ]
+}

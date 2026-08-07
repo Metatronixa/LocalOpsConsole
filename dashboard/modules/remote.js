@@ -19,19 +19,19 @@ const RemoteView = {
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                    <div class="lg:col-span-1 p-4 rounded-xl bg-slate-900/60 border border-slate-800 space-y-3">
-                        <h3 class="text-sm font-bold text-slate-100">Discovered PCs</h3>
-                        <p class="text-[11px] text-slate-500">Click a row to select the target for share/session queries.</p>
-                        <div id="remote-host-list" class="space-y-1 max-h-96 overflow-auto text-xs font-mono">
-                            <div class="text-slate-500">Click Discover computers to scan ARP / SMB neighbors.</div>
-                        </div>
-                        <div class="pt-2 border-t border-slate-800 space-y-2">
+                    <div class="lg:col-span-1 p-4 rounded-xl bg-slate-900/60 border border-slate-800 flex flex-col gap-3 min-h-0 max-h-[70vh]">
+                        <h3 class="text-sm font-bold text-slate-100 shrink-0">Discovered PCs</h3>
+                        <p class="text-[11px] text-slate-500 shrink-0">Click a row to select the target for share/session queries.</p>
+                        <div class="shrink-0 space-y-2 border-b border-slate-800 pb-3">
                             <label class="text-[11px] text-slate-400">Or type name / IP</label>
                             <div class="flex gap-2">
                                 <input id="remote-manual" type="text" placeholder="PC-NAME or 192.168.1.10"
                                     class="flex-1 px-2 py-1.5 rounded-lg bg-slate-950 border border-slate-700 text-xs font-mono text-slate-200" />
                                 <button type="button" class="action-btn emerald text-[11px]" onclick="RemoteView.selectManual()">Use</button>
                             </div>
+                        </div>
+                        <div id="remote-host-list" class="flex-1 min-h-0 overflow-y-auto space-y-1 text-xs font-mono">
+                            <div class="text-slate-500">Click Discover computers to scan ARP / SMB neighbors.</div>
                         </div>
                     </div>
 

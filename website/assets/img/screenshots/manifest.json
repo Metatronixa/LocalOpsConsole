@@ -6,84 +6,84 @@
       "file": "overview.png",
       "module": "overview",
       "category": "Overview",
-      "caption": "Overview — health, security, and incidents",
+      "caption": "Overview, health, security, and incidents",
       "src": "assets/img/screenshots/overview.png"
     },
     {
       "file": "incidents.png",
       "module": "incidents",
       "category": "Incidents",
-      "caption": "Incident Center — correlated alerts",
+      "caption": "Incident Center, correlated alerts",
       "src": "assets/img/screenshots/incidents.png"
     },
     {
       "file": "security-center.png",
       "module": "securitycenter",
       "category": "Security",
-      "caption": "Security Center — posture at a glance",
+      "caption": "Security Center, posture at a glance",
       "src": "assets/img/screenshots/security-center.png"
     },
     {
       "file": "security-baseline.png",
       "module": "securitybaseline",
       "category": "Security",
-      "caption": "Security Baseline — control audit",
+      "caption": "Security Baseline, control audit",
       "src": "assets/img/screenshots/security-baseline.png"
     },
     {
       "file": "health-center.png",
       "module": "healthcenter",
       "category": "Health",
-      "caption": "Health Center — host health score",
+      "caption": "Health Center, host health score",
       "src": "assets/img/screenshots/health-center.png"
     },
     {
       "file": "alerts.png",
       "module": "alerts",
       "category": "Monitoring",
-      "caption": "Notification Center — alerts",
+      "caption": "Notification Center, alerts",
       "src": "assets/img/screenshots/alerts.png"
     },
     {
       "file": "timeline.png",
       "module": "timeline",
       "category": "Monitoring",
-      "caption": "Event timeline — correlation trail",
+      "caption": "Event timeline, correlation trail",
       "src": "assets/img/screenshots/timeline.png"
     },
     {
       "file": "services.png",
       "module": "services",
       "category": "Operations",
-      "caption": "Services — inventory and critical profiles",
+      "caption": "Services, inventory and critical profiles",
       "src": "assets/img/screenshots/services.png"
     },
     {
       "file": "storage.png",
       "module": "storage",
       "category": "Operations",
-      "caption": "Storage — capacity and SMART",
+      "caption": "Storage, capacity and SMART",
       "src": "assets/img/screenshots/storage.png"
     },
     {
       "file": "internet-health.png",
       "module": "internetslow",
       "category": "Operations",
-      "caption": "Internet Health — connectivity diagnostics",
+      "caption": "Internet Health, connectivity diagnostics",
       "src": "assets/img/screenshots/internet-health.png"
     },
     {
       "file": "system.png",
       "module": "system",
       "category": "Performance",
-      "caption": "Live telemetry — CPU, RAM, disk, network",
+      "caption": "Live telemetry, CPU, RAM, disk, network",
       "src": "assets/img/screenshots/system.png"
     },
     {
       "file": "automation.png",
       "module": "automation",
       "category": "Automation",
-      "caption": "Automation — opt-in playbooks",
+      "caption": "Automation, opt-in playbooks",
       "src": "assets/img/screenshots/automation.png"
     }
   ]

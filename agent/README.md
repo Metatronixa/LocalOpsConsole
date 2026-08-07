@@ -1,6 +1,8 @@
-# LocalOps Agent (v2.0.0)
+# LocalOps Agent (v2.2.0)
 
 Outbound Windows fleet agent for [LocalOpsConsole](https://github.com/Metatronixa/LocalOpsConsole). The agent initiates all traffic to the console — no inbound listener on managed PCs.
+
+See [docs/AGENT_ROADMAP.md](../docs/AGENT_ROADMAP.md) for the V2 capability roadmap.
 
 ## Requirements
 
@@ -11,7 +13,7 @@ Outbound Windows fleet agent for [LocalOpsConsole](https://github.com/Metatronix
 
 ## Install
 
-1. Copy the `agent` folder (or extract `LocalOpsAgent-2.0.0.zip`) to the target PC.
+1. Copy the `agent` folder (or extract a release zip) to the target PC.
 2. On the console, open **Computers** and copy the enrollment token and install one-liner.
 3. Run PowerShell **as Administrator**:
 
@@ -26,6 +28,19 @@ The installer:
 - Registers scheduled task **LocalOpsAgent** (SYSTEM, at startup)
 - Starts the agent immediately
 
+### Enrollment token model
+
+- One **shared** enroll token for all new PCs (rotate in Computers → Enrollment if leaked).
+- After enroll, each PC receives a unique **AgentId** + **AgentSecret** used for HMAC-signed API calls (including self-update). Day-to-day security is per-PC; the shared token is only for first join.
+
+## Self-update (from console)
+
+1. On the console, open **Computers → Enrollment** and click **Publish agent package** (copies `agent/LocalOpsAgent.ps1` into `data/fleet/agent-package/` with version + SHA-256).
+2. Open a PC drawer → **Agent update** → **Update agent** (or Force update).
+3. The agent downloads the package over HMAC, verifies SHA-256, replaces `Program Files\LocalOpsAgent\LocalOpsAgent.ps1`, and restarts the scheduled task.
+
+**First upgrade to 2.2.0:** still manual (older agents do not understand `SelfUpdate`). After that, use the drawer.
+
 ## Remote agents and bindHost
 
 By default the console binds to `localhost` (this PC only). Agents on other PCs need:
@@ -35,18 +50,29 @@ By default the console binds to `localhost` (this PC only). Agents on other PCs 
 
 Optional: set `fleetPublicUrl` (e.g. `http://192.168.1.10:8787` or Tailscale) to pin the dashboard install one-liner. If unset, Computers uses the detected LAN IPv4 for the suggested `-ServerUrl`. Avoid binding HttpListener to a single LAN IP unless required — that can conflict with HTTP.sys URL reservations.
 
-### Computers remote actions (v2.1.5+)
+## Computers drawer (remote actions)
 
-From the PC detail panel you can queue: Flush DNS, Restart Spooler, Collect Inventory, Processes (and End), Printers, Ping PC (console→agent latency), Net smoke (agent internet ping + short download), Message, SFC scan, CHKDSK scan (read-only), CHKDSK schedule `/F` (no auto-reboot).
+Open **Computers**, click a PC row — a side drawer shows live telemetry and grouped actions:
 
-Reinstall or update the agent on remote PCs after upgrading the console so new command types are recognized.
+- **Agent update** — Update / force-update from published console package (2.2.0+)
+- **Spike forensics** — High CPU/RAM (≥90%) queues `GetResourceOffenders`; drawer shows top process/service with End / Restart service; console Alerts + NotificationManager notify the admin; table shows a SPIKE cue
+- **Network** — Flush DNS, Net smoke (ping + download + upload), Ping PC (console→agent latency)
+- **Windows Update** — Check pending status; install pending updates (no KB uninstall yet)
+- **Remote Support** — RustDesk status; silent install (requires `rustDeskInstallerUrl` HTTPS in settings)
+- **Software** — Install from curated catalog (`data/fleet/packages.json`); winget preferred, else HTTPS URL; opens `ProgramData\LocalOpsAgent\installs\{id}\`
+- **Event Log** — Tail System / Application / Security
+- **Services / Print** — Restart Spooler, Get Services, Restart Service
+- **Inventory / Inspect** — Collect Inventory, Processes (End), Printers, Run Script
+- **Message** — Message user on the remote PC
+- **Repair** — SFC scan, CHKDSK scan (read-only), CHKDSK schedule `/F` (no auto-reboot)
+- **Danger** — Restart Computer (60s delay), Remove agent
 
 ## Behavior
 
 - Heartbeat every **30 seconds** (CPU, RAM, disk, network, uptime, etc.)
 - Poll for commands every **3 seconds**
 - HMAC-SHA256 signed requests after enrollment
-- Logs: `C:\ProgramData\LocalOpsAgent\logs\agent-YYYY-MM-DD.log`
+- Logs: `C:\ProgramData\LocalOpsAgent\logs\agent-YYYY-MM-dd.log`
 
 ## Uninstall
 

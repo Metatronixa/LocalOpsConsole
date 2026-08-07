@@ -57,6 +57,7 @@ const Router = {
             remote: typeof RemoteView !== 'undefined' ? RemoteView : null,
             internetslow: typeof InternetHealthView !== 'undefined' ? InternetHealthView : null,
             fleet: typeof FleetView !== 'undefined' ? FleetView : null,
+            networkmap: typeof NetworkMapView !== 'undefined' ? NetworkMapView : null,
             security: typeof SecurityToolsView !== 'undefined' ? SecurityToolsView : null,
             eventlog: typeof EventLogView !== 'undefined' ? EventLogView : null,
             overview: typeof OverviewView !== 'undefined' ? OverviewView : null,

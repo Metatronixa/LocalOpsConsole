@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>API — LocalOpsConsole Docs</title>
+  <title>API. LocalOpsConsole Docs</title>
   <link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="../assets/css/site.css" />
 </head>
@@ -29,18 +29,18 @@
     <article class="docs-content">
       <h1>API</h1>
       <p>Base path: <code>/api/v1/</code>. JSON envelope: <code>{ Success, Message, Timestamp, Data }</code>.</p>
-      <p>Business logic lives in core services — <code>router.ps1</code> only dispatches. Methods other than those listed return <strong>405</strong>.</p>
+      <p>Business logic lives in core services, <code>router.ps1</code> only dispatches. Methods other than those listed return <strong>405</strong>.</p>
 
       <h2>Platform</h2>
       <ul>
-        <li><code>GET health</code> — version, elevation, module count</li>
-        <li><code>GET modules</code> — manifests for the sidebar (arrays forced for diagnostics/actions)</li>
-        <li><code>GET telemetry</code> — live CPU/RAM/disk/net snapshot (<code>?force=1</code>)</li>
-        <li><code>GET logs/tail?lines=n</code> — console feed</li>
-        <li><code>GET|POST settings</code> — read safe settings; POST updates Event Intel notification prefs</li>
+        <li><code>GET health</code>, version, elevation, module count</li>
+        <li><code>GET modules</code>, manifests for the sidebar (arrays forced for diagnostics/actions)</li>
+        <li><code>GET telemetry</code>, live CPU/RAM/disk/net snapshot (<code>?force=1</code>)</li>
+        <li><code>GET logs/tail?lines=n</code>, console feed</li>
+        <li><code>GET|POST settings</code>, read safe settings; POST updates Event Intel notification prefs</li>
         <li><code>GET integrity/status</code>, <code>GET automation/status</code></li>
         <li><code>GET updates/check</code>, <code>POST updates/apply</code></li>
-        <li><code>POST shutdown</code> — stops HttpListener</li>
+        <li><code>POST shutdown</code>, stops HttpListener</li>
       </ul>
 
       <h2>Event Intelligence</h2>
@@ -55,15 +55,15 @@
 
       <h2>Modules</h2>
       <ul>
-        <li><code>GET {module}/diagnostics/{name}</code> — optional query params</li>
-        <li><code>POST {module}/actions/{name}</code> — JSON body params; admin-gated when listed in <code>requiresAdmin</code></li>
+        <li><code>GET {module}/diagnostics/{name}</code>, optional query params</li>
+        <li><code>POST {module}/actions/{name}</code>, JSON body params; admin-gated when listed in <code>requiresAdmin</code></li>
       </ul>
 
       <h2>Fleet</h2>
       <ul>
         <li><code>GET fleet/enroll-token</code>, <code>POST fleet/enroll-token/rotate</code></li>
-        <li><code>POST fleet/enroll</code> — token-based (no HMAC yet)</li>
-        <li><code>POST fleet/heartbeat</code>, <code>GET fleet/poll</code>, <code>POST fleet/results</code>, <code>POST fleet/events</code> — HMAC after enroll</li>
+        <li><code>POST fleet/enroll</code>, token-based (no HMAC yet)</li>
+        <li><code>POST fleet/heartbeat</code>, <code>GET fleet/poll</code>, <code>POST fleet/results</code>, <code>POST fleet/events</code>, HMAC after enroll</li>
         <li><code>GET fleet/agents</code>, <code>GET fleet/agents/{id}</code>, <code>POST …/revoke</code></li>
         <li><code>GET|POST fleet/commands</code>, <code>GET fleet/scripts</code></li>
       </ul>

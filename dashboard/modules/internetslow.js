@@ -567,7 +567,7 @@ const InternetHealthView = {
         if (!el) return;
         if (!res.Success) { el.innerHTML = `<span class="text-rose-300">${this.escape(res.Message)}</span>`; return; }
         const d = res.Data || {};
-        el.innerHTML = `Download: <strong class="text-cyan-400">${d.DownloadMbps}</strong> Mbps · Latency: ${d.LatencyMs} ms · ${d.Bytes} bytes in ${d.DurationSec}s`;
+        el.innerHTML = `Download: <strong class="text-cyan-400">${d.DownloadMbps ?? '—'}</strong> Mbps · Upload: <strong class="text-emerald-400">${d.UploadMbps ?? '—'}</strong> Mbps · Latency: ${d.LatencyMs ?? '—'} ms`;
     },
 
     async flushDns() {

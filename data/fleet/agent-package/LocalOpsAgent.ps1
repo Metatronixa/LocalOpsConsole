@@ -1,8 +1,8 @@
 #Requires -Version 5.1
-# LocalOpsAgent.ps1 - Outbound fleet agent (v2.3.0)
+# LocalOpsAgent.ps1 - Outbound fleet agent (v2.2.0)
 
 $ErrorActionPreference = "Continue"
-$AgentVersion = "2.3.0"
+$AgentVersion = "2.2.0"
 $ConfigDir = "C:\ProgramData\LocalOpsAgent"
 $ConfigPath = Join-Path $ConfigDir "config.json"
 $LogDir = Join-Path $ConfigDir "logs"
@@ -918,112 +918,6 @@ function Invoke-AgentCommand {
                     "chkdsk $drive /F finished (exit $exitCode)"
                 }
                 $data = @{ Drive = $drive; ExitCode = $exitCode; Scheduled = [bool]$scheduled }
-            }
-            "AuditSecurityBaseline" {
-                Add-Log "Auditing security baseline (compact)..."
-                $checks = New-Object System.Collections.ArrayList
-                $pass = 0; $fail = 0; $warn = 0; $unknown = 0
-                function Add-AgentCheck([string]$Name, [string]$Status, [string]$Detail) {
-                    [void]$checks.Add([PSCustomObject]@{ Name = $Name; Status = $Status; Detail = $Detail })
-                    switch ($Status) {
-                        'Pass' { $script:__acPass++ }
-                        'Fail' { $script:__acFail++ }
-                        'Warning' { $script:__acWarn++ }
-                        default { $script:__acUnk++ }
-                    }
-                }
-                $script:__acPass = 0; $script:__acFail = 0; $script:__acWarn = 0; $script:__acUnk = 0
-                try {
-                    $mp = Get-MpComputerStatus -ErrorAction Stop
-                    if ([bool]$mp.RealTimeProtectionEnabled -and [bool]$mp.AntivirusEnabled) {
-                        Add-AgentCheck 'Microsoft Defender' 'Pass' 'Realtime and antivirus enabled'
-                    }
-                    elseif ([bool]$mp.AntivirusEnabled) {
-                        Add-AgentCheck 'Microsoft Defender' 'Warning' 'Antivirus on; realtime off'
-                    }
-                    else {
-                        Add-AgentCheck 'Microsoft Defender' 'Fail' 'Defender not fully enabled'
-                    }
-                }
-                catch { Add-AgentCheck 'Microsoft Defender' 'Unknown' $_.Exception.Message }
-                try {
-                    $profiles = Get-NetFirewallProfile -ErrorAction Stop
-                    $disabled = @($profiles | Where-Object { -not $_.Enabled })
-                    if ($disabled.Count -eq 0) {
-                        Add-AgentCheck 'Windows Firewall' 'Pass' 'All profiles enabled'
-                    }
-                    else {
-                        Add-AgentCheck 'Windows Firewall' 'Fail' ("Disabled: {0}" -f (($disabled | ForEach-Object Name) -join ', '))
-                    }
-                }
-                catch { Add-AgentCheck 'Windows Firewall' 'Unknown' $_.Exception.Message }
-
-                $total = $checks.Count
-                $score = if ($total -gt 0) {
-                    [int][math]::Round(100.0 * $script:__acPass / $total)
-                } else { 0 }
-                $success = $true
-                $message = "Baseline audit score $score%"
-                $data = @{
-                    Score   = $score
-                    Pass    = $script:__acPass
-                    Fail    = $script:__acFail
-                    Warning = $script:__acWarn
-                    Unknown = $script:__acUnk
-                    Checks  = @($checks)
-                }
-            }
-            "ApplySecurityPolicy" {
-                $packId = "hardening-basic"
-                if ($Payload -and $Payload.PackId) { $packId = [string]$Payload.PackId }
-                $allowedPacks = @('hardening-basic')
-                if ($allowedPacks -notcontains $packId) { throw "Unknown or disallowed pack: $packId" }
-
-                $controlIds = @('firewall-enable-all', 'defender-realtime-on')
-                if ($Payload -and $Payload.ControlIds) {
-                    $controlIds = @($Payload.ControlIds | ForEach-Object { [string]$_ })
-                }
-
-                $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
-                    [Security.Principal.WindowsBuiltInRole]::Administrator)
-                if (-not $isAdmin) { throw "ApplySecurityPolicy requires an elevated agent (Administrator)" }
-
-                Add-Log "Applying policy pack $packId..."
-                $results = New-Object System.Collections.ArrayList
-                foreach ($cid in $controlIds) {
-                    $ok = $false
-                    $detail = ""
-                    try {
-                        switch ($cid) {
-                            'firewall-enable-all' {
-                                Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True -ErrorAction Stop
-                                $ok = $true
-                                $detail = "Firewall Domain/Private/Public enabled"
-                            }
-                            'defender-realtime-on' {
-                                Set-MpPreference -DisableRealtimeMonitoring $false -ErrorAction Stop
-                                $ok = $true
-                                $detail = "Defender realtime monitoring enabled"
-                            }
-                            default {
-                                $detail = "Unknown control id (skipped)"
-                            }
-                        }
-                    }
-                    catch {
-                        $ok = $false
-                        $detail = $_.Exception.Message
-                    }
-                    Add-Log ("{0}: {1} — {2}" -f $cid, $(if ($ok) { 'OK' } else { 'FAIL' }), $detail)
-                    [void]$results.Add([PSCustomObject]@{ Id = $cid; Ok = $ok; Detail = $detail })
-                }
-                $failed = @($results | Where-Object { -not $_.Ok }).Count
-                $success = ($failed -eq 0)
-                $message = if ($success) { "Applied $packId ($($results.Count) controls)" } else { "Applied $packId with $failed failure(s)" }
-                $data = @{
-                    PackId  = $packId
-                    Results = @($results)
-                }
             }
             default {
                 throw "Unknown command type: $Type"

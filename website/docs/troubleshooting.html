@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Troubleshooting — LocalOpsConsole Docs</title>
+  <title>Troubleshooting. LocalOpsConsole Docs</title>
   <link rel="icon" href="../assets/img/logo.svg" type="image/svg+xml" />
   <link rel="stylesheet" href="../assets/css/site.css" />
 </head>
@@ -47,7 +47,7 @@
       <h2>Remote agent cannot enroll / connect</h2>
       <ul>
         <li>Confirm <code>-ServerUrl</code> is the console PC’s <strong>LAN IP</strong> (or <code>fleetPublicUrl</code>), not <code>127.0.0.1</code> / <code>localhost</code>.</li>
-        <li>On the console, set <code>bindHost</code> to <code>0.0.0.0</code> (or the LAN IP) and restart — default <code>localhost</code> rejects remote clients.</li>
+        <li>On the console, set <code>bindHost</code> to <code>0.0.0.0</code> (or the LAN IP) and restart. Default <code>localhost</code> rejects remote clients.</li>
         <li>Allow inbound TCP on the console port in Windows Firewall.</li>
         <li>From the remote PC, test in a browser: <code>http://&lt;console-LAN-IP&gt;:8787/</code>.</li>
       </ul>

@@ -232,7 +232,10 @@ function Invoke-LocFleetRouter {
 
     # Agent HMAC routes
     $agentRoutes = @('enroll', 'heartbeat', 'poll', 'results', 'events')
-    $needsHmac = ($subLower -in $agentRoutes) -or ($subLower -eq 'scripts' -and $agentSub -and $Segments.Count -ge 6 -and $Segments[5].ToLower() -eq 'content')
+    $agentPkgSub = if ($agentSub) { $agentSub.ToLower() } else { '' }
+    $needsHmac = ($subLower -in $agentRoutes) `
+        -or ($subLower -eq 'scripts' -and $agentSub -and $Segments.Count -ge 6 -and $Segments[5].ToLower() -eq 'content') `
+        -or ($subLower -eq 'agent-package' -and $agentPkgSub -in @('manifest', 'content'))
 
     $body = ""
     $bodyHash = @{}
@@ -324,6 +327,16 @@ function Invoke-LocFleetRouter {
             Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data
             return
         }
+        'topology' {
+            if ($method -ne "GET") {
+                Send-JsonResponse -Context $Context -Success $false -Message "Topology requires GET" -StatusCode 405
+                return
+            }
+            $result = Get-LocFleetTopology
+            $status = if ($result.StatusCode) { [int]$result.StatusCode } else { 200 }
+            Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data -StatusCode $status
+            return
+        }
         'agents' {
             if ($agentSub -and $Segments.Count -ge 6 -and $Segments[5].ToLower() -eq 'revoke') {
                 if ($method -ne "POST") {
@@ -365,6 +378,29 @@ function Invoke-LocFleetRouter {
             return
         }
         'commands' {
+            # POST /fleet/commands/{id}/cancel  or  /fleet/commands/clear-stuck
+            $cmdAction = if ($Segments.Count -ge 5) { $Segments[4].ToLower() } else { "" }
+            $cmdVerb = if ($Segments.Count -ge 6) { $Segments[5].ToLower() } else { "" }
+            if ($method -eq "POST" -and $cmdAction -eq "clear-stuck") {
+                $aid = if ($bodyHash.AgentId) { [string]$bodyHash.AgentId } else { "" }
+                if (-not $aid) {
+                    Send-JsonResponse -Context $Context -Success $false -Message "AgentId required" -StatusCode 400
+                    return
+                }
+                $reason = if ($bodyHash.Reason) { [string]$bodyHash.Reason } else { "Cleared stuck Running/Pending by operator" }
+                $result = Cancel-LocFleetStuckCommands -AgentId $aid -Reason $reason
+                $status = if ($result.StatusCode) { [int]$result.StatusCode } else { 200 }
+                Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data -StatusCode $status
+                return
+            }
+            if ($method -eq "POST" -and $cmdAction -and $cmdVerb -eq "cancel") {
+                $aid = if ($bodyHash.AgentId) { [string]$bodyHash.AgentId } else { "" }
+                $reason = if ($bodyHash.Reason) { [string]$bodyHash.Reason } else { "Cancelled by operator" }
+                $result = Cancel-LocFleetCommand -CommandId $cmdAction -AgentId $aid -Reason $reason
+                $status = if ($result.StatusCode) { [int]$result.StatusCode } else { 200 }
+                Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data -StatusCode $status
+                return
+            }
             if ($method -eq "POST") {
                 $aid = if ($bodyHash.AgentId) { [string]$bodyHash.AgentId } else { "" }
                 $type = if ($bodyHash.Type) { [string]$bodyHash.Type } else { "" }
@@ -431,6 +467,65 @@ function Invoke-LocFleetRouter {
             }
             $result = Get-LocFleetEnrollToken
             Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data
+            return
+        }
+        'policy-packs' {
+            if ($method -ne "GET") {
+                Send-JsonResponse -Context $Context -Success $false -Message "Policy packs require GET" -StatusCode 405
+                return
+            }
+            $result = Get-LocFleetPolicyPacks
+            Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data
+            return
+        }
+        'packages' {
+            if ($method -ne "GET") {
+                Send-JsonResponse -Context $Context -Success $false -Message "Packages require GET" -StatusCode 405
+                return
+            }
+            $result = Get-LocFleetPackages
+            Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data
+            return
+        }
+        'agent-package' {
+            $pkgAction = if ($agentSub) { $agentSub.ToLower() } else { '' }
+            if ($pkgAction -eq 'publish') {
+                if ($method -ne "POST") {
+                    Send-JsonResponse -Context $Context -Success $false -Message "Publish requires POST" -StatusCode 405
+                    return
+                }
+                $result = Publish-LocFleetAgentPackage
+                $status = if ($result.StatusCode) { [int]$result.StatusCode } else { 200 }
+                Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data -StatusCode $status
+                return
+            }
+            if ($pkgAction -eq 'manifest') {
+                if ($method -ne "GET") {
+                    Send-JsonResponse -Context $Context -Success $false -Message "Manifest requires GET" -StatusCode 405
+                    return
+                }
+                $result = Get-LocFleetAgentPackageManifest -AutoPublish
+                $status = if ($result.StatusCode) { [int]$result.StatusCode } else { 200 }
+                Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data -StatusCode $status
+                return
+            }
+            if ($pkgAction -eq 'content') {
+                if ($method -ne "GET") {
+                    Send-JsonResponse -Context $Context -Success $false -Message "Content requires GET" -StatusCode 405
+                    return
+                }
+                $result = Get-LocFleetAgentPackageContent
+                $status = if ($result.StatusCode) { [int]$result.StatusCode } else { 200 }
+                Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data -StatusCode $status
+                return
+            }
+            if ($method -ne "GET") {
+                Send-JsonResponse -Context $Context -Success $false -Message "Agent package requires GET or POST .../publish" -StatusCode 405
+                return
+            }
+            $result = Get-LocFleetAgentPackageManifest -AutoPublish
+            $status = if ($result.StatusCode) { [int]$result.StatusCode } else { 200 }
+            Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data -StatusCode $status
             return
         }
         default {
@@ -570,8 +665,7 @@ function Invoke-LocRouter {
             Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data -StatusCode $status
             return
         }
-        Send-JsonResponse -Context $Context -Success $false -Message "Use /api/v1/updates/check or /api/v1/updates/apply" -StatusCode 400
-        return
+        # Fall through to Windows Updates module (diagnostics/actions)
     }
 
     # Built-in: integrity status
@@ -648,6 +742,41 @@ function Invoke-LocRouter {
     if ($resource -in @("events", "alerts", "incidents", "timeline", "rules", "notifications", "security-score", "health-score", "heatmap", "event-intel")) {
         Invoke-LocEventIntelRouter -Context $Context -Segments $segments
         return
+    }
+
+    # Built-in: SyncMe self-registration (before module diagnostics/actions)
+    if ($resource -eq "syncme") {
+        $syncSub = if ($segments.Count -ge 4) { $segments[3].ToLower() } else { "" }
+        if ($syncSub -in @("register", "heartbeat")) {
+            if ($method -ne "POST") {
+                Send-JsonResponse -Context $Context -Success $false -Message "POST required" -StatusCode 405
+                return
+            }
+            # Load helpers before loopback check (Test-LocRequestIsLoopback lives here)
+            if (-not (Get-Command Save-LocSyncMeRegistration -ErrorAction SilentlyContinue)) {
+                $regLib = Join-Path (Get-LocRoot) "modules\SyncMe\lib\SyncMeRegister.ps1"
+                if (Test-Path -LiteralPath $regLib) { . $regLib }
+            }
+            if (-not (Get-Command Save-LocSyncMeRegistration -ErrorAction SilentlyContinue)) {
+                Send-JsonResponse -Context $Context -Success $false -Message "SyncMe register helpers not loaded" -StatusCode 500
+                return
+            }
+            if (-not (Test-LocRequestIsLoopback -Request $request)) {
+                Send-JsonResponse -Context $Context -Success $false -Message "SyncMe register is loopback-only in this release" -StatusCode 403
+                return
+            }
+            $body = Read-LocRequestBody -Request $request
+            $parsed = Parse-LocJsonBody -Body $body
+            if ($null -eq $parsed) {
+                Send-JsonResponse -Context $Context -Success $false -Message "Invalid JSON" -StatusCode 400
+                return
+            }
+            $result = Save-LocSyncMeRegistration -Fields $parsed
+            $status = if ($result.StatusCode) { [int]$result.StatusCode } else { 200 }
+            Send-JsonResponse -Context $Context -Success $result.Success -Message $result.Message -Data $result.Data -StatusCode $status
+            return
+        }
+        # Fall through to module diagnostics/actions (GetStatus, OpenConsole, …)
     }
 
     # Built-in: fleet RMM (before module routes)

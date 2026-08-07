@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Troubleshooting — LocalOpsConsole</title>
+  <title>Troubleshooting. LocalOpsConsole</title>
   <link rel="stylesheet" href="../assets/css/site.css" />
 </head>
 <body>
@@ -55,7 +55,7 @@
       <p>Restart the server after updating. Module libs must load before each action (fixed in 1.2).</p>
 
       <h2>SyncMe not found</h2>
-      <p>Run <strong>OpenDownloadPage</strong> to open <a href="https://www.syncme.co.za" target="_blank" rel="noopener">syncme.co.za</a>, install SyncMe, then set <code>syncMePath</code> in <code>settings.json</code> if needed and restart.</p>
+      <p>If SyncMe is running on this PC it can auto-register with LocalOps. Otherwise run <strong>OpenDownloadPage</strong> to open <a href="https://www.syncme.co.za" target="_blank" rel="noopener">syncme.co.za</a>, install SyncMe, then set <code>syncMePath</code> in <code>settings.json</code> if needed and restart.</p>
 
       <h2>Remote open files / sessions fail</h2>
       <p>Need elevation and SMB admin rights on the target PC. Registry reads require Remote Registry enabled on the target.</p>
@@ -70,17 +70,17 @@
 
       <h2>Remote agent cannot enroll</h2>
       <ul>
-        <li><code>-ServerUrl</code> must be the console’s LAN IP or <code>fleetPublicUrl</code> — not <code>127.0.0.1</code>.</li>
+        <li><code>-ServerUrl</code> must be the console’s LAN IP or <code>fleetPublicUrl</code>, not <code>127.0.0.1</code>.</li>
         <li>Set console <code>bindHost</code> to <code>0.0.0.0</code> (not a single LAN IP) and set <code>fleetPublicUrl</code>; restart; allow firewall TCP on the port.</li>
         <li>If the server fails with “conflicts with an existing registration”, stop leftover listeners on 8787 and run <code>netsh http show urlacl</code>.</li>
-        <li>See <a href="../docs/installation.html">Installation — LocalOps Agent</a>.</li>
+        <li>See <a href="../docs/installation.html">Installation. LocalOps Agent</a>.</li>
       </ul>
 
       <h2>Module missing</h2>
       <p>Ensure <code>modules/*/module.json</code> is valid JSON. Health reports module load errors.</p>
 
       <h2>UI looks unstyled</h2>
-      <p>Assets are local under <code>dashboard/assets</code>. If you only opened <code>index.html</code> from disk without the server, API calls will fail — always use the HttpListener URL.</p>
+      <p>Assets are local under <code>dashboard/assets</code>. If you only opened <code>index.html</code> from disk without the server, API calls will fail. Always use the HttpListener URL.</p>
     </article>
   </div>
 

@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Updates — LocalOpsConsole</title>
+  <title>Updates. LocalOpsConsole</title>
   <link rel="stylesheet" href="../assets/css/site.css" />
 </head>
 <body>
@@ -58,13 +58,13 @@
     }
   ]
 }</pre>
-      <p>Relative URLs (e.g. <code>builds/LocalOpsConsole-x.y.z.zip</code>) resolve against the directory that contains <code>update.json</code> — useful if you also mirror ZIPs under <code>https://www.opsconsole.co.za/uploads/builds/</code>.</p>
+      <p>Relative URLs (e.g. <code>builds/LocalOpsConsole-x.y.z.zip</code>) resolve against the directory that contains <code>update.json</code>, useful if you also mirror ZIPs under <code>https://www.opsconsole.co.za/uploads/builds/</code>.</p>
 
       <h2>In the dashboard</h2>
       <ol>
         <li>On load, the UI calls <code>GET /api/v1/updates/check</code>.</li>
         <li>If <code>latest</code> is newer than local <code>VERSION</code>, an update banner appears.</li>
-        <li>Confirm to run <code>POST /api/v1/updates/apply</code> — download, SHA-256 verify, extract (preserving <code>logs/</code> and local <code>settings.json</code>), then restart.</li>
+        <li>Confirm to run <code>POST /api/v1/updates/apply</code>, download, SHA-256 verify, extract (preserving <code>logs/</code> and local <code>settings.json</code>), then restart.</li>
       </ol>
 
       <h2>Publishing a release</h2>

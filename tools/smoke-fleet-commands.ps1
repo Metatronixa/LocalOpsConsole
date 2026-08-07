@@ -34,7 +34,8 @@ function Assert-True {
 
 $required = @(
     'FlushDns', 'RestartSpooler', 'GetProcesses', 'EndProcess', 'GetPrinters',
-    'NetHealthSmoke', 'SfcScannow', 'ChkdskScan', 'ChkdskScheduleFix', 'CollectInventory', 'Message'
+    'NetHealthSmoke', 'SfcScannow', 'ChkdskScan', 'ChkdskScheduleFix', 'CollectInventory', 'Message',
+    'AuditSecurityBaseline', 'ApplySecurityPolicy', 'SelfUpdate'
 )
 $types = @(Get-LocFleetCommandTypes)
 Write-Host "Fleet command allow-list ($($types.Count) types)" -ForegroundColor Cyan

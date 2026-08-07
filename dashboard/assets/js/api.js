@@ -30,9 +30,18 @@ const API = {
             if (!response.ok && !silent) {
                 LiveConsole.log(`[API] ${endpoint}: HTTP ${response.status}`, 'WARN');
             }
-            const json = await response.json();
+            const text = await response.text();
+            let json;
+            try {
+                json = text ? JSON.parse(text) : { Success: false, Message: 'Empty response', Data: null };
+            } catch {
+                if (!silent) {
+                    LiveConsole.log(`[API Error] ${endpoint}: invalid JSON (HTTP ${response.status})`, 'ERROR');
+                }
+                return { Success: false, Message: `Invalid JSON (HTTP ${response.status})`, Data: null };
+            }
             if (!json.Success && !silent) {
-                LiveConsole.log(`[API] ${json.Message}`, 'WARN');
+                LiveConsole.log(`[API] ${json.Message || endpoint}`, 'WARN');
             }
             return json;
         } catch (err) {
