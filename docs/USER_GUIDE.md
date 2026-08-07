@@ -5,7 +5,7 @@ LocalOpsConsole is a **local-first Windows Operations Platform** (v2.1.6) for IT
 **Preferred reading:** the styled HTML guide (same content, full walkthrough):
 
 - In the running app: open **Help** in the header, or browse `http://localhost:8787/user-guide.html`
-- On the website: [User Guide](https://www.opsconsole.co.za/docs/user-guide.html) (source: `website/docs/user-guide.html`)
+- On the website: [User Guide](https://www.opsconsole.co.za/docs/user-guide.html)
 - Packaged copy: `dashboard/user-guide.html`
 
 This markdown file is a short companion for the repo. The HTML guide explains every major surface in detail.
@@ -113,4 +113,4 @@ Set `syncMePath` (or register via the SyncMe module). Open **Operations → Sync
 - Commands stuck **Pending**: often a stuck **Running** command is blocking the queue (see Command history). Use **Clear stuck**, or wait for the 45m Running timeout. Also restart task **LocalOpsAgent**, check `C:\ProgramData\LocalOpsAgent\logs`, confirm `ServerUrl`. **Failed** with “Unknown command type” means an old agent — reinstall/update the agent
 - Event Log “Access denied” on the Security channel is normal without elevation
 
-See also the [HTML User Guide](../website/docs/user-guide.html), `CHANGELOG.md`, and `SECURITY.md`.
+See also the [HTML User Guide](https://www.opsconsole.co.za/docs/user-guide.html), `CHANGELOG.md`, and `SECURITY.md`.

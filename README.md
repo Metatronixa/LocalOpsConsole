@@ -11,21 +11,21 @@
 PowerShell HttpListener API + offline SPA. Plugin modules via `module.json`. **Overview** answers “Is this computer healthy?” using health score, security posture, and active incidents — not raw Event Viewer dumps.
 
 <p align="center">
-  <img src="website/assets/img/screenshot-overview.png" alt="LocalOpsConsole — Overview health, security, and incidents" width="860" />
+  <img src="https://www.opsconsole.co.za/assets/img/screenshot-overview.png" alt="LocalOpsConsole — Overview health, security, and incidents" width="860" />
 </p>
 <p align="center"><em>Overview — health score, security posture, and active incidents</em></p>
 
 <p align="center">
-  <img src="website/assets/img/screenshots/security-center.png" alt="LocalOpsConsole — Security Center" width="860" />
+  <img src="https://www.opsconsole.co.za/assets/img/screenshots/security-center.png" alt="LocalOpsConsole — Security Center" width="860" />
 </p>
 <p align="center"><em>Security Center — posture score and control status</em></p>
 
 <p align="center">
-  <img src="website/assets/img/screenshot-system.png" alt="LocalOpsConsole — live system telemetry" width="860" />
+  <img src="https://www.opsconsole.co.za/assets/img/screenshot-system.png" alt="LocalOpsConsole — live system telemetry" width="860" />
 </p>
 <p align="center"><em>Live telemetry — CPU, RAM, disk, network, GPU</em></p>
 
-<p align="center"><a href="website/screenshots.html">More screenshots by category →</a></p>
+<p align="center"><a href="https://www.opsconsole.co.za/screenshots.html">More screenshots by category →</a></p>
 
 ## Why free?
 
@@ -42,7 +42,7 @@ Intentionally MIT so techs and small teams can operate Windows endpoints without
 ### Option B — Bootstrap script
 
 ```powershell
-iwr https://raw.githubusercontent.com/Metatronixa/LocalOpsConsole/main/website/uploads/Install-LocalOpsConsole.ps1 -OutFile "$env:TEMP\Install-LOC.ps1"
+iwr https://raw.githubusercontent.com/Metatronixa/LocalOpsConsole/main/scripts/Install-LocalOpsConsole.ps1 -OutFile "$env:TEMP\Install-LOC.ps1"
 powershell -ExecutionPolicy Bypass -File "$env:TEMP\Install-LOC.ps1" -Launch
 ```
 
@@ -75,9 +75,9 @@ Opens `http://localhost:8787/` on **Overview**.
 
 | Doc | Description |
 |-----|-------------|
-| [User Guide (HTML)](website/docs/user-guide.html) | Complete operator walkthrough (also in-app via **Help** → `/user-guide.html`) |
+| [User Guide (HTML)](https://www.opsconsole.co.za/docs/user-guide.html) | Complete operator walkthrough (also in-app via **Help** → `/user-guide.html`) |
 | [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | Markdown companion |
-| [website/docs/](website/docs/) | Installation, architecture, modules, API, FAQ |
+| [Docs site](https://www.opsconsole.co.za/docs/) | Installation, architecture, modules, API, FAQ |
 | [docs/modules/](docs/modules/) | Per-module docs |
 | [ROADMAP.md](ROADMAP.md) | Public roadmap |
 | [SECURITY.md](SECURITY.md) | Security policy |
@@ -92,7 +92,7 @@ Opens `http://localhost:8787/` on **Overview**.
 - `modules/` — plugin packs (`module.json` + diagnostics/actions)
 - `dashboard/` — offline SPA (Overview, Incidents, Security Center, …)
 - `notifications/` — channel plugins
-- `website/` — marketing + update feed
+- `website/` — local marketing site + update feed (not tracked on GitHub; hosted at opsconsole.co.za)
 - `data/integrity/` — module hash store (generated on build)
 
 ## API (summary)
@@ -113,7 +113,7 @@ Privileged actions are listed in each module’s `requiresAdmin`. Automation is 
 - Binds to **localhost** only by default.
 - Admin-required actions are blocked without elevation.
 - UI works offline (no CDN).
-- Do not expose the API to the public internet. For LAN fleet agents, set `bindHost` to `0.0.0.0` and use the console LAN IP (see the [User Guide](website/docs/user-guide.html)).
+- Do not expose the API to the public internet. For LAN fleet agents, set `bindHost` to `0.0.0.0` and use the console LAN IP (see the [User Guide](https://www.opsconsole.co.za/docs/user-guide.html)).
 - See `SECURITY.md` and `CHANGELOG.md`.
 
 ## Updates

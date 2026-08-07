@@ -3,7 +3,6 @@ logs/*
 !logs/.gitkeep
 dist/
 *.zip
-!website/uploads/builds/.gitkeep
 .DS_Store
 Thumbs.db
 *.bak
@@ -32,3 +31,5 @@ data/integrity/module-hashes.json
 !data/storage/.gitkeep
 !data/syncme/.gitkeep
 !data/integrity/.gitkeep
+# Marketing site + update feed stay local / hosted on opsconsole.co.za — not on GitHub
+website/

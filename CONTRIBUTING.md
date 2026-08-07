@@ -15,7 +15,7 @@ Thanks for helping improve LocalOpsConsole. This project is free and open source
 - Each module lives under `modules/<Name>/` with `module.json`, `diagnostics/`, `actions/`, optional `lib/`.
 - Prefer fast CIM/local commands for anything on the telemetry path.
 - Mark mutating actions in `requiresAdmin` when elevation is required.
-- Document new modules in `docs/USER_GUIDE.md` and `website/guide/modules.html`.
+- Document new modules in `docs/USER_GUIDE.md` and the local marketing docs under `website/` (hosted at opsconsole.co.za; not tracked on GitHub).
 
 ## Security
 
