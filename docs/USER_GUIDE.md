@@ -1,6 +1,6 @@
 # LocalOpsConsole User Guide
 
-LocalOpsConsole is a **local-first Windows Operations Platform** (v2.1.6) for IT professionals, MSPs, system administrators, and power users.
+LocalOpsConsole is a **local-first Windows Operations Platform** (v2.1.7) for IT professionals, MSPs, system administrators, and power users.
 
 **Preferred reading:** the styled HTML guide (same content, full walkthrough):
 
@@ -110,7 +110,7 @@ Set `syncMePath` (or register via the SyncMe module). Open **Operations → Sync
 - Set `integrityMode` to `warn` during local module development
 - Run `.\tools\smoke-api.ps1` with the server running
 - Remote agents: `fleetPublicUrl` (LAN or Tailscale IP) + `bindHost: 0.0.0.0`; if start fails with “conflicts with an existing registration”, free port 8787 / check `netsh http show urlacl`
-- Commands stuck **Pending**: often a stuck **Running** command is blocking the queue (see Command history). Use **Clear stuck**, or wait for the 45m Running timeout. Also restart task **LocalOpsAgent**, check `C:\ProgramData\LocalOpsAgent\logs`, confirm `ServerUrl`. **Failed** with “Unknown command type” means an old agent — reinstall/update the agent
+- Commands stuck **Pending**: often a stuck **Running** command is blocking the queue (see Command history). Use **Clear stuck**, or wait for short-command (5m) / long-command (45m) Running timeout. Pending never claimed fails after ~10m. Restart task **LocalOpsAgent**, check `C:\ProgramData\LocalOpsAgent\logs` for Poll errors, confirm `ServerUrl`. **Failed** with “Unknown command type” or disabled Event Log/WU buttons means an old agent — install Agent **2.3.0+** (2.1.5 cannot self-update; reinstall manually)
 - Event Log “Access denied” on the Security channel is normal without elevation
 
 See also the [HTML User Guide](https://www.opsconsole.co.za/docs/user-guide.html), `CHANGELOG.md`, and `SECURITY.md`.

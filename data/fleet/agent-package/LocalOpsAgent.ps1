@@ -1,8 +1,8 @@
 #Requires -Version 5.1
-# LocalOpsAgent.ps1 - Outbound fleet agent (v2.2.0)
+# LocalOpsAgent.ps1 - Outbound fleet agent (v2.3.0)
 
 $ErrorActionPreference = "Continue"
-$AgentVersion = "2.2.0"
+$AgentVersion = "2.3.0"
 $ConfigDir = "C:\ProgramData\LocalOpsAgent"
 $ConfigPath = Join-Path $ConfigDir "config.json"
 $LogDir = Join-Path $ConfigDir "logs"
@@ -74,7 +74,10 @@ function Invoke-AgentApi {
         $bodyText = ($Body | ConvertTo-Json -Depth 8 -Compress)
     }
 
-    $headers = @{ "Content-Type" = "application/json" }
+    $headers = @{}
+    if ($bodyText) {
+        $headers["Content-Type"] = "application/json"
+    }
     if ($Signed) {
         $ts = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds().ToString()
         $sigPayload = "$ts$($Method.ToUpperInvariant())$Path$bodyText"
@@ -87,11 +90,14 @@ function Invoke-AgentApi {
     $params = @{
         Uri             = $uri
         Method          = $Method
-        Headers         = $headers
         TimeoutSec      = $TimeoutSec
         UseBasicParsing = $true
     }
-    if ($bodyText) { $params.Body = $bodyText }
+    if ($headers.Count -gt 0) { $params.Headers = $headers }
+    if ($bodyText) {
+        $params.Body = $bodyText
+        $params.ContentType = "application/json"
+    }
 
     return Invoke-RestMethod @params
 }
@@ -196,7 +202,17 @@ function Get-AgentTelemetry {
 
     $internetOk = $null
     try {
-        $internetOk = (Test-Connection -ComputerName 1.1.1.1 -Count 1 -Quiet -ErrorAction SilentlyContinue)
+        # Soft timeout — Test-Connection can hang and starve the poll loop.
+        $job = Start-Job -ScriptBlock {
+            Test-Connection -ComputerName 1.1.1.1 -Count 1 -Quiet -ErrorAction SilentlyContinue
+        }
+        if (Wait-Job $job -Timeout 3) {
+            $internetOk = [bool](Receive-Job $job)
+        }
+        else {
+            Stop-Job $job -ErrorAction SilentlyContinue
+        }
+        Remove-Job $job -Force -ErrorAction SilentlyContinue
     }
     catch { }
 
@@ -235,6 +251,9 @@ function Get-AgentPendingCommands {
         $resp = Invoke-AgentApi -Method GET -Path "/api/v1/fleet/poll" -Signed -TimeoutSec 20
         if ($resp.Success -and $resp.Data) {
             return @($resp.Data)
+        }
+        if (-not $resp.Success) {
+            Write-AgentLog "Poll rejected: $($resp.Message)" "WARN"
         }
     }
     catch {
@@ -562,18 +581,44 @@ function Invoke-AgentCommand {
                 $lastSuccess = $null
                 $comError = $null
                 try {
-                    $session = New-Object -ComObject Microsoft.Update.Session
-                    $searcher = $session.CreateUpdateSearcher()
-                    $historyCount = $searcher.GetTotalHistoryCount()
-                    if ($historyCount -gt 0) {
-                        $hist = $searcher.QueryHistory(0, 1)
-                        if ($hist.Count -gt 0) { $lastSuccess = $hist.Item(0).Date.ToString("yyyy-MM-dd HH:mm:ss") }
+                    $wuJob = Start-Job -ScriptBlock {
+                        $out = @{ Pending = @(); LastHistoryDate = $null; Error = $null }
+                        try {
+                            $session = New-Object -ComObject Microsoft.Update.Session
+                            $searcher = $session.CreateUpdateSearcher()
+                            $historyCount = $searcher.GetTotalHistoryCount()
+                            if ($historyCount -gt 0) {
+                                $hist = $searcher.QueryHistory(0, 1)
+                                if ($hist.Count -gt 0) { $out.LastHistoryDate = $hist.Item(0).Date.ToString("yyyy-MM-dd HH:mm:ss") }
+                            }
+                            $result = $searcher.Search("IsInstalled=0 and Type='Software' and IsHidden=0")
+                            $list = @()
+                            for ($i = 0; $i -lt $result.Updates.Count -and $i -lt 25; $i++) {
+                                $u = $result.Updates.Item($i)
+                                $list += @{ Title = [string]$u.Title; IsDownloaded = [bool]$u.IsDownloaded; SizeMB = [math]::Round($u.MaxDownloadSize / 1MB, 1) }
+                            }
+                            $out.Pending = $list
+                        }
+                        catch {
+                            $out.Error = $_.Exception.Message
+                        }
+                        return $out
                     }
-                    $result = $searcher.Search("IsInstalled=0 and Type='Software' and IsHidden=0")
-                    for ($i = 0; $i -lt $result.Updates.Count -and $i -lt 25; $i++) {
-                        $u = $result.Updates.Item($i)
-                        $pending += @{ Title = [string]$u.Title; IsDownloaded = [bool]$u.IsDownloaded; SizeMB = [math]::Round($u.MaxDownloadSize / 1MB, 1) }
+                    if (Wait-Job $wuJob -Timeout 90) {
+                        $wuOut = Receive-Job $wuJob
+                        $pending = @($wuOut.Pending)
+                        $lastSuccess = $wuOut.LastHistoryDate
+                        if ($wuOut.Error) {
+                            $comError = [string]$wuOut.Error
+                            Add-Log "WU search: $comError"
+                        }
                     }
+                    else {
+                        Stop-Job $wuJob -ErrorAction SilentlyContinue
+                        $comError = "WU search timed out after 90s"
+                        Add-Log $comError
+                    }
+                    Remove-Job $wuJob -Force -ErrorAction SilentlyContinue
                 }
                 catch {
                     $comError = $_.Exception.Message
@@ -918,6 +963,112 @@ function Invoke-AgentCommand {
                     "chkdsk $drive /F finished (exit $exitCode)"
                 }
                 $data = @{ Drive = $drive; ExitCode = $exitCode; Scheduled = [bool]$scheduled }
+            }
+            "AuditSecurityBaseline" {
+                Add-Log "Auditing security baseline (compact)..."
+                $checks = New-Object System.Collections.ArrayList
+                $pass = 0; $fail = 0; $warn = 0; $unknown = 0
+                function Add-AgentCheck([string]$Name, [string]$Status, [string]$Detail) {
+                    [void]$checks.Add([PSCustomObject]@{ Name = $Name; Status = $Status; Detail = $Detail })
+                    switch ($Status) {
+                        'Pass' { $script:__acPass++ }
+                        'Fail' { $script:__acFail++ }
+                        'Warning' { $script:__acWarn++ }
+                        default { $script:__acUnk++ }
+                    }
+                }
+                $script:__acPass = 0; $script:__acFail = 0; $script:__acWarn = 0; $script:__acUnk = 0
+                try {
+                    $mp = Get-MpComputerStatus -ErrorAction Stop
+                    if ([bool]$mp.RealTimeProtectionEnabled -and [bool]$mp.AntivirusEnabled) {
+                        Add-AgentCheck 'Microsoft Defender' 'Pass' 'Realtime and antivirus enabled'
+                    }
+                    elseif ([bool]$mp.AntivirusEnabled) {
+                        Add-AgentCheck 'Microsoft Defender' 'Warning' 'Antivirus on; realtime off'
+                    }
+                    else {
+                        Add-AgentCheck 'Microsoft Defender' 'Fail' 'Defender not fully enabled'
+                    }
+                }
+                catch { Add-AgentCheck 'Microsoft Defender' 'Unknown' $_.Exception.Message }
+                try {
+                    $profiles = Get-NetFirewallProfile -ErrorAction Stop
+                    $disabled = @($profiles | Where-Object { -not $_.Enabled })
+                    if ($disabled.Count -eq 0) {
+                        Add-AgentCheck 'Windows Firewall' 'Pass' 'All profiles enabled'
+                    }
+                    else {
+                        Add-AgentCheck 'Windows Firewall' 'Fail' ("Disabled: {0}" -f (($disabled | ForEach-Object Name) -join ', '))
+                    }
+                }
+                catch { Add-AgentCheck 'Windows Firewall' 'Unknown' $_.Exception.Message }
+
+                $total = $checks.Count
+                $score = if ($total -gt 0) {
+                    [int][math]::Round(100.0 * $script:__acPass / $total)
+                } else { 0 }
+                $success = $true
+                $message = "Baseline audit score $score%"
+                $data = @{
+                    Score   = $score
+                    Pass    = $script:__acPass
+                    Fail    = $script:__acFail
+                    Warning = $script:__acWarn
+                    Unknown = $script:__acUnk
+                    Checks  = @($checks)
+                }
+            }
+            "ApplySecurityPolicy" {
+                $packId = "hardening-basic"
+                if ($Payload -and $Payload.PackId) { $packId = [string]$Payload.PackId }
+                $allowedPacks = @('hardening-basic')
+                if ($allowedPacks -notcontains $packId) { throw "Unknown or disallowed pack: $packId" }
+
+                $controlIds = @('firewall-enable-all', 'defender-realtime-on')
+                if ($Payload -and $Payload.ControlIds) {
+                    $controlIds = @($Payload.ControlIds | ForEach-Object { [string]$_ })
+                }
+
+                $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole(
+                    [Security.Principal.WindowsBuiltInRole]::Administrator)
+                if (-not $isAdmin) { throw "ApplySecurityPolicy requires an elevated agent (Administrator)" }
+
+                Add-Log "Applying policy pack $packId..."
+                $results = New-Object System.Collections.ArrayList
+                foreach ($cid in $controlIds) {
+                    $ok = $false
+                    $detail = ""
+                    try {
+                        switch ($cid) {
+                            'firewall-enable-all' {
+                                Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled True -ErrorAction Stop
+                                $ok = $true
+                                $detail = "Firewall Domain/Private/Public enabled"
+                            }
+                            'defender-realtime-on' {
+                                Set-MpPreference -DisableRealtimeMonitoring $false -ErrorAction Stop
+                                $ok = $true
+                                $detail = "Defender realtime monitoring enabled"
+                            }
+                            default {
+                                $detail = "Unknown control id (skipped)"
+                            }
+                        }
+                    }
+                    catch {
+                        $ok = $false
+                        $detail = $_.Exception.Message
+                    }
+                    Add-Log ("{0}: {1} — {2}" -f $cid, $(if ($ok) { 'OK' } else { 'FAIL' }), $detail)
+                    [void]$results.Add([PSCustomObject]@{ Id = $cid; Ok = $ok; Detail = $detail })
+                }
+                $failed = @($results | Where-Object { -not $_.Ok }).Count
+                $success = ($failed -eq 0)
+                $message = if ($success) { "Applied $packId ($($results.Count) controls)" } else { "Applied $packId with $failed failure(s)" }
+                $data = @{
+                    PackId  = $packId
+                    Results = @($results)
+                }
             }
             default {
                 throw "Unknown command type: $Type"

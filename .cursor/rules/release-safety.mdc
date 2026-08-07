@@ -48,3 +48,4 @@ When the user says the GitHub app/release is broken and to repair **without bump
 
 - `website/` is gitignored — do not commit it. Deploy marketing/update feed separately to opsconsole.co.za.
 - Bootstrap installer for GitHub raw URLs lives under `scripts/Install-LocalOpsConsole.ps1`.
+- After every release: bump visible version strings on `website/index.html` and `website/download.html` to match `VERSION`, refresh `website/uploads/update.json` (SHA of the repaired ZIP), then **deploy the whole `website/` tree** to opsconsole.co.za. Leaving live HTML on an old version while GitHub is newer is a release failure.

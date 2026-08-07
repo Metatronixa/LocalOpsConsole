@@ -1,5 +1,27 @@
 # Changelog
 
+## 2.1.7 — 2026-08-07
+
+### Bugs fixed
+
+- **Fleet Pending forever**: agent GET poll no longer sends `Content-Type` (PS 5.1 could break `/fleet/poll` while heartbeat still worked).
+- **Never-claimed Pending TTL**: Pending with no `ClaimedAt` fails after 10 minutes with a clear message.
+- **Short Running timeout**: FlushDns / EventLog / Processes etc. abandon after **5m** (SFC/WU/CHKDSK/policy stay 45m).
+- **Agent remove** clears that PC’s Pending/Running commands.
+- **UI**: Event Log / WU / Policy / Offenders gated by agent min version; clearer outdated-agent guidance.
+- **WU search** on agent soft-timeouts after 90s so the poll loop cannot hang.
+- **Smoke** completes in-process claims so live agents are not left blocked.
+
+### Verify
+
+```powershell
+.\tools\smoke-bind.ps1
+.\tools\smoke-api.ps1
+.\tools\smoke-fleet-commands.ps1 -Live
+```
+
+**Ops:** on stuck PCs still on agent 2.1.5 — Clear stuck, then **manual reinstall** of LocalOpsAgent 2.3.0 (no SelfUpdate on 2.1.5).
+
 ## 2.1.6 — 2026-08-07
 
 ### Features

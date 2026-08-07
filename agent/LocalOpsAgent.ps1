@@ -74,7 +74,10 @@ function Invoke-AgentApi {
         $bodyText = ($Body | ConvertTo-Json -Depth 8 -Compress)
     }
 
-    $headers = @{ "Content-Type" = "application/json" }
+    $headers = @{}
+    if ($bodyText) {
+        $headers["Content-Type"] = "application/json"
+    }
     if ($Signed) {
         $ts = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds().ToString()
         $sigPayload = "$ts$($Method.ToUpperInvariant())$Path$bodyText"
@@ -87,11 +90,14 @@ function Invoke-AgentApi {
     $params = @{
         Uri             = $uri
         Method          = $Method
-        Headers         = $headers
         TimeoutSec      = $TimeoutSec
         UseBasicParsing = $true
     }
-    if ($bodyText) { $params.Body = $bodyText }
+    if ($headers.Count -gt 0) { $params.Headers = $headers }
+    if ($bodyText) {
+        $params.Body = $bodyText
+        $params.ContentType = "application/json"
+    }
 
     return Invoke-RestMethod @params
 }
@@ -196,7 +202,17 @@ function Get-AgentTelemetry {
 
     $internetOk = $null
     try {
-        $internetOk = (Test-Connection -ComputerName 1.1.1.1 -Count 1 -Quiet -ErrorAction SilentlyContinue)
+        # Soft timeout — Test-Connection can hang and starve the poll loop.
+        $job = Start-Job -ScriptBlock {
+            Test-Connection -ComputerName 1.1.1.1 -Count 1 -Quiet -ErrorAction SilentlyContinue
+        }
+        if (Wait-Job $job -Timeout 3) {
+            $internetOk = [bool](Receive-Job $job)
+        }
+        else {
+            Stop-Job $job -ErrorAction SilentlyContinue
+        }
+        Remove-Job $job -Force -ErrorAction SilentlyContinue
     }
     catch { }
 
@@ -235,6 +251,9 @@ function Get-AgentPendingCommands {
         $resp = Invoke-AgentApi -Method GET -Path "/api/v1/fleet/poll" -Signed -TimeoutSec 20
         if ($resp.Success -and $resp.Data) {
             return @($resp.Data)
+        }
+        if (-not $resp.Success) {
+            Write-AgentLog "Poll rejected: $($resp.Message)" "WARN"
         }
     }
     catch {
@@ -562,18 +581,44 @@ function Invoke-AgentCommand {
                 $lastSuccess = $null
                 $comError = $null
                 try {
-                    $session = New-Object -ComObject Microsoft.Update.Session
-                    $searcher = $session.CreateUpdateSearcher()
-                    $historyCount = $searcher.GetTotalHistoryCount()
-                    if ($historyCount -gt 0) {
-                        $hist = $searcher.QueryHistory(0, 1)
-                        if ($hist.Count -gt 0) { $lastSuccess = $hist.Item(0).Date.ToString("yyyy-MM-dd HH:mm:ss") }
+                    $wuJob = Start-Job -ScriptBlock {
+                        $out = @{ Pending = @(); LastHistoryDate = $null; Error = $null }
+                        try {
+                            $session = New-Object -ComObject Microsoft.Update.Session
+                            $searcher = $session.CreateUpdateSearcher()
+                            $historyCount = $searcher.GetTotalHistoryCount()
+                            if ($historyCount -gt 0) {
+                                $hist = $searcher.QueryHistory(0, 1)
+                                if ($hist.Count -gt 0) { $out.LastHistoryDate = $hist.Item(0).Date.ToString("yyyy-MM-dd HH:mm:ss") }
+                            }
+                            $result = $searcher.Search("IsInstalled=0 and Type='Software' and IsHidden=0")
+                            $list = @()
+                            for ($i = 0; $i -lt $result.Updates.Count -and $i -lt 25; $i++) {
+                                $u = $result.Updates.Item($i)
+                                $list += @{ Title = [string]$u.Title; IsDownloaded = [bool]$u.IsDownloaded; SizeMB = [math]::Round($u.MaxDownloadSize / 1MB, 1) }
+                            }
+                            $out.Pending = $list
+                        }
+                        catch {
+                            $out.Error = $_.Exception.Message
+                        }
+                        return $out
                     }
-                    $result = $searcher.Search("IsInstalled=0 and Type='Software' and IsHidden=0")
-                    for ($i = 0; $i -lt $result.Updates.Count -and $i -lt 25; $i++) {
-                        $u = $result.Updates.Item($i)
-                        $pending += @{ Title = [string]$u.Title; IsDownloaded = [bool]$u.IsDownloaded; SizeMB = [math]::Round($u.MaxDownloadSize / 1MB, 1) }
+                    if (Wait-Job $wuJob -Timeout 90) {
+                        $wuOut = Receive-Job $wuJob
+                        $pending = @($wuOut.Pending)
+                        $lastSuccess = $wuOut.LastHistoryDate
+                        if ($wuOut.Error) {
+                            $comError = [string]$wuOut.Error
+                            Add-Log "WU search: $comError"
+                        }
                     }
+                    else {
+                        Stop-Job $wuJob -ErrorAction SilentlyContinue
+                        $comError = "WU search timed out after 90s"
+                        Add-Log $comError
+                    }
+                    Remove-Job $wuJob -Force -ErrorAction SilentlyContinue
                 }
                 catch {
                     $comError = $_.Exception.Message

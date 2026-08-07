@@ -670,6 +670,20 @@ function Queue-LocFleetCommand {
 
 # Running jobs older than this are treated as abandoned (agent never posted a result).
 $script:LocFleetRunningTimeoutMinutes = 45
+$script:LocFleetShortRunningTimeoutMinutes = 5
+$script:LocFleetPendingNeverClaimedMinutes = 10
+$script:LocFleetLongCommandTypes = @(
+    'SfcScannow', 'ChkdskScan', 'ChkdskScheduleFix',
+    'InstallWindowsUpdates', 'ApplySecurityPolicy', 'InstallPackage', 'SelfUpdate'
+)
+
+function Get-LocFleetRunningTimeoutMinutes {
+    param([string]$Type)
+    if ($script:LocFleetLongCommandTypes -contains [string]$Type) {
+        return [int]$script:LocFleetRunningTimeoutMinutes
+    }
+    return [int]$script:LocFleetShortRunningTimeoutMinutes
+}
 
 function Test-LocFleetCommandStaleRunning {
     param(
@@ -679,7 +693,9 @@ function Test-LocFleetCommandStaleRunning {
     )
     if (-not $Command) { return $false }
     if ([string]$Command.Status -ne "Running") { return $false }
-    if ($TimeoutMinutes -lt 1) { $TimeoutMinutes = [int]$script:LocFleetRunningTimeoutMinutes }
+    if ($TimeoutMinutes -lt 1) {
+        $TimeoutMinutes = Get-LocFleetRunningTimeoutMinutes -Type ([string]$Command.Type)
+    }
     $claimedRaw = [string]$Command.ClaimedAt
     if ([string]::IsNullOrWhiteSpace($claimedRaw)) {
         $claimedRaw = [string]$Command.CreatedAt
@@ -687,6 +703,23 @@ function Test-LocFleetCommandStaleRunning {
     $claimedAt = [datetime]::MinValue
     if (-not [datetime]::TryParse($claimedRaw, [ref]$claimedAt)) { return $false }
     return (($Now - $claimedAt).TotalMinutes -ge $TimeoutMinutes)
+}
+
+function Test-LocFleetCommandStalePending {
+    param(
+        [object]$Command,
+        [datetime]$Now = $(Get-Date),
+        [int]$TimeoutMinutes = 0
+    )
+    if (-not $Command) { return $false }
+    if ([string]$Command.Status -ne "Pending") { return $false }
+    if (-not [string]::IsNullOrWhiteSpace([string]$Command.ClaimedAt)) { return $false }
+    if ($TimeoutMinutes -lt 1) { $TimeoutMinutes = [int]$script:LocFleetPendingNeverClaimedMinutes }
+    $createdRaw = [string]$Command.CreatedAt
+    if ([string]::IsNullOrWhiteSpace($createdRaw)) { return $false }
+    $createdAt = [datetime]::MinValue
+    if (-not [datetime]::TryParse($createdRaw, [ref]$createdAt)) { return $false }
+    return (($Now - $createdAt).TotalMinutes -ge $TimeoutMinutes)
 }
 
 function Cancel-LocFleetCommand {
@@ -826,11 +859,12 @@ function Claim-LocFleetCommands {
             $c = $list[$i]
             if ([string]$c.AgentId -ne $AgentId) { continue }
             if (-not (Test-LocFleetCommandStaleRunning -Command $c -Now $utcNow)) { continue }
+            $mins = Get-LocFleetRunningTimeoutMinutes -Type ([string]$c.Type)
             $c.Status = "Failed"
             $c.CompletedAt = $now
             $c.Result = [ordered]@{
                 Success    = $false
-                Message    = ("Timed out - agent never reported result (Running > {0}m)" -f $script:LocFleetRunningTimeoutMinutes)
+                Message    = ("Timed out - agent never reported result (Running > {0}m)" -f $mins)
                 Data       = $null
                 ExitCode   = -1
                 DurationMs = 0
@@ -840,16 +874,38 @@ function Claim-LocFleetCommands {
             Write-LocLog -Module "FLEET" -Action "Claim" -Level "WARN" -Message "Expired stale Running $($c.Id) ($($c.Type))"
         }
 
+        # Expire Pending that was never claimed (agent Online but poll broken / outdated).
+        for ($i = 0; $i -lt $list.Count; $i++) {
+            $c = $list[$i]
+            if ([string]$c.AgentId -ne $AgentId) { continue }
+            if (-not (Test-LocFleetCommandStalePending -Command $c -Now $utcNow)) { continue }
+            $c.Status = "Failed"
+            $c.CompletedAt = $now
+            $c.Result = [ordered]@{
+                Success    = $false
+                Message    = ("Timed out - never claimed (Pending > {0}m). Restart LocalOpsAgent or reinstall agent; check ServerUrl / poll logs." -f $script:LocFleetPendingNeverClaimedMinutes)
+                Data       = $null
+                ExitCode   = -1
+                DurationMs = 0
+                LogLines   = @()
+            }
+            $list[$i] = $c
+            Write-LocLog -Module "FLEET" -Action "Claim" -Level "WARN" -Message "Expired never-claimed Pending $($c.Id) ($($c.Type))"
+        }
+
         # Do not pile up Running jobs while a long command (e.g. SFC) is in flight.
         $hasRunning = $false
+        $runningType = ""
         foreach ($c in $list) {
             if ([string]$c.AgentId -eq $AgentId -and [string]$c.Status -eq "Running") {
                 $hasRunning = $true
+                $runningType = [string]$c.Type
                 break
             }
         }
         if ($hasRunning) {
             Write-LocFleetJson -FileName "commands.json" -Data @{ commands = $list }
+            Write-LocLog -Module "FLEET" -Action "Claim" -Level "INFO" -Message ("Poll blocked by Running {0} for {1}" -f $runningType, $AgentId)
             return
         }
 
@@ -867,6 +923,7 @@ function Claim-LocFleetCommands {
                     Payload = $c.Payload
                 })
                 $taken++
+                Write-LocLog -Module "FLEET" -Action "Claim" -Level "INFO" -Message ("Claimed {0} ({1}) for {2}" -f $c.Type, $c.Id, $AgentId)
             }
         }
 
@@ -1355,6 +1412,12 @@ function Revoke-LocAgent {
             Write-LocFleetJson -FileName "agents.json" -Data @{ agents = $agentsHash }
         }
     }
+
+    # Cancel orphan Pending/Running so they cannot rot forever after remove.
+    try {
+        Cancel-LocFleetStuckCommands -AgentId $AgentId -Reason "Agent removed"
+    }
+    catch { }
 
     Add-LocFleetAudit -Action "AgentRevoked" -AgentId $AgentId
     return New-ApiResult -Success $true -Message "Agent removed" -Data @{ AgentId = $AgentId }

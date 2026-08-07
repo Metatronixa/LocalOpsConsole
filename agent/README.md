@@ -1,4 +1,4 @@
-# LocalOps Agent (v2.2.0)
+# LocalOps Agent (v2.3.0)
 
 Outbound Windows fleet agent for [LocalOpsConsole](https://github.com/Metatronixa/LocalOpsConsole). The agent initiates all traffic to the console — no inbound listener on managed PCs.
 
@@ -39,7 +39,7 @@ The installer:
 2. Open a PC drawer → **Agent update** → **Update agent** (or Force update).
 3. The agent downloads the package over HMAC, verifies SHA-256, replaces `Program Files\LocalOpsAgent\LocalOpsAgent.ps1`, and restarts the scheduled task.
 
-**First upgrade to 2.2.0:** still manual (older agents do not understand `SelfUpdate`). After that, use the drawer.
+**First upgrade from 2.1.x:** still manual (older agents do not understand `SelfUpdate`). After 2.2.0+, use the drawer.
 
 ## Remote agents and bindHost
 

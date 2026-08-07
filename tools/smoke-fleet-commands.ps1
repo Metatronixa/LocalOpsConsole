@@ -103,12 +103,16 @@ if ($Live) {
             $claimOk = $false
             $claimType = ""
             $claimCount = 0
+            $claimedIds = @()
             for ($attempt = 0; $attempt -lt 8; $attempt++) {
                 $claim = Claim-LocFleetCommands -AgentId $AgentId -MaxClaim 1
                 $claimCount = @($claim.Data).Count
                 if ($claim.Success -and $claimCount -ge 1) {
                     $claimOk = $true
                     $claimType = [string]$claim.Data[0].Type
+                    foreach ($item in @($claim.Data)) {
+                        if ($item.Id) { $claimedIds += [string]$item.Id }
+                    }
                     break
                 }
                 Start-Sleep -Milliseconds 250
@@ -130,6 +134,15 @@ if ($Live) {
             Assert-True "claim returns at least one command" $claimOk ("count=" + $claimCount)
             if ($claimOk -and $claimType) {
                 Assert-True "claim has Type" (-not [string]::IsNullOrWhiteSpace($claimType))
+            }
+            # Do not leave in-process claims as Running (blocks the live agent queue).
+            foreach ($cid in $claimedIds) {
+                try {
+                    Complete-LocFleetCommand -AgentId $AgentId -CommandId $cid -Success $true -Message "Smoke claim complete" | Out-Null
+                }
+                catch {
+                    try { Cancel-LocFleetCommand -CommandId $cid -AgentId $AgentId -Reason "Smoke cleanup" | Out-Null } catch { }
+                }
             }
 
             $body3 = @{ AgentId = $AgentId; Type = "NotARealCommand"; Payload = @{} } | ConvertTo-Json -Compress

@@ -221,6 +221,68 @@ const FleetView = {
         return /^2\.2\./.test(ver) || /^2\.[3-9]/.test(ver) || /^[3-9]/.test(ver);
     },
 
+    /** Minimum agent version required for advanced command types. */
+    commandMinVersion(type) {
+        const map = {
+            GetEventLogTail: '2.2.0',
+            GetResourceOffenders: '2.2.0',
+            GetWindowsUpdateStatus: '2.2.0',
+            InstallWindowsUpdates: '2.2.0',
+            GetRustDeskStatus: '2.2.0',
+            InstallRustDesk: '2.2.0',
+            InstallPackage: '2.2.0',
+            AuditSecurityBaseline: '2.2.0',
+            ApplySecurityPolicy: '2.2.0',
+            SelfUpdate: '2.2.0',
+            GetServices: '2.1.5',
+            RestartService: '2.1.5',
+            NetHealthSmoke: '2.1.5',
+            EndProcess: '2.1.5',
+            GetPrinters: '2.1.5',
+            Message: '2.1.5',
+            SfcScannow: '2.1.5',
+            ChkdskScan: '2.1.5',
+            ChkdskScheduleFix: '2.1.5'
+        };
+        return map[type] || '2.1.0';
+    },
+
+    parseVer(v) {
+        const parts = String(v || '0').split('.').map((n) => parseInt(n, 10) || 0);
+        while (parts.length < 3) parts.push(0);
+        return parts;
+    },
+
+    verGte(agentVersion, minVersion) {
+        const a = this.parseVer(agentVersion);
+        const b = this.parseVer(minVersion);
+        for (let i = 0; i < 3; i++) {
+            if (a[i] > b[i]) return true;
+            if (a[i] < b[i]) return false;
+        }
+        return true;
+    },
+
+    supportsCommand(agentVersion, type) {
+        return this.verGte(agentVersion, this.commandMinVersion(type));
+    },
+
+    cmdBtn(type, label, payloadExpr, cls) {
+        const ver = this._detailCache && this._detailCache.agent
+            ? String(this._detailCache.agent.AgentVersion || '')
+            : '';
+        const ok = this.supportsCommand(ver, type);
+        const btnClass = cls || 'action-btn cyan text-[11px]';
+        if (!ok) {
+            const min = this.commandMinVersion(type);
+            return `<button type="button" class="${btnClass} opacity-40 cursor-not-allowed" disabled title="Requires agent ${min}+ (this PC: ${this.escape(ver || '?')})">${this.escape(label)}</button>`;
+        }
+        const onclick = payloadExpr
+            ? `FleetView.queueCmd('${type}', ${payloadExpr})`
+            : `FleetView.queueCmd('${type}')`;
+        return `<button type="button" class="${btnClass}" onclick="${onclick}">${this.escape(label)}</button>`;
+    },
+
     async loadEnrollInfo() {
         const res = await API.request('fleet/enroll-token');
         if (!res.Success || !res.Data) {
@@ -468,9 +530,10 @@ const FleetView = {
                 ${a.Online && stuckPending ? `<p class="text-[11px] text-amber-400 font-semibold">Commands Pending &gt;60s while online — restart scheduled task LocalOpsAgent; check logs and ServerUrl.</p>` : ''}
                 ${running.length ? `<p class="text-[11px] text-slate-400">Running: ${this.escape(running.map((c) => c.Type).join(', '))} (blocks the next Pending command until it finishes or times out after 45m).</p>` : ''}
                 ${stuckRunning || (running.length && pending.length) ? `<div class="flex flex-wrap items-center gap-2"><p class="text-[11px] text-amber-400 font-semibold m-0">Queue blocked by Running (or stale claim). Clear stuck commands to unblock Pending.</p><button type="button" class="action-btn amber text-[11px]" onclick="FleetView.clearStuckCommands()">Clear stuck</button></div>` : ''}
-                ${verOld ? `<p class="text-[11px] text-amber-400 font-semibold">Agent version ${this.escape(ver)} may be outdated — reinstall LocalOpsAgent for full command support.</p>` : ''}
+                ${verOld || (ver && !this.supportsCommand(ver, 'GetEventLogTail')) ? `<p class="text-[11px] text-amber-400 font-semibold">Agent ${this.escape(ver || '?')} is too old for Event Log / WU / Policy / Offenders. Reinstall LocalOpsAgent 2.3.0 from Computers → Enrollment (2.1.5 cannot self-update).</p>` : ''}
                 ${outdated && !canSelfUpdate ? `<p class="text-[11px] text-amber-400 font-semibold">Published package is ${this.escape(pkgVer || '?')}; this agent is ${this.escape(ver || '?')} and cannot self-update yet — install 2.2.0+ manually once.</p>` : ''}
                 ${outdated && canSelfUpdate ? `<p class="text-[11px] text-amber-400 font-semibold">Published package ${this.escape(pkgVer)} is newer than agent ${this.escape(ver)} — use Update agent below.</p>` : ''}
+                ${a.Online && stuckPending && !running.length ? `<p class="text-[11px] text-amber-400 font-semibold">Pending never claimed — agent may not be polling. Restart task LocalOpsAgent; check ProgramData\\LocalOpsAgent\\logs for Poll errors.</p><button type="button" class="action-btn amber text-[11px] mt-1" onclick="FleetView.clearStuckCommands()">Clear stuck</button>` : ''}
 
                 <div>
                     <div class="section-title">Live telemetry</div>
@@ -495,7 +558,7 @@ const FleetView = {
                     <div class="section-title text-amber-400">Spike forensics</div>
                     <p class="text-[11px] text-slate-300 mb-2">${this.escape((offenders && offenders.Summary) || 'Top memory consumers')}</p>
                     <div class="flex flex-wrap gap-2 mb-2">
-                        <button type="button" class="action-btn amber text-[11px]" onclick="FleetView.queueCmd('GetResourceOffenders')">Refresh offenders</button>
+                        ${this.cmdBtn('GetResourceOffenders', 'Refresh offenders', null, 'action-btn amber text-[11px]')}
                     </div>
                     ${offenderProcs.length ? `
                     <div class="max-h-36 overflow-auto border border-slate-800 rounded-lg">
@@ -536,8 +599,10 @@ const FleetView = {
                     <div class="section-title">Policy</div>
                     <p class="text-[10px] text-slate-500 mb-2">Remote security hardening (firewall + Defender). Wallpaper/theme lockdown is not included.</p>
                     <div class="flex flex-wrap gap-2 mb-2">
-                        <button type="button" class="action-btn cyan text-[11px]" onclick="FleetView.queueCmd('AuditSecurityBaseline')">Audit baseline</button>
-                        <button type="button" class="action-btn amber text-[11px]" onclick="FleetView.applyHardeningBasic()">Apply hardening-basic</button>
+                        ${this.cmdBtn('AuditSecurityBaseline', 'Audit baseline')}
+                        ${this.supportsCommand(ver, 'ApplySecurityPolicy')
+                            ? `<button type="button" class="action-btn amber text-[11px]" onclick="FleetView.applyHardeningBasic()">Apply hardening-basic</button>`
+                            : `<button type="button" class="action-btn amber text-[11px] opacity-40 cursor-not-allowed" disabled title="Requires agent 2.2.0+">Apply hardening-basic</button>`}
                     </div>
                     ${baselineAudit ? `<p class="text-[11px] text-slate-300">Last audit score: <span class="text-cyan-300 font-mono">${this.escape(String(baselineAudit.Score != null ? baselineAudit.Score : '—'))}%</span> · pass ${this.escape(String(baselineAudit.Pass || 0))} / fail ${this.escape(String(baselineAudit.Fail || 0))}</p>
                     ${API.asArray(baselineAudit.Checks).length ? `<ul class="mt-1 text-[10px] text-slate-500 font-mono max-h-24 overflow-auto">${API.asArray(baselineAudit.Checks).slice(0, 8).map((ch) => `<li>${this.escape(ch.Name || '')}: ${this.escape(ch.Status || '')} — ${this.escape(ch.Detail || '')}</li>`).join('')}</ul>` : ''}` : ''}
@@ -547,8 +612,10 @@ const FleetView = {
                 <div>
                     <div class="section-title">Windows Update</div>
                     <div class="flex flex-wrap gap-2 mb-2">
-                        <button type="button" class="action-btn cyan text-[11px]" onclick="FleetView.queueCmd('GetWindowsUpdateStatus')">Check status</button>
-                        <button type="button" class="action-btn amber text-[11px]" onclick="FleetView.confirmQueue('InstallWindowsUpdates', 'Download and install pending Windows Updates on this PC? May take a long time and may require reboot later.')">Install pending</button>
+                        ${this.cmdBtn('GetWindowsUpdateStatus', 'Check status')}
+                        ${this.supportsCommand(ver, 'InstallWindowsUpdates')
+                            ? `<button type="button" class="action-btn amber text-[11px]" onclick="FleetView.confirmQueue('InstallWindowsUpdates', 'Download and install pending Windows Updates on this PC? May take a long time and may require reboot later.')">Install pending</button>`
+                            : `<button type="button" class="action-btn amber text-[11px] opacity-40 cursor-not-allowed" disabled title="Requires agent 2.2.0+">Install pending</button>`}
                     </div>
                     ${wuStatus ? `<p class="text-[11px] text-slate-400">Pending: ${this.escape(wuStatus.PendingCount != null ? wuStatus.PendingCount : wuPending.length)}${wuStatus.PendingReboot ? ' · reboot pending' : ''}${wuStatus.LastHistoryDate ? ' · last history ' + this.escape(wuStatus.LastHistoryDate) : ''}</p>
                     ${wuPending.length ? `<ul class="mt-1 text-[10px] text-slate-500 font-mono max-h-24 overflow-auto">${wuPending.slice(0, 8).map((u) => `<li>${this.escape(u.Title || '')}</li>`).join('')}</ul>` : ''}` : ''}
@@ -579,10 +646,11 @@ const FleetView = {
                 <div>
                     <div class="section-title">Event Log</div>
                     <div class="flex flex-wrap gap-2 mb-2">
-                        <button type="button" class="action-btn cyan text-[11px]" onclick="FleetView.queueCmd('GetEventLogTail', { LogName: 'System', Count: 40 })">System</button>
-                        <button type="button" class="action-btn cyan text-[11px]" onclick="FleetView.queueCmd('GetEventLogTail', { LogName: 'Application', Count: 40 })">Application</button>
-                        <button type="button" class="action-btn cyan text-[11px]" onclick="FleetView.queueCmd('GetEventLogTail', { LogName: 'Security', Count: 40 })">Security</button>
+                        ${this.cmdBtn('GetEventLogTail', 'System', "{ LogName: 'System', Count: 40 }")}
+                        ${this.cmdBtn('GetEventLogTail', 'Application', "{ LogName: 'Application', Count: 40 }")}
+                        ${this.cmdBtn('GetEventLogTail', 'Security', "{ LogName: 'Security', Count: 40 }")}
                     </div>
+                    ${!this.supportsCommand(ver, 'GetEventLogTail') ? `<p class="text-[10px] text-amber-400 mb-2">Event Log tails require agent 2.2.0+ (this PC: ${this.escape(ver || '?')}).</p>` : ''}
                     ${eventEntries.length ? `
                     <div class="max-h-40 overflow-auto border border-slate-800 rounded-lg">
                         <table class="w-full text-[10px] font-mono">
@@ -757,6 +825,14 @@ const FleetView = {
 
     async queueCmd(type, payload) {
         if (!this._selected) return;
+        const agent = this._agents.find((a) => a.Id === this._selected)
+            || (this._detailCache && this._detailCache.agent);
+        const ver = agent ? String(agent.AgentVersion || '') : '';
+        if (ver && !this.supportsCommand(ver, type)) {
+            const min = this.commandMinVersion(type);
+            LiveConsole.log(`${type} requires agent ${min}+ (this PC: ${ver || '?'}). Reinstall LocalOpsAgent.`, 'WARN');
+            return;
+        }
         const res = await API.request('fleet/commands', 'POST', { AgentId: this._selected, Type: type, Payload: payload || {} }, 20000);
         if (res.Success) {
             LiveConsole.log(`Queued ${type} for agent`, 'SUCCESS', res.Data);
