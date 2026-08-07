@@ -1,5 +1,26 @@
 # Changelog
 
+## 2.1.6 — 2026-08-07
+
+### Features
+
+- **Complete HTML User Guide** — full operator walkthrough (install, UI, modules, fleet, SyncMe, settings, troubleshooting) at `website/docs/user-guide.html`, also served in-app at `/user-guide.html` with a header **Help** link.
+- **NetworkMap, SyncMe register, fleet remote-ops polish** from the prior main commit (Computers drawer, policy packs, agent package, splash).
+
+### Docs
+
+- Docs hub and side nav link to the User Guide; README and `docs/USER_GUIDE.md` point to the HTML guide.
+
+### Verify
+
+```powershell
+.\tools\smoke-bind.ps1
+# With server running:
+.\tools\smoke-api.ps1
+.\tools\smoke-fleet-commands.ps1
+.\tools\smoke-fleet-commands.ps1 -Live
+```
+
 ## 2.1.5 — 2026-08-05
 
 ### Features

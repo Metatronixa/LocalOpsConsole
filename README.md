@@ -6,7 +6,7 @@
 [![PowerShell](https://img.shields.io/badge/PowerShell-5.1+-5391FE?style=flat-square&logo=powershell&logoColor=white)](https://github.com/Metatronixa/LocalOpsConsole)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-059669?style=flat-square)](CONTRIBUTING.md)
 
-**Local-first Windows Operations Platform** (v2.1.5) for IT professionals, MSPs, and power users — diagnostics, Event Intelligence, incidents, security baseline, and safe remediation.
+**Local-first Windows Operations Platform** (v2.1.6) for IT professionals, MSPs, and power users — diagnostics, Event Intelligence, incidents, security baseline, and safe remediation.
 
 PowerShell HttpListener API + offline SPA. Plugin modules via `module.json`. **Overview** answers “Is this computer healthy?” using health score, security posture, and active incidents — not raw Event Viewer dumps.
 
@@ -65,7 +65,8 @@ Opens `http://localhost:8787/` on **Overview**.
 | **Security Baseline** | Defender, Firewall, BitLocker, TPM, Secure Boot, UAC, SMBv1, RDP, WinRM, logging, … |
 | **Integrity gate** | Manifest + SHA-256 + elevation + path jail before module execution |
 | **Automation** | Opt-in playbooks (restart → verify → notify → close) |
-| **Computers (fleet)** | Optional LocalOps Agent — heartbeat, commands, scripts |
+| **Computers (fleet)** | Optional LocalOps Agent — heartbeat, commands, scripts, repair |
+| **Network Map** | Spatial view of agents + LAN neighbors |
 | **Internet Health** | DNS, latency, connectivity, repairs |
 | **Services / Storage / Printers / Updates** | Inventory, monitoring, remediation, reporting |
 | **Access** | Standard users: diagnostics · Elevated: remediations |
@@ -74,10 +75,11 @@ Opens `http://localhost:8787/` on **Overview**.
 
 | Doc | Description |
 |-----|-------------|
-| [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | Operator guide |
+| [User Guide (HTML)](website/docs/user-guide.html) | Complete operator walkthrough (also in-app via **Help** → `/user-guide.html`) |
+| [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | Markdown companion |
+| [website/docs/](website/docs/) | Installation, architecture, modules, API, FAQ |
 | [docs/modules/](docs/modules/) | Per-module docs |
 | [ROADMAP.md](ROADMAP.md) | Public roadmap |
-| [website/](website/) | Marketing site + [docs](website/docs/) |
 | [SECURITY.md](SECURITY.md) | Security policy |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
 | [LICENSE](LICENSE) | MIT |
@@ -111,7 +113,7 @@ Privileged actions are listed in each module’s `requiresAdmin`. Automation is 
 - Binds to **localhost** only by default.
 - Admin-required actions are blocked without elevation.
 - UI works offline (no CDN).
-- Do not expose the API to the public internet. For LAN fleet agents, set `bindHost` to `0.0.0.0` and use the console LAN IP (see `docs/USER_GUIDE.md`).
+- Do not expose the API to the public internet. For LAN fleet agents, set `bindHost` to `0.0.0.0` and use the console LAN IP (see the [User Guide](website/docs/user-guide.html)).
 - See `SECURITY.md` and `CHANGELOG.md`.
 
 ## Updates

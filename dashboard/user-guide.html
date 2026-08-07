@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>User Guide. LocalOpsConsole Docs</title>
+  <meta name="description" content="Complete operator guide for LocalOpsConsole — install, UI, modules, fleet, SyncMe, settings, and troubleshooting." />
+  <link rel="icon" href="assets/img/logo.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="assets/css/site.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap nav">
+      <a class="brand" href="/"><span class="brand-mark"><img src="assets/img/logo.svg" alt="" width="16" height="16" /></span>LocalOps<em>Console</em></a>
+      <button type="button" class="nav-toggle" aria-label="Menu">Menu</button>
+      <ul class="nav-links"><li><a href="/">Console</a></li><li><a class="active" href="user-guide.html">User Guide</a></li></ul>
+      <a class="btn btn-primary" href="/">Back to console</a>
+    </div>
+  </header>
+
+  <main class="wrap docs-layout">
+    <nav class="docs-nav" aria-label="Docs"><div class="group">App</div><a href="/">Back to console</a><a class="active" href="user-guide.html">User Guide</a><div class="group">In this guide</div>
+      <a href="#intro">Introduction</a>
+      <a href="#must-do">What you must do</a>
+      <a href="#install">Install &amp; launch</a>
+      <a href="#ui">UI tour</a>
+      <a href="#profiles">Profiles</a>
+      <a href="#sections">Platform sections</a>
+      <a href="#event-intel">Event Intelligence</a>
+      <a href="#security">Security</a>
+      <a href="#operations">Operations modules</a>
+      <a href="#fleet">Computers (fleet)</a>
+      <a href="#network-map">Network Map</a>
+      <a href="#syncme">SyncMe</a>
+      <a href="#settings">Settings</a>
+      <a href="#updates">Updates</a>
+      <a href="#access">Access &amp; elevation</a>
+      <a href="#troubleshoot">Troubleshooting</a>
+    </nav>
+
+    <article class="docs-content">
+      <div class="page-hero" style="padding-top:2rem">
+        <h1>User Guide</h1>
+        <p>Complete operator manual for <strong>LocalOpsConsole v2.1.6</strong> — how every major surface works, and exactly what you must do to install, run, and manage Windows endpoints safely.</p>
+      </div>
+
+      <div class="callout">
+        <strong>Local-first.</strong> The console runs on your Windows PC. The dashboard is an offline SPA; the API is PowerShell HttpListener (default <code>http://localhost:8787/</code>). Nothing requires a cloud account. Optional fleet agents phone home outbound to this console.
+      </div>
+
+      <h2 id="intro">1. What LocalOpsConsole is</h2>
+      <p>LocalOpsConsole is a <strong>Windows Operations Platform</strong> for IT pros, MSPs, system admins, and power users. It combines:</p>
+      <ul>
+        <li><strong>Plugin diagnostics &amp; remediations</strong> — modules for services, storage, printers, updates, network, security, and more</li>
+        <li><strong>Event Intelligence</strong> — watchers + JSON rules that open <em>incidents</em> instead of dumping raw Event Viewer noise</li>
+        <li><strong>Security Baseline</strong> — read-only posture audit (Defender, Firewall, BitLocker, TPM, …)</li>
+        <li><strong>Optional fleet</strong> — LocalOps Agent on other PCs for heartbeat, remote commands, and repair actions</li>
+      </ul>
+      <p>The Overview page answers one question first: <strong>Is this computer healthy?</strong> (health score + security score + active incidents).</p>
+
+      <h2 id="must-do">2. What you must do (checklist)</h2>
+      <ol>
+        <li><strong>Install</strong> the console ZIP (or clone source) to a writable folder.</li>
+        <li><strong>Run <code>start.bat</code></strong> and accept UAC if you need remediations (diagnostics work without elevation; many fixes do not).</li>
+        <li><strong>Open the printed URL</strong> on the same PC (normally <code>http://localhost:8787/</code>).</li>
+        <li><strong>Confirm the elevation badge</strong> in the header — STANDARD USER vs elevated admin.</li>
+        <li>For <strong>other PCs</strong>: set <code>bindHost</code> to <code>0.0.0.0</code>, set <code>fleetPublicUrl</code> to your LAN/Tailscale URL, restart, then install the agent with that URL (never <code>localhost</code> on the remote PC).</li>
+        <li>When an <strong>update banner</strong> appears, review notes and confirm — updates are never silent.</li>
+        <li><strong>Do not</strong> expose the API to the public internet.</li>
+      </ol>
+
+      <h2 id="install">3. Install &amp; launch</h2>
+
+      <h3>3.1 Option A — GitHub Release ZIP</h3>
+      <ol>
+        <li>Download <code>LocalOpsConsole-x.y.z.zip</code> from <a href="https://github.com/Metatronixa/LocalOpsConsole/releases/latest">GitHub Releases</a>.</li>
+        <li>Extract to e.g. <code>C:\Tools\LocalOpsConsole</code>.</li>
+        <li>Double-click <code>start.bat</code> (requests UAC).</li>
+        <li>Browser opens Overview at the printed URL.</li>
+      </ol>
+
+      <h3>3.2 Option B — Bootstrap script</h3>
+      <pre>iwr https://raw.githubusercontent.com/Metatronixa/LocalOpsConsole/main/website/uploads/Install-LocalOpsConsole.ps1 -OutFile "$env:TEMP\Install-LOC.ps1"
+powershell -ExecutionPolicy Bypass -File "$env:TEMP\Install-LOC.ps1" -Launch</pre>
+
+      <h3>3.3 Option C — From source</h3>
+      <pre>git clone https://github.com/Metatronixa/LocalOpsConsole.git
+cd LocalOpsConsole
+.\start.bat</pre>
+
+      <h3>3.4 What start.bat does</h3>
+      <ul>
+        <li>Starts the PowerShell API (<code>api\server.ps1</code>) with module loading, Event Intelligence pulse, and static dashboard serving</li>
+        <li>Prints the listen URL and opens the browser when possible</li>
+        <li>Elevation enables remediations that declare <code>requiresAdmin</code></li>
+      </ul>
+      <div class="callout warn">
+        <strong>Failed to fetch</strong> on every tile means the server process is not running. Close stale windows and run <code>start.bat</code> again. Check <code>logs\YYYY-MM-DD.log</code>.
+      </div>
+
+      <h3>3.5 URL cheat sheet</h3>
+      <table>
+        <thead>
+          <tr><th>Where you are</th><th>URL to use</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Browser on the console PC</td><td><code>http://localhost:8787/</code></td></tr>
+          <tr><td>Agent / browser on another LAN PC</td><td><code>http://&lt;console-LAN-IP&gt;:8787</code> (requires <code>bindHost: 0.0.0.0</code>)</td></tr>
+          <tr><td>Over Tailscale</td><td><code>http://&lt;console-Tailscale-IP&gt;:8787</code> + same bind setting</td></tr>
+          <tr><td>Remote agent install</td><td>Never use <code>127.0.0.1</code> / <code>localhost</code> as <code>-ServerUrl</code></td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="ui">4. UI tour</h2>
+      <p>After splash, the shell has four zones:</p>
+      <ol>
+        <li><strong>Header</strong> — brand + version, live telemetry (CPU, RAM, DISK, NET, GPU, BAT, VPN when present), elevation badge, Shutdown, engine status</li>
+        <li><strong>Sidebar</strong> — platform sections and modules (filtered by profile)</li>
+        <li><strong>Main pane</strong> — the active module view</li>
+        <li><strong>Live console</strong> — streaming output from diagnostics/actions as they run</li>
+      </ol>
+      <p>Optional chrome:</p>
+      <ul>
+        <li><strong>Update banner</strong> — when a newer build is available via <code>updateUrl</code></li>
+        <li><strong>Alerts</strong> — notification center access from monitoring surfaces</li>
+        <li><strong>Help</strong> — opens this User Guide inside the app (<code>/user-guide.html</code>)</li>
+      </ul>
+      <p>Click <strong>Shutdown</strong> to stop the server process cleanly from the UI.</p>
+
+      <h2 id="profiles">5. Profiles</h2>
+      <p>Profiles filter which modules appear in the sidebar so Helpdesk staff are not flooded with every admin tool.</p>
+      <table>
+        <thead>
+          <tr><th>Profile</th><th>Typical focus</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Helpdesk</td><td>Day-to-day user issues, printers, basic network</td></tr>
+          <tr><td>Desktop Support</td><td>Broader workstation tooling</td></tr>
+          <tr><td>Systems Admin</td><td>Full platform including security and fleet</td></tr>
+          <tr><td>Network Admin</td><td>Network, VPN, Internet Health, Network Map</td></tr>
+          <tr><td>Developer</td><td>Tools + developer-oriented modules</td></tr>
+          <tr><td>Power User</td><td>Wide access without full admin packaging</td></tr>
+        </tbody>
+      </table>
+      <p>Switch profile from the platform UI (Settings / profile control as shown in your build). Changing profile does not change Windows privileges — elevation is separate.</p>
+
+      <h2 id="sections">6. Platform sections</h2>
+      <table>
+        <thead>
+          <tr><th>Section</th><th>Purpose</th><th>What you do</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Overview</td><td>Health at a glance</td><td>Read scores + incidents; drill into failing areas</td></tr>
+          <tr><td>Operations</td><td>Day-to-day tools</td><td>Services, updates, printers, fleet, SyncMe, network, …</td></tr>
+          <tr><td>Security</td><td>Posture &amp; tooling</td><td>Security Center, Baseline audit, Defender/Firewall, Event Log</td></tr>
+          <tr><td>Health</td><td>Health Center checks</td><td>Run health diagnostics</td></tr>
+          <tr><td>Performance</td><td>Live system view</td><td>Watch CPU/RAM/disk/network telemetry</td></tr>
+          <tr><td>Inventory</td><td>What is on the box</td><td>Devices, users, graphics, storage, startup, power</td></tr>
+          <tr><td>Incidents</td><td>Correlated problems</td><td>Open, review, resolve Event Intelligence incidents</td></tr>
+          <tr><td>Monitoring</td><td>Alerts + timeline</td><td>Notification Center, Event Timeline</td></tr>
+          <tr><td>Automation</td><td>Opt-in playbooks</td><td>Review history; enable only via rules</td></tr>
+          <tr><td>Settings</td><td>Preferences</td><td>Quiet hours, channels, Event Intel options</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="overview">7. Overview, Health Center, Security Center</h2>
+      <h3>Overview</h3>
+      <p>Landing page after launch. Shows health score, security score, and active incidents. Use it as your triage start — then open the related module.</p>
+      <h3>Health Center</h3>
+      <p>Deeper health checks for the local machine. Run diagnostics from the module actions; watch the live console for script output.</p>
+      <h3>Security Center</h3>
+      <p>Aggregated security posture. Prefer this and <strong>Security Baseline</strong> for “are we compliant?” questions rather than raw Event Log scrolling.</p>
+
+      <h2 id="event-intel">8. Event Intelligence, Incidents, Monitoring</h2>
+      <p>When <code>eventIntelEnabled</code> is <code>true</code> in <code>settings.json</code> (default on):</p>
+      <ol>
+        <li><strong>Watchers</strong> observe Windows Event Logs and related signals</li>
+        <li><strong>Rules</strong> under <code>rules/</code> evaluate normalized events</li>
+        <li><strong>Correlation</strong> opens or updates an <strong>incident</strong></li>
+        <li><strong>Notifications</strong> respect severity, selected channels, quiet hours, and maintenance windows</li>
+        <li><strong>Automation</strong> runs only when a rule sets <code>automation.enabled: true</code></li>
+      </ol>
+      <div class="callout">
+        <strong>Event ID 4104</strong> (PowerShell Script Block Logging) may appear when the console starts <code>api\server.ps1</code>. That is Windows logging the host process — not automatically an attack.
+      </div>
+      <h3>Incident Center</h3>
+      <p>List and open correlated incidents. Resolve when the underlying condition is cleared. Archives follow retention in Event Intel settings.</p>
+      <h3>Notification Center &amp; Event Timeline</h3>
+      <p>Alerts and a timeline of observed events. Use Timeline for forensics; Incidents for “what should I act on?”</p>
+
+      <h2 id="security">9. Security Baseline, Security tools, Event Log</h2>
+      <h3>Security Baseline</h3>
+      <ol>
+        <li>Open <strong>Security → Security Baseline</strong></li>
+        <li>Click <strong>Audit</strong> (read-only — does not change the system)</li>
+        <li>Review score, risk rating, per-control results, and recommendations</li>
+      </ol>
+      <p>Controls typically cover Defender, Firewall, BitLocker, TPM, Secure Boot, UAC, SMBv1, RDP, WinRM, logging, and related posture checks.</p>
+      <h3>Security module &amp; Event Log</h3>
+      <p>Dedicated views paint the UI first, then load data asynchronously with <strong>bounded</strong> WinEvent queries. “Access denied” on the Security channel without elevation is normal.</p>
+      <h3>Integrity gate</h3>
+      <p>Before a module diagnostic/action runs, the engine checks:</p>
+      <ol>
+        <li>Manifest validation</li>
+        <li>SHA-256 integrity (warn in source; <strong>enforce</strong> in packaged builds)</li>
+        <li>Elevation / permissions</li>
+        <li>Dependencies</li>
+        <li>Parameter allow-list</li>
+        <li>Path jail</li>
+      </ol>
+      <p>Set <code>integrityMode</code> to <code>warn</code> only while developing local modules. Releases ship as <code>enforce</code>.</p>
+
+      <h2 id="operations">10. Operations modules</h2>
+      <p>Each module follows the same pattern: open the sidebar entry → run a <strong>diagnostic</strong> (inspect) or <strong>action</strong> (change) → watch the live console. Admin-required actions stay locked until elevated.</p>
+
+      <h3>System (Performance)</h3>
+      <p>Live telemetry for CPU, memory, disk, network, GPU. Use when investigating spikes on the console PC itself.</p>
+
+      <h3>Services</h3>
+      <p>List and manage Windows services — inventory, status, restart where permitted.</p>
+
+      <h3>Storage</h3>
+      <p>Disk inventory, capacity, and storage-related diagnostics/remediations.</p>
+
+      <h3>Printers</h3>
+      <p>Printer inventory and common print-path repairs (including spooler-related workflows).</p>
+
+      <h3>Updates</h3>
+      <p>Windows Update status and install flows for the local machine. For remote PCs, use the Computers drawer Windows Update actions.</p>
+
+      <h3>Tools &amp; Configuration</h3>
+      <p>Utility diagnostics and configuration catalog helpers used by support workflows.</p>
+
+      <h3>Network, VPN, Internet Health</h3>
+      <ul>
+        <li><strong>Network</strong> — adapter and connectivity focused checks</li>
+        <li><strong>VPN</strong> — VPN presence/status when configured</li>
+        <li><strong>Internet Health</strong> — DNS, latency, connectivity tests and repairs (includes speed-test related diagnostics)</li>
+      </ul>
+
+      <h3>Remote</h3>
+      <p>Discover hosts, shares, open files/sessions, and remote registry style inspections on the LAN (subject to Windows permissions).</p>
+
+      <h3>Remote Support (RustDesk)</h3>
+      <p>RustDesk status and optional silent install. Configure <code>rustDeskInstallerUrl</code> (HTTPS) and optional SHA-256 in <code>settings.json</code> before remote install from the fleet drawer.</p>
+
+      <h3>Audio</h3>
+      <p>Audio device diagnostics for workstation support.</p>
+
+      <h3>Automation</h3>
+      <p>Opt-in playbooks (restart → verify → notify → close style flows). Automation does <strong>not</strong> run unless a rule enables it. Review history here; edit rules under <code>rules/</code> for behavior changes.</p>
+
+      <h2 id="fleet">11. Computers (fleet) — deep guide</h2>
+      <p>Fleet is <strong>optional</strong>. The console is fully useful offline on one PC. Agents are outbound-only — no inbound listener on managed desktops.</p>
+
+      <h3>11.1 Concepts</h3>
+      <ul>
+        <li><strong>Shared enroll token</strong> — used only for first join; rotate in Computers → Enrollment if leaked</li>
+        <li><strong>Per-agent secret</strong> — after enroll, each PC gets AgentId + AgentSecret; API calls are HMAC-signed</li>
+        <li><strong>Heartbeat</strong> — roughly every 30s (CPU, RAM, disk, network, uptime, disk IO, …)</li>
+        <li><strong>Command poll</strong> — roughly every 3s; agent claims <strong>one</strong> command at a time and will not claim while another is Running</li>
+      </ul>
+
+      <h3>11.2 Prepare the console for remote agents</h3>
+      <ol>
+        <li>Edit <code>settings.json</code>:</li>
+      </ol>
+      <pre>{
+  "bindHost": "0.0.0.0",
+  "port": 8787,
+  "fleetPublicUrl": "http://192.168.1.10:8787",
+  "fleetEnabled": true
+}</pre>
+      <ol start="2">
+        <li>Replace the IP with this PC’s LAN IPv4 or Tailscale IP.</li>
+        <li>Restart via <code>start.bat</code> (accept UAC). Allow inbound TCP 8787 in Windows Firewall if prompted.</li>
+        <li>Open <strong>Operations → Computers</strong>. Copy the enrollment token and install one-liner.</li>
+      </ol>
+      <div class="callout warn">
+        Prefer <code>bindHost: 0.0.0.0</code> over binding HttpListener to a single LAN IP (HTTP.sys URL ACL conflicts are common). The server maps <code>0.0.0.0</code> to all interfaces and still listens on localhost for the local UI.
+      </div>
+
+      <h3>11.3 Install the agent on another PC</h3>
+      <ol>
+        <li>Copy <code>LocalOpsAgent-x.y.z.zip</code> (or the <code>agent</code> folder) to the target PC.</li>
+        <li>Extract and run <strong>as Administrator</strong>:</li>
+      </ol>
+      <pre>.\Install-LocalOpsAgent.ps1 -ServerUrl "http://192.168.1.10:8787" -EnrollToken "YOUR_TOKEN"</pre>
+      <ol start="3">
+        <li>Confirm the PC appears Online under Computers.</li>
+      </ol>
+      <p>The installer copies the agent to <code>C:\Program Files\LocalOpsAgent\</code>, writes <code>C:\ProgramData\LocalOpsAgent\config.json</code>, registers scheduled task <strong>LocalOpsAgent</strong> (SYSTEM at startup), and starts it.</p>
+
+      <h3>11.4 Computers table &amp; drawer</h3>
+      <p>Click a row to open the side drawer: live telemetry + grouped remote actions.</p>
+      <table>
+        <thead>
+          <tr><th>Group</th><th>Actions</th><th>Notes</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Agent update</td><td>Update / Force update</td><td>Requires <strong>Publish agent package</strong> on the console first</td></tr>
+          <tr><td>Spike forensics</td><td>Resource offenders</td><td>High CPU/RAM (≥90%) can queue offender discovery</td></tr>
+          <tr><td>Network</td><td>Flush DNS, Net smoke, Ping PC</td><td>Net smoke = ping + short download + upload; Ping PC = console→agent latency</td></tr>
+          <tr><td>Windows Update</td><td>Check / Install pending</td><td>No KB uninstall yet</td></tr>
+          <tr><td>Remote Support</td><td>RustDesk status / install</td><td>Needs HTTPS installer URL in settings</td></tr>
+          <tr><td>Software</td><td>Install from catalog</td><td><code>data/fleet/packages.json</code>; winget or HTTPS</td></tr>
+          <tr><td>Event Log</td><td>Tail System / Application / Security</td><td>Bounded tails</td></tr>
+          <tr><td>Services / Print</td><td>Restart Spooler, Get/Restart services</td><td></td></tr>
+          <tr><td>Inventory / Inspect</td><td>Inventory, Processes (End), Printers, Run Script</td><td></td></tr>
+          <tr><td>Message</td><td>Message user</td><td>Shows on the remote session</td></tr>
+          <tr><td>Repair</td><td>SFC, CHKDSK scan, CHKDSK schedule /F</td><td>Schedule fix does not auto-reboot</td></tr>
+          <tr><td>Policy</td><td>Audit / Apply hardening-basic</td><td>Pack under <code>data/fleet/policy-packs/</code></td></tr>
+          <tr><td>Danger</td><td>Restart PC (60s), Remove agent</td><td>Confirm carefully</td></tr>
+        </tbody>
+      </table>
+
+      <h3>11.5 Command queue behavior</h3>
+      <ul>
+        <li>Click a <strong>Command history</strong> row to open its result in the result panel.</li>
+        <li>If one command stays <strong>Running</strong>, newer work stays <strong>Pending</strong> until it finishes, times out (~45 minutes), or you click <strong>Clear stuck</strong>.</li>
+        <li><strong>Failed: Unknown command type</strong> means the agent is too old — reinstall/update the agent for newer command types.</li>
+      </ul>
+
+      <h3>11.6 Publish agent package &amp; self-update</h3>
+      <ol>
+        <li>Computers → Enrollment → <strong>Publish agent package</strong> (copies agent script + SHA-256 into <code>data/fleet/agent-package/</code>)</li>
+        <li>On a PC drawer → <strong>Update agent</strong></li>
+        <li>Agent downloads over HMAC, verifies hash, replaces Program Files script, restarts the task</li>
+      </ol>
+
+      <h3>11.7 Uninstall agent</h3>
+      <pre>.\Uninstall-LocalOpsAgent.ps1</pre>
+      <p>Or use <strong>Remove agent</strong> from the drawer (deletes the fleet record on the console).</p>
+
+      <h2 id="network-map">12. Network Map</h2>
+      <p>Under Operations, <strong>Network Map</strong> shows enrolled agents and discovered LAN neighbors arranged by IP/gateway context. Use it to see spatial/fleet topology at a glance, then open Computers for actions.</p>
+
+      <h2 id="syncme">13. SyncMe</h2>
+      <p>SyncMe integration expects a local SyncMe install path.</p>
+      <ol>
+        <li>Set <code>syncMePath</code> in <code>settings.json</code> (or register via the SyncMe module / register API).</li>
+        <li>Open <strong>Operations → SyncMe</strong>.</li>
+        <li>Use diagnostics for status; actions to open console, open download page, or start backup as exposed by the module.</li>
+      </ol>
+      <p>Registration state is stored under <code>data/syncme/</code> (runtime JSON is gitignored).</p>
+
+      <h2 id="inventory">14. Inventory</h2>
+      <table>
+        <thead>
+          <tr><th>Module</th><th>What you see</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Devices</td><td>Hardware / device inventory</td></tr>
+          <tr><td>Users</td><td>Local user related inventory</td></tr>
+          <tr><td>Graphics</td><td>GPU / display related data</td></tr>
+          <tr><td>Storage</td><td>Volumes and capacity (also under Operations)</td></tr>
+          <tr><td>Startup</td><td>Startup entries</td></tr>
+          <tr><td>Power</td><td>Power / battery oriented info</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="settings">15. Settings reference</h2>
+      <p>UI Settings covers notification prefs, quiet hours, maintenance, and Event Intel options. Machine-level keys live in <code>settings.json</code> next to the app:</p>
+      <table>
+        <thead>
+          <tr><th>Key</th><th>Meaning</th><th>Typical value</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>port</code></td><td>HTTP listen port</td><td><code>8787</code></td></tr>
+          <tr><td><code>bindHost</code></td><td>Listen scope</td><td><code>localhost</code> (local only) or <code>0.0.0.0</code> (LAN agents)</td></tr>
+          <tr><td><code>fleetPublicUrl</code></td><td>URL shown to agents / install one-liner</td><td><code>http://192.168.x.x:8787</code></td></tr>
+          <tr><td><code>fleetEnabled</code></td><td>Enable fleet APIs</td><td><code>true</code></td></tr>
+          <tr><td><code>fleetEnrollToken</code></td><td>Shared join token</td><td>Generate locally; leave empty in public commits</td></tr>
+          <tr><td><code>fleetOfflineSeconds</code></td><td>Offline threshold</td><td><code>90</code></td></tr>
+          <tr><td><code>updateUrl</code></td><td>Update manifest</td><td><code>https://www.opsconsole.co.za/uploads/update.json</code></td></tr>
+          <tr><td><code>integrityMode</code></td><td>Module hash enforcement</td><td><code>warn</code> (dev) / <code>enforce</code> (release)</td></tr>
+          <tr><td><code>eventIntelEnabled</code></td><td>Watchers + incidents</td><td><code>true</code></td></tr>
+          <tr><td><code>syncMePath</code></td><td>Path to SyncMe install</td><td>Local absolute path</td></tr>
+          <tr><td><code>rustDeskInstallerUrl</code></td><td>HTTPS installer for silent deploy</td><td>Empty until configured</td></tr>
+          <tr><td><code>rustDeskInstallerSha256</code></td><td>Optional integrity for installer</td><td>Hex hash</td></tr>
+        </tbody>
+      </table>
+      <div class="callout danger">
+        <strong>Secrets.</strong> Do not commit real <code>fleetEnrollToken</code> values or machine-specific LAN paths to public repos. Keep them in your local <code>settings.json</code> only.
+      </div>
+
+      <h2 id="updates">16. In-app updates</h2>
+      <ol>
+        <li>On launch (and periodically), the app fetches <code>updateUrl</code> (default opsconsole.co.za feed).</li>
+        <li>If <code>latest</code> is newer than the running version, the banner appears.</li>
+        <li>You choose <strong>Update now</strong> or <strong>Later</strong> — never silent.</li>
+        <li>The feed includes SHA-256 for the ZIP; verify downloads.</li>
+      </ol>
+      <p>Maintainers: bump <code>VERSION</code>, run <code>.\build.ps1 -PublishWebsite</code>, attach ZIPs to a GitHub Release, deploy <code>website/uploads/update.json</code>.</p>
+
+      <h2 id="access">17. Access model &amp; elevation</h2>
+      <table>
+        <thead>
+          <tr><th>Mode</th><th>What works</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>STANDARD USER</td><td>Most diagnostics and read-only views</td></tr>
+          <tr><td>Elevated (UAC)</td><td>Remediations marked <code>requiresAdmin</code> (service control, some repairs, agent install, …)</td></tr>
+        </tbody>
+      </table>
+      <p>The header badge shows current elevation. If an action is locked, restart via <code>start.bat</code> and accept UAC.</p>
+
+      <h2 id="troubleshoot">18. Troubleshooting</h2>
+      <table>
+        <thead>
+          <tr><th>Symptom</th><th>What to do</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Failed to fetch everywhere</td><td>Server not running — <code>start.bat</code>; check port 8787; read <code>logs\</code></td></tr>
+          <tr><td>UI opens but remediations fail</td><td>Elevation badge STANDARD — restart elevated</td></tr>
+          <tr><td>HttpListener URL conflict</td><td>Free port; <code>netsh http show urlacl</code>; prefer <code>bindHost: 0.0.0.0</code></td></tr>
+          <tr><td>Agents never Online</td><td>Wrong ServerUrl (not localhost); firewall; enroll token; task LocalOpsAgent running</td></tr>
+          <tr><td>Commands stuck Pending</td><td>Clear stuck Running command; wait 45m timeout; check agent logs under ProgramData</td></tr>
+          <tr><td>Unknown command type</td><td>Update/reinstall agent to match console capabilities</td></tr>
+          <tr><td>BindMismatch warning</td><td><code>fleetPublicUrl</code> is remote but console still localhost-only — set <code>bindHost</code></td></tr>
+          <tr><td>Event Log Access denied</td><td>Normal on Security channel without elevation</td></tr>
+          <tr><td>Integrity failures in package</td><td>Do not edit module files in enforce mode; rebuild package</td></tr>
+        </tbody>
+      </table>
+      <h3>Verification scripts</h3>
+      <pre>.\tools\smoke-bind.ps1
+.\tools\smoke-fleet-commands.ps1
+# With server running:
+.\tools\smoke-api.ps1
+.\tools\smoke-fleet-commands.ps1 -Live
+.\tools\smoke-syncme-register.ps1</pre>
+      <h3>Log locations</h3>
+      <ul>
+        <li>Console: <code>logs\YYYY-MM-DD.log</code> and the live console pane</li>
+        <li>Agent: <code>C:\ProgramData\LocalOpsAgent\logs\agent-YYYY-MM-dd.log</code></li>
+      </ul>
+
+      <h2 id="safety">19. Safety policy</h2>
+      <ul>
+        <li>Default bind is <strong>localhost only</strong></li>
+        <li>Privileged actions are declared per module</li>
+        <li>Automation is off unless a rule enables it</li>
+        <li>Packaged builds enforce module integrity</li>
+        <li>Do not expose the API to the public internet</li>
+        <li>See <code>SECURITY.md</code> in the repository</li>
+      </ul>
+
+      <h2 id="more">20. More documentation</h2>
+      <p>
+        <a href="https://www.opsconsole.co.za/docs/installation.html">Installation</a> ·
+        <a href="https://www.opsconsole.co.za/docs/architecture.html">Architecture</a> ·
+        <a href="https://www.opsconsole.co.za/docs/modules.html">Modules</a> ·
+        <a href="https://www.opsconsole.co.za/docs/api.html">API</a> ·
+        <a href="https://www.opsconsole.co.za/docs/troubleshooting.html">Troubleshooting</a> ·
+        <a href="https://github.com/Metatronixa/LocalOpsConsole">GitHub</a>
+      </p>
+      <p>Markdown companion: <code>docs/USER_GUIDE.md</code>. Per-module notes: <code>docs/modules/</code>.</p>
+    </article>
+  </main>
+
+  <footer class="site-footer"><div class="wrap footer-copy">© 2026 Bradford Lotriet</div></footer>
+  <script src="assets/js/site.js"></script>
+</body>
+</html>

@@ -1,16 +1,16 @@
 ﻿{
     "name":  "LocalOpsConsole",
-    "latest":  "2.1.5",
-    "releasedAt":  "2026-08-06T04:58:30Z",
-    "notes":  "v2.1.5 — Computers remote ops + Pending claim fix (one command per poll, ArrayList claim, stuck-Pending UI warn)",
+    "latest":  "2.1.6",
+    "releasedAt":  "2026-08-07T06:14:00Z",
+    "notes":  "LocalOpsConsole 2.1.6",
     "minVersion":  "1.0.0",
     "builds":  [
                    {
-                       "version":  "2.1.5",
+                       "version":  "2.1.6",
                        "channel":  "stable",
-                       "url":  "https://github.com/Metatronixa/LocalOpsConsole/releases/download/v2.1.5/LocalOpsConsole-2.1.5.zip",
-                       "sha256":  "040b2c87b1dc0882a30d7178997098723e434c5225343507ebb7ed24b9c56346",
-                       "size":  337244
+                       "url":  "https://github.com/Metatronixa/LocalOpsConsole/releases/download/v2.1.6/LocalOpsConsole-2.1.6.zip",
+                       "sha256":  "34659ee6be21e728aa1e7648649ab9a17302f4f0e7e3af406a6e11dccba9b186",
+                       "size":  377500
                    }
                ]
 }

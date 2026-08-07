@@ -1,8 +1,14 @@
 # LocalOpsConsole User Guide
 
-LocalOpsConsole is a **local-first Windows Operations Platform** (v2.1.5) for IT professionals, MSPs, system administrators, and power users.
+LocalOpsConsole is a **local-first Windows Operations Platform** (v2.1.6) for IT professionals, MSPs, system administrators, and power users.
 
-It combines plugin diagnostics with **Event Intelligence** — continuous observation that surfaces **incidents**, not raw event noise.
+**Preferred reading:** the styled HTML guide (same content, full walkthrough):
+
+- In the running app: open **Help** in the header, or browse `http://localhost:8787/user-guide.html`
+- On the website: [User Guide](https://www.opsconsole.co.za/docs/user-guide.html) (source: `website/docs/user-guide.html`)
+- Packaged copy: `dashboard/user-guide.html`
+
+This markdown file is a short companion for the repo. The HTML guide explains every major surface in detail.
 
 ## Launch
 
@@ -17,7 +23,7 @@ If the UI shows **Failed to fetch** for every API call, the server process is no
 | Section | Purpose |
 |---------|---------|
 | Overview | Is this computer healthy? |
-| Operations | System tools, services, updates, network, printers, fleet, … |
+| Operations | System tools, services, updates, network, printers, fleet, SyncMe, Network Map, … |
 | Security | Security Center, Security Baseline, Defender tools, Event Log |
 | Health | Health Center checks |
 | Performance | System telemetry-focused views |
@@ -88,9 +94,13 @@ Use the console’s LAN IP, **Tailscale IP**, or `fleetPublicUrl` — **not** `1
 
 ### Remote actions (Computers)
 
-Select an online PC → detail panel: Flush DNS, Restart Spooler, Inventory, Processes (End), Printers, Ping PC, Net smoke, Message, SFC, CHKDSK, Policy (audit / apply hardening-basic). Use **Network Map** under Operations for a spatial view of agents + LAN neighbors.
+Select an online PC → detail panel: Flush DNS, Restart Spooler, Inventory, Processes (End), Printers, Ping PC, Net smoke, Message, SFC, CHKDSK, Policy (audit / apply hardening-basic), Windows Update, RustDesk, software catalog, event log tails, agent self-update, and more. Use **Network Map** under Operations for a spatial view of agents + LAN neighbors.
 
 Click a **Command history** row to open its result in the **Command result** panel (no scrolling required). If one command stays **Running**, newer work stays **Pending** until it finishes, times out (45 minutes), or you click **Clear stuck**.
+
+## SyncMe
+
+Set `syncMePath` (or register via the SyncMe module). Open **Operations → SyncMe** for status, console, download page, and backup actions.
 
 ## Troubleshooting
 
@@ -100,7 +110,7 @@ Click a **Command history** row to open its result in the **Command result** pan
 - Set `integrityMode` to `warn` during local module development
 - Run `.\tools\smoke-api.ps1` with the server running
 - Remote agents: `fleetPublicUrl` (LAN or Tailscale IP) + `bindHost: 0.0.0.0`; if start fails with “conflicts with an existing registration”, free port 8787 / check `netsh http show urlacl`
-- Commands stuck **Pending**: often a stuck **Running** command is blocking the queue (see Command history). Use **Clear stuck**, or wait for the 45m Running timeout. Also restart task **LocalOpsAgent**, check `C:\ProgramData\LocalOpsAgent\logs`, confirm `ServerUrl`. **Failed** with “Unknown command type” means an old agent — install Agent **2.3.0+** for policy commands
+- Commands stuck **Pending**: often a stuck **Running** command is blocking the queue (see Command history). Use **Clear stuck**, or wait for the 45m Running timeout. Also restart task **LocalOpsAgent**, check `C:\ProgramData\LocalOpsAgent\logs`, confirm `ServerUrl`. **Failed** with “Unknown command type” means an old agent — reinstall/update the agent
 - Event Log “Access denied” on the Security channel is normal without elevation
 
-See also `CHANGELOG.md` and `SECURITY.md`.
+See also the [HTML User Guide](../website/docs/user-guide.html), `CHANGELOG.md`, and `SECURITY.md`.
