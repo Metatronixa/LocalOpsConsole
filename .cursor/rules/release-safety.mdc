@@ -1,0 +1,50 @@
+---
+description: Mandatory test + release safety — never ship untested or secret-laden builds
+alwaysApply: true
+---
+
+# LocalOpsConsole — Test & Release Safety
+
+These failures keep repeating. Follow this gate **every time** before commit, push, or GitHub Release.
+
+## Never ship without verification
+
+1. **Offline smokes first** (no server required):
+   - `.\tools\smoke-bind.ps1`
+   - `.\tools\smoke-fleet-commands.ps1`
+2. **Start the console** (`.\start.bat` / ensure `:8787` healthy).
+3. **Live smokes** (required before any release or “push to GitHub”):
+   - `.\tools\smoke-api.ps1`
+   - `.\tools\smoke-fleet-commands.ps1 -Live`
+   - `.\tools\smoke-syncme-register.ps1` when SyncMe paths matter
+4. If any smoke fails: **fix, re-run, do not commit/push/release**.
+5. After `.\build.ps1`, **inspect the ZIP** before publishing:
+   - Packaged `settings.json` must have `bindHost: localhost`, empty `fleetEnrollToken`, empty `fleetPublicUrl`, empty `syncMePath`
+   - Must include `dashboard/user-guide.html` and expected modules
+   - Must **not** contain developer LAN IPs, tokens, or machine paths
+
+## Never package local secrets
+
+- Working-tree `settings.json` is often machine-local. `build.ps1` must sanitize staged settings (already required).
+- **Do not** `git add settings.json` when it contains enroll tokens, LAN URLs, or absolute SyncMe paths.
+- Prefer leaving `settings.json` unstaged; keep committed defaults clean.
+
+## Release repairs (same version)
+
+When the user says the GitHub app/release is broken and to repair **without bumping version**:
+
+1. Fix code + pass smokes.
+2. `.\build.ps1 -PublishWebsite` (same `VERSION`).
+3. `gh release delete vX.Y.Z --yes` (and delete the tag if needed).
+4. Recreate `gh release create vX.Y.Z` with the new ZIPs from `dist/`.
+5. Confirm new SHA-256 matches `website/uploads/update.json` (local feed).
+
+## Do not claim “tested” unless you ran the scripts
+
+- Saying “smokes passed earlier in the chat” after later edits is not enough — re-run after the last code change that ships.
+- Removing/moving folders (e.g. `website/`) or changing package contents always requires a rebuild + ZIP inspect + live smoke.
+
+## website/ is local-only
+
+- `website/` is gitignored — do not commit it. Deploy marketing/update feed separately to opsconsole.co.za.
+- Bootstrap installer for GitHub raw URLs lives under `scripts/Install-LocalOpsConsole.ps1`.

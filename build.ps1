@@ -62,13 +62,24 @@ Write-Host "Generating integrity hashes..." -ForegroundColor Cyan
 . (Join-Path $Root "core\IntegrityManager.ps1")
 Initialize-LocSettings -RootPath $stage
 $hashPath = New-LocIntegrityStore -ModulesPath (Join-Path $stage "modules") -Version $Version
-# Packaged builds enforce integrity
+# Packaged builds: enforce integrity AND strip machine-local / secret fields.
+# Never ship the developer's working settings.json (LAN IPs, enroll tokens, paths).
 $stagedSettings = Join-Path $stage "settings.json"
 if (Test-Path $stagedSettings) {
     try {
         $sj = Get-Content $stagedSettings -Raw | ConvertFrom-Json
         $sj | Add-Member -NotePropertyName integrityMode -NotePropertyValue "enforce" -Force
+        $sj | Add-Member -NotePropertyName bindHost -NotePropertyValue "localhost" -Force
+        $sj | Add-Member -NotePropertyName fleetPublicUrl -NotePropertyValue "" -Force
+        $sj | Add-Member -NotePropertyName fleetEnrollToken -NotePropertyValue "" -Force
+        $sj | Add-Member -NotePropertyName syncMePath -NotePropertyValue "" -Force
+        if (-not $sj.PSObject.Properties['updateUrl'] -or [string]::IsNullOrWhiteSpace([string]$sj.updateUrl)) {
+            $sj | Add-Member -NotePropertyName updateUrl -NotePropertyValue "https://www.opsconsole.co.za/uploads/update.json" -Force
+        }
+        $sj | Add-Member -NotePropertyName rustDeskInstallerUrl -NotePropertyValue "" -Force
+        $sj | Add-Member -NotePropertyName rustDeskInstallerSha256 -NotePropertyValue "" -Force
         ($sj | ConvertTo-Json -Depth 12) | Set-Content $stagedSettings -Encoding UTF8
+        Write-Host "Sanitized staged settings.json (localhost bind, empty secrets)" -ForegroundColor Green
     }
     catch { }
 }

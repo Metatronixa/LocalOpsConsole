@@ -4,12 +4,15 @@
 
 ### Features
 
-- **Complete HTML User Guide** — full operator walkthrough (install, UI, modules, fleet, SyncMe, settings, troubleshooting) at `website/docs/user-guide.html`, also served in-app at `/user-guide.html` with a header **Help** link.
-- **NetworkMap, SyncMe register, fleet remote-ops polish** from the prior main commit (Computers drawer, policy packs, agent package, splash).
+- **Complete HTML User Guide** — full operator walkthrough (install, UI, modules, fleet, SyncMe, settings, troubleshooting) at in-app `/user-guide.html` (Help) and local marketing docs.
+- **NetworkMap, SyncMe register, fleet remote-ops polish**.
 
-### Docs
+### Package repair (same 2.1.6)
 
-- Docs hub and side nav link to the User Guide; README and `docs/USER_GUIDE.md` point to the HTML guide.
+- **Sanitize release `settings.json`**: never ship developer LAN IPs / enroll tokens / SyncMe paths (`bindHost` forced to `localhost`).
+- **Updater timeouts**: remote update check no longer blocks the single-threaded API indefinitely.
+- **Fleet stale Running**: fix `[datetime]::TryParse` under PowerShell 5.1 (was throwing during claim).
+- Marketing `website/` stays local-only (not on GitHub); bootstrap installer at `scripts/Install-LocalOpsConsole.ps1`.
 
 ### Verify
 

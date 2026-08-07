@@ -52,3 +52,4 @@ if (-not $status.Success -or -not $status.Data.Path) {
     exit 1
 }
 Write-Host "OK" -ForegroundColor Green
+exit 0

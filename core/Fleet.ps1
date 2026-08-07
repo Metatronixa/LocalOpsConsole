@@ -684,7 +684,7 @@ function Test-LocFleetCommandStaleRunning {
     if ([string]::IsNullOrWhiteSpace($claimedRaw)) {
         $claimedRaw = [string]$Command.CreatedAt
     }
-    $claimedAt = $null
+    $claimedAt = [datetime]::MinValue
     if (-not [datetime]::TryParse($claimedRaw, [ref]$claimedAt)) { return $false }
     return (($Now - $claimedAt).TotalMinutes -ge $TimeoutMinutes)
 }

@@ -1,0 +1,13 @@
+---
+description: LocalOpsConsole V2 is the only product path
+alwaysApply: true
+---
+
+# LocalOpsConsole — V2 Product
+
+- **V2 at the repo root is the only product.** All feature work goes in `api/`, `core/`, `modules/`, `dashboard/`, `agent/`, `docs/`, `scripts/`, `data/` (and local `website/` for opsconsole.co.za deploys — not tracked on GitHub).
+- **Do not recreate or extend** `v3/`, `website-v3/`, or `docs-v3/` unless the user explicitly asks.
+- Prefer improving V2 UX (Computers drawer, live telemetry, fleet agent) over greenfield rewrites.
+- Feature gate: faster, safer, more informed?
+- Keep the existing dark cyan/slate ops visual language unless redesigning intentionally.
+- Before commit/push/release: follow `.cursor/rules/release-safety.mdc` (smokes + ZIP inspect).

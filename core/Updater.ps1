@@ -53,36 +53,70 @@ function Resolve-UpdateAssetUrl {
 }
 
 function Get-RemoteText {
-    param([string]$Url)
+    param(
+        [string]$Url,
+        [int]$TimeoutMs = 8000
+    )
     if ($Url -like 'file://*') {
         $path = [Uri]::new($Url).LocalPath
         if (-not (Test-Path $path)) { throw "Manifest not found: $path" }
         return Get-Content -Path $path -Raw -Encoding UTF8
     }
-    $wc = New-Object System.Net.WebClient
-    $wc.Headers.Add('User-Agent', 'LocalOpsConsole-Updater')
+    # HttpWebRequest with timeouts — WebClient has no timeout and can block the single-threaded API.
+    $req = [System.Net.HttpWebRequest]::Create($Url)
+    $req.Method = "GET"
+    $req.UserAgent = "LocalOpsConsole-Updater"
+    $req.Timeout = $TimeoutMs
+    $req.ReadWriteTimeout = $TimeoutMs
+    $req.AutomaticDecompression = [System.Net.DecompressionMethods]::GZip -bor [System.Net.DecompressionMethods]::Deflate
+    $resp = $null
+    $stream = $null
+    $reader = $null
     try {
-        return $wc.DownloadString($Url)
+        $resp = $req.GetResponse()
+        $stream = $resp.GetResponseStream()
+        $reader = New-Object System.IO.StreamReader($stream)
+        return $reader.ReadToEnd()
     }
     finally {
-        $wc.Dispose()
+        if ($reader) { $reader.Dispose() }
+        if ($stream) { $stream.Dispose() }
+        if ($resp) { $resp.Dispose() }
     }
 }
 
 function Get-RemoteFile {
-    param([string]$Url, [string]$OutFile)
+    param(
+        [string]$Url,
+        [string]$OutFile,
+        [int]$TimeoutMs = 120000
+    )
     if ($Url -like 'file://*') {
         $path = [Uri]::new($Url).LocalPath
         Copy-Item -Path $path -Destination $OutFile -Force
         return
     }
-    $wc = New-Object System.Net.WebClient
-    $wc.Headers.Add('User-Agent', 'LocalOpsConsole-Updater')
+    $req = [System.Net.HttpWebRequest]::Create($Url)
+    $req.Method = "GET"
+    $req.UserAgent = "LocalOpsConsole-Updater"
+    $req.Timeout = $TimeoutMs
+    $req.ReadWriteTimeout = $TimeoutMs
+    $resp = $null
+    $inStream = $null
+    $outStream = $null
     try {
-        $wc.DownloadFile($Url, $OutFile)
+        $resp = $req.GetResponse()
+        $inStream = $resp.GetResponseStream()
+        $outStream = [System.IO.File]::Create($OutFile)
+        $buffer = New-Object byte[] 81920
+        while (($read = $inStream.Read($buffer, 0, $buffer.Length)) -gt 0) {
+            $outStream.Write($buffer, 0, $read)
+        }
     }
     finally {
-        $wc.Dispose()
+        if ($outStream) { $outStream.Dispose() }
+        if ($inStream) { $inStream.Dispose() }
+        if ($resp) { $resp.Dispose() }
     }
 }
 
