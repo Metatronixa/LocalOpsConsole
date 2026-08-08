@@ -95,6 +95,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const health = await API.request('health');
     if (typeof LocSplash !== 'undefined') LocSplash.markReady(!!health.Success);
     if (health.Success) {
+        API.setOffline(false);
         document.getElementById('app-version').innerText = `v${health.Data.Version}`;
         document.getElementById('host-name').innerText = (health.Data.Windows || 'LOCAL').split('(')[0].trim() || 'LOCAL';
         window.__LOC_ADMIN = !!health.Data.Admin;
@@ -107,6 +108,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             badge.innerText = 'STANDARD USER';
         }
         document.getElementById('engine-status').innerText = health.Data.Status || 'ONLINE';
+    } else {
+        API.setOffline(true);
+        const engineEl = document.getElementById('engine-status');
+        if (engineEl) {
+            engineEl.innerText = 'OFFLINE';
+            engineEl.classList.add('text-rose-400');
+        }
     }
 
     const response = await API.request('modules');
@@ -338,15 +346,14 @@ async function shutdownConsole() {
     const engineEl = document.getElementById('engine-status');
     if (btn) btn.disabled = true;
     if (btnR) btnR.disabled = true;
-    if (engineEl) engineEl.innerText = 'SHUTTING DOWN…';
-    LiveConsole.log('Shutting down server…', 'WARN');
-    try {
-        await API.request('shutdown', 'POST', {}, 5000);
-    } catch (e) { /* expected once listener stops */ }
     if (engineEl) {
-        engineEl.innerText = 'OFFLINE';
+        engineEl.innerText = 'SHUTTING DOWN…';
         engineEl.classList.add('text-rose-400');
     }
+    LiveConsole.log('Shutting down server…', 'WARN');
+    API.setOffline(true);
+    await API.request('shutdown', 'POST', {}, 5000, { silent: true, expectDisconnect: true });
+    if (engineEl) engineEl.innerText = 'OFFLINE';
     LiveConsole.log('Server stopped. You can close this tab.', 'INFO');
 }
 
@@ -357,46 +364,48 @@ async function restartConsole() {
     const engineEl = document.getElementById('engine-status');
     if (btn) btn.disabled = true;
     if (btnR) btnR.disabled = true;
-    if (engineEl) engineEl.innerText = 'RESTARTING…';
+    if (engineEl) {
+        engineEl.innerText = 'RESTARTING…';
+        engineEl.classList.remove('text-rose-400');
+    }
     LiveConsole.log('Restarting server…', 'WARN');
-    let scheduleOk = false;
-    try {
-        const res = await API.request('restart', 'POST', {}, 8000);
-        scheduleOk = !!(res && res.Success);
-        if (res && res.Success === false) {
-            LiveConsole.log(res.Message || 'Restart request failed', 'ERROR');
-            if (engineEl) engineEl.innerText = 'ONLINE';
-            if (btn) btn.disabled = false;
-            if (btnR) btnR.disabled = false;
-            return;
+    API.setOffline(true);
+
+    const res = await API.request('restart', 'POST', {}, 12000, { silent: true, expectDisconnect: true });
+    // Listener often drops mid-response after schedule — treat network errors as scheduled OK
+    const scheduleOk = !!(res && (res.Success || res.NetworkError || API.isNetworkFailure(res.Message)));
+    if (!scheduleOk) {
+        API.setOffline(false);
+        LiveConsole.log(res.Message || 'Restart request failed', 'ERROR');
+        if (engineEl) {
+            engineEl.innerText = 'ONLINE';
+            engineEl.classList.remove('text-rose-400');
         }
-    } catch (e) {
-        // Listener often drops mid-response after schedule — treat as scheduled
-        scheduleOk = true;
+        if (btn) btn.disabled = false;
+        if (btnR) btnR.disabled = false;
+        return;
     }
 
+    LiveConsole.log('Waiting for server to come back…', 'INFO');
     const started = Date.now();
-    const maxMs = 90000;
+    const maxMs = 120000;
     while (Date.now() - started < maxMs) {
         await new Promise(r => setTimeout(r, 1500));
-        try {
-            const h = await API.request('health', 'GET', null, 5000);
-            if (h && h.Success) {
-                LiveConsole.log('Server is back — reloading…', 'SUCCESS');
-                location.reload();
-                return;
-            }
-        } catch (_) { /* still down */ }
         if (engineEl) engineEl.innerText = 'RECONNECTING…';
+        const h = await API.request('health', 'GET', null, 5000, { silent: true, expectDisconnect: true });
+        if (h && h.Success) {
+            API.setOffline(false);
+            LiveConsole.log('Server is back — reloading…', 'SUCCESS');
+            location.reload();
+            return;
+        }
     }
+
     if (engineEl) {
         engineEl.innerText = 'OFFLINE';
         engineEl.classList.add('text-rose-400');
     }
-    const hint = scheduleOk
-        ? 'Server did not return. Run start.bat as Administrator to bring it back.'
-        : 'Restart could not be scheduled. Run start.bat as Administrator.';
-    LiveConsole.log(hint, 'ERROR');
+    LiveConsole.log('Server did not return. Run start.bat as Administrator to bring it back.', 'ERROR');
     if (btn) btn.disabled = false;
     if (btnR) btnR.disabled = false;
 }
@@ -526,11 +535,13 @@ async function refreshTelemetry() {
         if (engineEl && telemetryFailCount >= 2) {
             engineEl.innerText = 'OFFLINE';
             engineEl.classList.add('text-rose-400');
+            API.setOffline(true);
         }
         return;
     }
 
     telemetryFailCount = 0;
+    API.setOffline(false);
     if (engineEl) {
         engineEl.innerText = 'ONLINE';
         engineEl.classList.remove('text-rose-400');

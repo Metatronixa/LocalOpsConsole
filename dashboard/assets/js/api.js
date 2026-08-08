@@ -1,6 +1,17 @@
 const API = {
     baseUrl: '/api/v1',
     defaultTimeoutMs: 25000,
+    /** When true, network failures are expected (shutdown/restart/reconnect) — do not spam LiveConsole */
+    offline: false,
+
+    setOffline(value) {
+        this.offline = !!value;
+    },
+
+    isNetworkFailure(message) {
+        const m = String(message || '');
+        return /failed to fetch|network\s*error|load failed|err_connection|econnrefused|connection.?reset|aborted|timed out/i.test(m);
+    },
 
     /** Normalize PowerShell JSON quirks: single-item arrays become objects */
     asArray(data) {
@@ -13,6 +24,7 @@ const API = {
 
     async request(endpoint, method = 'GET', payload = null, timeoutMs = this.defaultTimeoutMs, options = {}) {
         const silent = !!options.silent;
+        const expectDisconnect = !!options.expectDisconnect;
         const reqOptions = {
             method,
             headers: { 'Content-Type': 'application/json' }
@@ -27,7 +39,7 @@ const API = {
 
         try {
             const response = await fetch(`${this.baseUrl}/${endpoint}`, reqOptions);
-            if (!response.ok && !silent) {
+            if (!response.ok && !silent && !this.offline) {
                 LiveConsole.log(`[API] ${endpoint}: HTTP ${response.status}`, 'WARN');
             }
             const text = await response.text();
@@ -35,22 +47,24 @@ const API = {
             try {
                 json = text ? JSON.parse(text) : { Success: false, Message: 'Empty response', Data: null };
             } catch {
-                if (!silent) {
+                if (!silent && !this.offline) {
                     LiveConsole.log(`[API Error] ${endpoint}: invalid JSON (HTTP ${response.status})`, 'ERROR');
                 }
-                return { Success: false, Message: `Invalid JSON (HTTP ${response.status})`, Data: null };
+                return { Success: false, Message: `Invalid JSON (HTTP ${response.status})`, Data: null, NetworkError: false };
             }
-            if (!json.Success && !silent) {
+            if (!json.Success && !silent && !this.offline) {
                 LiveConsole.log(`[API] ${json.Message || endpoint}`, 'WARN');
             }
             return json;
         } catch (err) {
             const aborted = err && (err.name === 'AbortError' || /aborted/i.test(err.message || ''));
             const msg = aborted ? `Timed out after ${Math.round(timeoutMs / 1000)}s` : (err.message || 'Failed to fetch');
-            if (!silent) {
+            const networkError = true;
+            // Expected while shutting down, restarting, or when UI already knows engine is offline
+            if (!silent && !this.offline && !expectDisconnect) {
                 LiveConsole.log(`[API Error] ${endpoint}: ${msg}`, 'ERROR');
             }
-            return { Success: false, Message: msg, Data: null };
+            return { Success: false, Message: msg, Data: null, NetworkError: networkError, Aborted: aborted };
         } finally {
             if (timer) clearTimeout(timer);
         }

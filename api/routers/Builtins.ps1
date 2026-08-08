@@ -118,6 +118,8 @@ function Invoke-LocBuiltinRouter {
         }
         Write-LocLog -Module "CORE" -Action "Shutdown" -Level "WARN" -Message "Shutdown requested via API"
         Send-JsonResponse -Context $Context -Success $true -Message "Shutting down" -Data @{ Stopping = $true }
+        # Brief pause so the HTTP response can leave the host before Stop() tears down the listener
+        Start-Sleep -Milliseconds 400
         if (Get-Command Request-LocShutdown -ErrorAction SilentlyContinue) {
             Request-LocShutdown
         }
@@ -143,6 +145,7 @@ function Invoke-LocBuiltinRouter {
             return $true
         }
         Send-JsonResponse -Context $Context -Success $true -Message "Restarting" -Data @{ Restarting = $true }
+        Start-Sleep -Milliseconds 400
         if (Get-Command Request-LocShutdown -ErrorAction SilentlyContinue) {
             Request-LocShutdown
         }

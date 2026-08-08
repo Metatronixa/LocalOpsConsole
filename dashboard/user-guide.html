@@ -444,7 +444,8 @@ cd LocalOpsConsole
         </thead>
         <tbody>
           <tr><td>Failed to fetch everywhere</td><td>Server not running — <code>start.bat</code> or UI Restart; check port 8787; read <code>logs\</code></td></tr>
-          <tr><td>Restart stuck on RECONNECTING</td><td>Wait for health; if timeout, run <code>start.bat</code> elevated. Restart does not show a second UAC.</td></tr>
+          <tr><td>Restart shows Failed to fetch</td><td>Expected while the listener stops. UI should say RECONNECTING (not abort). Hard-refresh the page if you still see ERROR spam from an old JS cache.</td></tr>
+          <tr><td>Restart stuck on RECONNECTING</td><td>Wait up to ~2 minutes; if timeout, run <code>start.bat</code> elevated. Restart does not show a second UAC.</td></tr>
           <tr><td>UI opens but remediations fail</td><td>Elevation badge STANDARD — restart elevated via <code>start.bat</code></td></tr>
           <tr><td>HttpListener URL conflict</td><td>Free port; <code>netsh http show urlacl</code>; prefer <code>bindHost: 0.0.0.0</code></td></tr>
           <tr><td>Agents never Online</td><td>Wrong ServerUrl (not localhost); firewall; enroll token; task LocalOpsAgent running</td></tr>

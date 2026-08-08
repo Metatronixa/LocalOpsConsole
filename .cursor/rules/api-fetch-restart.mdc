@@ -1,0 +1,34 @@
+---
+description: Prevent Failed-to-fetch / Restart / accept-loop API readiness regressions
+alwaysApply: true
+---
+
+# API readiness & Restart safety
+
+These failures keep shipping. Treat them as release blockers.
+
+## Never mis-handle Restart / Shutdown disconnects
+
+- `POST /restart` and `POST /shutdown` **will** drop the HTTP connection after the listener stops. That is expected.
+- Browser `fetch` then surfaces as **Failed to fetch** / network error with `Success: false` — **not** a thrown exception (see `dashboard/assets/js/api.js`).
+- UI must treat network failures on restart/shutdown as **scheduled OK** and enter reconnect/offline mode — never abort reconnect because `res.Success === false` with a network message.
+- Use `API.setOffline(true)`, `silent: true`, and/or `expectDisconnect: true` so LiveConsole is **not** spammed with `[API Error] … Failed to fetch` during reconnect or while engine is OFFLINE.
+- Telemetry/alerts polls must stay `silent: true` and respect offline mode.
+
+## Restart server path
+
+- Schedule relaunch of **`api/server.ps1`** (hidden, inherit elevation) **before** `Request-LocShutdown`.
+- Do **not** relaunch via `start.ps1` (UAC / browser / “already running” races).
+- Flush JSON response, brief pause, then stop listener.
+- Wait for port free (including TIME_WAIT) before binding again.
+- Keep `/health` cheap (no cold CIM / Defender on the hot path).
+- Never run heavy EventIntel health (`Get-MpComputerStatus`, etc.) on the HttpListener accept-loop thread during warm-up.
+
+## “Failed to fetch everywhere”
+
+Usually means **no listener on the port**, not missing routes. Fix by ensuring the server process is up (start.bat / Restart), not by rewriting every module. Log and UI copy should say that.
+
+## Before claiming Restart/API is fixed
+
+- Confirm restart UI reconnects without ERROR spam for expected disconnects.
+- Offline smokes still pass; live `/health` works after cold start without a second manual restart.

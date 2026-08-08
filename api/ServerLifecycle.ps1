@@ -27,27 +27,35 @@ function Request-LocServerRelaunch {
         throw "api/server.ps1 not found under $root"
     }
 
+    # Inherit elevation from this process (UseShellExecute=$false). Wait for port free, then relaunch.
     $cmd = @"
 `$ErrorActionPreference = 'Continue'
 `$port = $port
-`$deadline = (Get-Date).AddSeconds(30)
+`$deadline = (Get-Date).AddSeconds(45)
 while ((Get-Date) -lt `$deadline) {
     `$busy = `$false
     try {
-        `$busy = [bool](Get-NetTCPConnection -LocalPort `$port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1)
-    } catch { `$busy = `$false }
+        `$busy = [bool](Get-NetTCPConnection -LocalPort `$port -State Listen,TimeWait -ErrorAction SilentlyContinue | Select-Object -First 1)
+    } catch {
+        try {
+            `$busy = [bool](Get-NetTCPConnection -LocalPort `$port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1)
+        } catch { `$busy = `$false }
+    }
     if (-not `$busy) { break }
-    Start-Sleep -Milliseconds 400
+    Start-Sleep -Milliseconds 500
 }
+Start-Sleep -Milliseconds 500
 `$arg = '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$serverPs1`" -Port $port -ModulesPath `"$modulesPath`" -DashboardPath `"$dashboardPath`" -RootPath `"$root`"$noStaticArg$productModeArg'
-`$psi = New-Object System.Diagnostics.ProcessStartInfo
-`$psi.FileName = 'powershell.exe'
-`$psi.Arguments = `$arg
-`$psi.WorkingDirectory = '$root'
-`$psi.UseShellExecute = `$true
-`$psi.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
-[void][Diagnostics.Process]::Start(`$psi)
+`$p = Start-Process -FilePath 'powershell.exe' -ArgumentList `$arg -WorkingDirectory '$root' -WindowStyle Hidden -PassThru
+if (-not `$p) { throw 'Failed to start api/server.ps1 relaunch process' }
 "@
     $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($cmd))
-    Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand $encoded" -WindowStyle Hidden | Out-Null
+    $helper = Start-Process -FilePath "powershell.exe" `
+        -ArgumentList "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand $encoded" `
+        -WorkingDirectory $root `
+        -WindowStyle Hidden `
+        -PassThru
+    if (-not $helper) {
+        throw "Failed to schedule restart helper process"
+    }
 }
