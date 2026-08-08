@@ -50,7 +50,7 @@ $logs = Join-Path $stage "logs"
 New-Item -ItemType Directory -Force -Path $logs | Out-Null
 Set-Content (Join-Path $logs ".gitkeep") -Value "" -Encoding UTF8
 
-foreach ($d in @("data\events", "data\incidents\active", "data\incidents\resolved", "data\incidents\archive", "data\fleet", "data\integrity")) {
+foreach ($d in @("data\events", "data\incidents\active", "data\incidents\resolved", "data\incidents\archive", "data\fleet", "data\integrity", "data\license", "data\threat", "data\runtime")) {
     $p = Join-Path $stage $d
     New-Item -ItemType Directory -Force -Path $p | Out-Null
     Set-Content (Join-Path $p ".gitkeep") -Value "" -Encoding UTF8
@@ -73,6 +73,17 @@ if (Test-Path $stagedSettings) {
         $sj | Add-Member -NotePropertyName fleetPublicUrl -NotePropertyValue "" -Force
         $sj | Add-Member -NotePropertyName fleetEnrollToken -NotePropertyValue "" -Force
         $sj | Add-Member -NotePropertyName syncMePath -NotePropertyValue "" -Force
+        $sj | Add-Member -NotePropertyName licenseKey -NotePropertyValue "" -Force
+        if (-not $sj.PSObject.Properties['productMode'] -or [string]::IsNullOrWhiteSpace([string]$sj.productMode)) {
+            $sj | Add-Member -NotePropertyName productMode -NotePropertyValue "desktop" -Force
+        }
+        # Never ship a staged license blob from the build machine
+        $stagedLicenseDir = Join-Path $stage "data\license"
+        if (Test-Path -LiteralPath $stagedLicenseDir) {
+            Get-ChildItem -LiteralPath $stagedLicenseDir -File -ErrorAction SilentlyContinue |
+                Where-Object { $_.Name -ne ".gitkeep" } |
+                Remove-Item -Force -ErrorAction SilentlyContinue
+        }
         if (-not $sj.PSObject.Properties['updateUrl'] -or [string]::IsNullOrWhiteSpace([string]$sj.updateUrl)) {
             $sj | Add-Member -NotePropertyName updateUrl -NotePropertyValue "https://www.opsconsole.co.za/uploads/update.json" -Force
         }
@@ -81,7 +92,9 @@ if (Test-Path $stagedSettings) {
         ($sj | ConvertTo-Json -Depth 12) | Set-Content $stagedSettings -Encoding UTF8
         Write-Host "Sanitized staged settings.json (localhost bind, empty secrets)" -ForegroundColor Green
     }
-    catch { }
+    catch {
+        Write-Warning ("Failed to sanitize staged settings.json: {0}" -f $_.Exception.Message)
+    }
 }
 Write-Host "Integrity store: $hashPath" -ForegroundColor Green
 

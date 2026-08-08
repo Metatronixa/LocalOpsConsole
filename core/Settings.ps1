@@ -30,6 +30,7 @@ function Initialize-LocSettings {
             taskIntervalSeconds  = 10
             logRetentionDays     = 14
             bindHost             = "localhost"
+            productMode          = "desktop"
         }
     }
 }
@@ -113,6 +114,19 @@ function Test-LocEventIntelEnabled {
     if (-not $s) { return $true }
     if ($null -eq $s.PSObject.Properties['eventIntelEnabled']) { return $true }
     return [bool]$s.eventIntelEnabled
+}
+
+function Get-LocProductMode {
+    if (Get-Command Resolve-LocProductMode -ErrorAction SilentlyContinue) {
+        return Resolve-LocProductMode
+    }
+    $s = Get-LocSettings
+    $mode = "desktop"
+    if ($s -and $s.PSObject.Properties['productMode'] -and -not [string]::IsNullOrWhiteSpace([string]$s.productMode)) {
+        $mode = ([string]$s.productMode).Trim().ToLowerInvariant()
+    }
+    if ($mode -notin @("desktop", "appliance")) { $mode = "desktop" }
+    return $mode
 }
 
 function Save-LocSettings {

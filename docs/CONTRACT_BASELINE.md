@@ -12,19 +12,20 @@ Prefix: `/api/v1`. Oversized source inventory (lines) at capture time: `core/Fle
 
 | Method | Path | Notes |
 |--------|------|--------|
-| GET | `/health` | Version, admin, module count/errors, PS/Windows, Status |
-| GET | `/modules` | Module descriptors (id, diagnostics, actions, profiles, capabilities, …) |
+| GET | `/health` | Version, admin, module count/errors, PS/Windows, Status, Edition, ProductMode, Sku |
+| GET | `/license` | Safe license summary (Valid, Edition, Sku, ProductMode, …) — never raw key |
+| GET | `/modules` | Module descriptors (id, diagnostics, actions, profiles, capabilities, requiredEdition, …) |
 | GET | `/logs?lines=` | Console feed tail |
 | GET | `/telemetry?force=` | Telemetry snapshot |
 | POST | `/shutdown` | Stop listener |
-| POST | `/restart` | Schedule headless relaunch, then stop listener |
+| POST | `/restart` | Schedule hidden-window relaunch (`api/server.ps1`), then stop listener |
 | GET | `/updates/check` | Update check |
 | POST | `/updates/apply` | Body `{ Force? }` — else fall through to Updates module |
 | GET | `/integrity/status` | Integrity status |
 | GET | `/automation/status` | Automation status |
 | POST | `/automation/playbooks/{ruleId}` | Body `{ enabled, scope?, agentIds? }` |
 | POST | `/automation/playbooks/{ruleId}/run` | Body `{ agentIds? }` |
-| GET | `/settings` | Safe settings (no secrets) |
+| GET | `/settings` | Safe settings (no secrets); includes productMode + license summary |
 | POST | `/settings` | Event Intel prefs |
 | POST | `/settings/test-channel` | Body `{ channel }` |
 | POST | `/syncme/register` | Loopback only |

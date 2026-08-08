@@ -1,4 +1,4 @@
-# api/routers/Builtins.ps1 - health/modules/logs/telemetry/shutdown/updates/integrity
+# api/routers/Builtins.ps1 - health/license/modules/logs/telemetry/shutdown/updates/integrity
 # Returns $true when the request was fully handled; $false to fall through (updates/syncme module routes).
 
 function Invoke-LocBuiltinRouter {
@@ -20,6 +20,11 @@ function Invoke-LocBuiltinRouter {
             $script:LocHealthOsBuild = [Environment]::OSVersion.Version.ToString()
         }
 
+        $lic = $null
+        if (Get-Command Get-LocLicenseSummary -ErrorAction SilentlyContinue) {
+            $lic = Get-LocLicenseSummary
+        }
+
         $data = [PSCustomObject]@{
             Version       = $ver.version
             Name          = $ver.name
@@ -29,8 +34,31 @@ function Invoke-LocBuiltinRouter {
             PowerShell    = $PSVersionTable.PSVersion.ToString()
             Windows       = ("{0} ({1})" -f $script:LocHealthOsCaption, $script:LocHealthOsBuild).Trim()
             Status        = if ((Get-LocModuleErrors).Count -eq 0) { "Healthy" } else { "Degraded" }
+            Edition       = if ($lic) { [string]$lic.Edition } else { "Community" }
+            ProductMode   = if ($lic) { [string]$lic.ProductMode } else { "desktop" }
+            Sku           = if ($lic) { [string]$lic.Sku } else { "community" }
         }
         Send-JsonResponse -Context $Context -Success $true -Message "OK" -Data $data
+        return $true
+    }
+
+    # Built-in: license status (safe summary — no raw key)
+    if ($Resource -eq "license") {
+        if ($Method -ne "GET") {
+            Send-JsonResponse -Context $Context -Success $false -Message "License requires GET" -StatusCode 405
+            return $true
+        }
+        $summary = if (Get-Command Get-LocLicenseSummary -ErrorAction SilentlyContinue) {
+            Get-LocLicenseSummary
+        }
+        else {
+            [PSCustomObject]@{
+                Valid = $true; Edition = "Community"; Sku = "community"
+                ProductMode = "desktop"; LicensedTo = $null; ExpiresAt = $null
+                AgentLimit = $null; Source = "community"; Message = "LicenseManager unavailable"
+            }
+        }
+        Send-JsonResponse -Context $Context -Success $true -Message "License status" -Data $summary
         return $true
     }
 
@@ -38,21 +66,22 @@ function Invoke-LocBuiltinRouter {
     if ($Resource -eq "modules") {
         $mods = Get-LocModules | ForEach-Object {
             [PSCustomObject]@{
-                id            = $_.Id
-                name          = $_.Name
-                version       = $_.Version
-                icon          = $_.Icon
-                description   = $_.Description
-                order         = $_.Order
-                tier          = $_.Tier
+                id              = $_.Id
+                name            = $_.Name
+                version         = $_.Version
+                icon            = $_.Icon
+                description     = $_.Description
+                order           = $_.Order
+                tier            = $_.Tier
+                requiredEdition = if ($_.RequiredEdition) { $_.RequiredEdition } else { "community" }
                 # Wrap as ArrayList so ConvertTo-Json keeps single-item arrays as JSON arrays
-                profiles      = [System.Collections.ArrayList]@($_.Profiles)
-                depends       = [System.Collections.ArrayList]@($_.Depends)
-                diagnostics   = [System.Collections.ArrayList]@($_.Diagnostics)
-                actions       = [System.Collections.ArrayList]@($_.Actions)
-                requiresAdmin = [System.Collections.ArrayList]@($_.RequiresAdmin)
-                hidden        = $_.Hidden
-                capabilities  = [System.Collections.ArrayList]@(if ($_.Capabilities) { $_.Capabilities } else { @() })
+                profiles        = [System.Collections.ArrayList]@($_.Profiles)
+                depends         = [System.Collections.ArrayList]@($_.Depends)
+                diagnostics     = [System.Collections.ArrayList]@($_.Diagnostics)
+                actions         = [System.Collections.ArrayList]@($_.Actions)
+                requiresAdmin   = [System.Collections.ArrayList]@($_.RequiresAdmin)
+                hidden          = $_.Hidden
+                capabilities    = [System.Collections.ArrayList]@(if ($_.Capabilities) { $_.Capabilities } else { @() })
             }
         }
         Send-JsonResponse -Context $Context -Success $true -Message "Modules loaded" -Data @($mods)

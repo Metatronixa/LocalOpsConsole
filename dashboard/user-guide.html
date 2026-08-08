@@ -92,6 +92,8 @@ cd LocalOpsConsole
         <li>Waits for <code>/api/v1/health</code>, writes <code>data/runtime/server.pid</code>, opens the browser, and <strong>exits</strong> — no Wait-Process console stays open</li>
         <li>On failure, opens a short visible PowerShell window with the error and “Press Enter”</li>
         <li>For verbose progress: <code>powershell -File start.ps1 -ShowConsole</code></li>
+        <li>API-only (no browser): <code>powershell -File start.ps1 -NoBrowser</code></li>
+        <li>Appliance / no static UI: <code>powershell -File start.ps1 -Appliance</code> (passes <code>-NoStatic -ProductMode appliance</code>)</li>
       </ul>
       <div class="callout warn">
         <strong>Failed to fetch</strong> on every tile means the server process is not running. Use <strong>start.bat</strong> again (or UI Restart if the tab is still up). Check <code>logs\YYYY-MM-DD.log</code>.

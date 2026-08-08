@@ -9,6 +9,7 @@
 - **First-start readiness**: Event Intelligence defers heavy Defender/firewall health probes so `/api` stays responsive on cold boot; `/health` stays cheap.
 - **Threat Operations**: Security event stream with filters, ScriptBlock decoding, agent telemetry ingest (`POST /api/v1/fleet/threat-telemetry`).
 - **Header redesign**: Brand | telemetry chips | ops controls — logo no longer clipped by Restart/Shutdown.
+- **License / product-mode hooks**: `LicenseManager` + `GET /api/v1/license`; Community remains ungated on the public MIT tree. `-NoBrowser` / `-Appliance` (`-NoStatic`) for API-only / appliance hosts.
 
 ### Product / docs
 

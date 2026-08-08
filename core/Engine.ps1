@@ -10,6 +10,7 @@ function Get-LocCoreEngineFiles {
         "Response.ps1",
         "Security.ps1",
         "Settings.ps1",
+        "LicenseManager.ps1",
         "Logger.ps1",
         "Cache.ps1",
         "Console.ps1",

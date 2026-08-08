@@ -122,6 +122,8 @@ function Invoke-LocBuiltinSettings {
             taskIntervalSeconds = $s.taskIntervalSeconds
             bindHost            = $s.bindHost
             integrityMode       = if ($s.integrityMode) { $s.integrityMode } else { "warn" }
+            productMode         = if (Get-Command Get-LocProductMode -ErrorAction SilentlyContinue) { Get-LocProductMode } else { "desktop" }
+            license             = if (Get-Command Get-LocLicenseSummary -ErrorAction SilentlyContinue) { Get-LocLicenseSummary } else { $null }
             eventIntelEnabled   = (Test-LocEventIntelEnabled)
             eventIntel          = (Get-LocEventIntelSettingsForApi)
             fleetEnabled        = if ($null -ne $s.fleetEnabled) { [bool]$s.fleetEnabled } else { $true }

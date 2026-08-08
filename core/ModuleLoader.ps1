@@ -72,6 +72,7 @@ function Initialize-ModuleLoader {
                 Hidden          = if ($null -ne $json.hidden) { [bool]$json.hidden } else { $false }
                 CacheSeconds    = @{}
                 Capabilities    = if ($null -ne $json.capabilities) { @($json.capabilities | ForEach-Object { [string]$_ }) } else { @() }
+                RequiredEdition = if ($json.requiredEdition) { ([string]$json.requiredEdition).Trim().ToLowerInvariant() } else { "community" }
                 Path            = $moduleDir
                 ManifestPath    = $file.FullName
             }

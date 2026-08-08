@@ -32,6 +32,9 @@ data/integrity/module-hashes.json
 data/threat/*.json
 data/threat/*.jsonl
 data/runtime/*.pid
+data/license/**
+!data/license/
+!data/license/.gitkeep
 !data/.gitkeep
 !data/fleet/.gitkeep
 !data/events/.gitkeep

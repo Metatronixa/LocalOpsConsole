@@ -1,7 +1,69 @@
 ﻿{
-  "Version": "2.3.0",
-  "Sha256": "d88b4660bb28ac314a7bfb8704560bacb9caacb06063f328b6741feb79b02a23",
-  "FileName": "LocalOpsAgent.ps1",
-  "SizeBytes": 66858,
-  "PublishedAt": "2026-08-07T16:36:45Z"
+    "Version":  "2.3.0",
+    "Sha256":  "46b8e62466791ed04986ec603b32608783539344a3e1eea7cad341e5a0f476b2",
+    "FileName":  "LocalOpsAgent.ps1",
+    "SizeBytes":  2635,
+    "Files":  [
+                  {
+                      "FileName":  "LocalOpsAgent.ps1",
+                      "Sha256":  "46b8e62466791ed04986ec603b32608783539344a3e1eea7cad341e5a0f476b2",
+                      "SizeBytes":  2635
+                  },
+                  {
+                      "FileName":  "AgentCommon.ps1",
+                      "Sha256":  "1b2d53a67455813e95fd657bc6f843156a7df947ede6f0d6dd9693f3d31a96dd",
+                      "SizeBytes":  7035
+                  },
+                  {
+                      "FileName":  "CapabilityDetector.ps1",
+                      "Sha256":  "04e99173fbda657693b96196afbcec6e1034103f66a13352906f199feb599e14",
+                      "SizeBytes":  3529
+                  },
+                  {
+                      "FileName":  "AgentTelemetry.ps1",
+                      "Sha256":  "d6f0c2769289cae866c7ee05d7003c1669a4b3b4c373a128a458a700f049e9a9",
+                      "SizeBytes":  3881
+                  },
+                  {
+                      "FileName":  "CommandDispatcher.ps1",
+                      "Sha256":  "ed99761545c946184d635ff6a7cf1fb61f7d08db9a68fd8032b00884bf902543",
+                      "SizeBytes":  8069
+                  },
+                  {
+                      "FileName":  "AgentCommands.Core.ps1",
+                      "Sha256":  "2c6dc53b7acf698280b7fbc59648dc6bba74cf69cf7bf3bb22f4460e61c3675e",
+                      "SizeBytes":  6042
+                  },
+                  {
+                      "FileName":  "AgentCommands.Local.ps1",
+                      "Sha256":  "2eec202dd9625b3226c0dbbb076d5ac9d35504d2e9182f81e8cf0f4f8efc19d5",
+                      "SizeBytes":  6434
+                  },
+                  {
+                      "FileName":  "AgentCommands.Net.ps1",
+                      "Sha256":  "424b203c72b271ca8d29c01a31687e002b49e0cc4d45f49f2b60e54e310aa017",
+                      "SizeBytes":  7730
+                  },
+                  {
+                      "FileName":  "AgentCommands.Software.ps1",
+                      "Sha256":  "8b48406d3e879f34643bb4a69ccbf3a88e55381a5d6276bc260845f25cc4fa55",
+                      "SizeBytes":  12634
+                  },
+                  {
+                      "FileName":  "AgentCommands.Maint.ps1",
+                      "Sha256":  "38a317303f2c749a2ddcee46f33bfbf0f6e21c6ab709e56b275d21d7faa87f97",
+                      "SizeBytes":  7685
+                  },
+                  {
+                      "FileName":  "AgentCommands.Security.ps1",
+                      "Sha256":  "65bab9fea39633c65def764d4e9b8b303eb08354d1fa22eeb7553f6a0c99bf1e",
+                      "SizeBytes":  6215
+                  },
+                  {
+                      "FileName":  "Install-LocalOpsAgent.ps1",
+                      "Sha256":  "477cd898aaa3e8b1d85dc8480cd45ad75581aaf967a663d6183908b52e6cd40d",
+                      "SizeBytes":  2885
+                  }
+              ],
+    "PublishedAt":  "2026-08-08T04:52:10Z"
 }

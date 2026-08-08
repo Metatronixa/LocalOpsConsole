@@ -4,11 +4,19 @@ param (
     [int]$Port = 8787,
     [string]$ModulesPath = "",
     [string]$DashboardPath = "",
-    [string]$RootPath = ""
+    [string]$RootPath = "",
+    [switch]$NoStatic,
+    [string]$ProductMode = ""
 )
 
 $ErrorActionPreference = "Continue"
 
+if (-not [string]::IsNullOrWhiteSpace($ProductMode)) {
+    $ProductMode = $ProductMode.Trim().ToLowerInvariant()
+    if ($ProductMode -notin @("desktop", "appliance")) {
+        throw "ProductMode must be 'desktop' or 'appliance' (got: $ProductMode)"
+    }
+}
 if ([string]::IsNullOrWhiteSpace($RootPath)) {
     $RootPath = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 }
@@ -50,6 +58,12 @@ foreach ($name in @(
 
 Initialize-LocSettings -RootPath $RootPath
 Initialize-LocLogger -RootPath $RootPath
+if (-not [string]::IsNullOrWhiteSpace($ProductMode)) {
+    Initialize-LocLicense -ProductModeOverride $ProductMode
+}
+else {
+    Initialize-LocLicense
+}
 Initialize-LocIntegrityManager
 Initialize-LocFleetStore
 Initialize-ModuleLoader -ModulesPath $ModulesPath
@@ -66,6 +80,16 @@ if ([string]::IsNullOrWhiteSpace($bindHost)) { $bindHost = "localhost" }
 
 $listenHosts = @(Resolve-LocHttpListenHosts -BindHost $bindHost)
 $prefixes = @($listenHosts | ForEach-Object { "http://${_}:$Port/" })
+
+# Appliance / API-only: skip dashboard static files (-NoStatic or productMode=appliance)
+$script:LocNoStatic = [bool]$NoStatic
+if (-not $script:LocNoStatic -and (Get-Command Test-LocApplianceMode -ErrorAction SilentlyContinue)) {
+    $script:LocNoStatic = [bool](Test-LocApplianceMode)
+}
+# Explicit -ProductMode appliance also disables static even if settings say desktop
+if (-not $script:LocNoStatic -and $ProductMode -eq "appliance") {
+    $script:LocNoStatic = $true
+}
 
 $MimeTypes = @{
     ".html" = "text/html; charset=utf-8"
@@ -91,56 +115,13 @@ $script:LocModulesPath = $ModulesPath
 $script:LocDashboardPath = $DashboardPath
 $script:LocRootPath = $RootPath
 
-function Request-LocShutdown {
-    $script:LocShutdownRequested = $true
-    try {
-        if ($script:LocHttpListener -and $script:LocHttpListener.IsListening) {
-            $script:LocHttpListener.Stop()
-        }
-    }
-    catch { Write-Debug $_.Exception.Message }
-}
-
-function Request-LocServerRelaunch {
-    # Schedule hidden api/server.ps1 after port frees. Caller should then Request-LocShutdown.
-    $root = if ($script:LocRootPath) { [string]$script:LocRootPath } else { Get-LocRoot }
-    $port = if ($script:LocServerPort -gt 0) { [int]$script:LocServerPort } else { 8787 }
-    $modulesPath = if ($script:LocModulesPath) { [string]$script:LocModulesPath } else { Join-Path $root "modules" }
-    $dashboardPath = if ($script:LocDashboardPath) { [string]$script:LocDashboardPath } else { Join-Path $root "dashboard" }
-    $serverPs1 = Join-Path $root "api\server.ps1"
-    if (-not (Test-Path -LiteralPath $serverPs1)) {
-        throw "api/server.ps1 not found under $root"
-    }
-
-    $cmd = @"
-`$ErrorActionPreference = 'Continue'
-`$port = $port
-`$deadline = (Get-Date).AddSeconds(30)
-while ((Get-Date) -lt `$deadline) {
-    `$busy = `$false
-    try {
-        `$busy = [bool](Get-NetTCPConnection -LocalPort `$port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1)
-    } catch { `$busy = `$false }
-    if (-not `$busy) { break }
-    Start-Sleep -Milliseconds 400
-}
-`$arg = '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$serverPs1`" -Port $port -ModulesPath `"$modulesPath`" -DashboardPath `"$dashboardPath`" -RootPath `"$root`"'
-`$psi = New-Object System.Diagnostics.ProcessStartInfo
-`$psi.FileName = 'powershell.exe'
-`$psi.Arguments = `$arg
-`$psi.WorkingDirectory = '$root'
-`$psi.UseShellExecute = `$true
-`$psi.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
-[void][Diagnostics.Process]::Start(`$psi)
-"@
-    $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($cmd))
-    Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand $encoded" -WindowStyle Hidden | Out-Null
-}
+. (Join-Path $PSScriptRoot "ServerLifecycle.ps1")
 
 try {
     $listener.Start()
     $prefixList = ($prefixes -join ", ")
-    $listenMsg = "Listening on $prefixList (bindHost=$bindHost)"
+    $modeNote = if ($script:LocNoStatic) { " noStatic=true" } else { "" }
+    $listenMsg = "Listening on $prefixList (bindHost=$bindHost$modeNote)"
     Write-LocLog -Module "CORE" -Action "Server" -Level "SUCCESS" -Message $listenMsg
 }
 catch {
@@ -216,6 +197,16 @@ try {
             catch {
                 Send-JsonResponse -Context $context -Success $false -Message "Routing Error: $($_.Exception.Message)" -StatusCode 500
             }
+            continue
+        }
+
+        if ($script:LocNoStatic) {
+            $context.Response.StatusCode = 404
+            $msgBytes = [System.Text.Encoding]::UTF8.GetBytes("404 - Static UI disabled (appliance / NoStatic)")
+            $context.Response.ContentType = "text/plain; charset=utf-8"
+            $context.Response.ContentLength64 = $msgBytes.Length
+            $context.Response.OutputStream.Write($msgBytes, 0, $msgBytes.Length)
+            $context.Response.OutputStream.Close()
             continue
         }
 

@@ -1,12 +1,17 @@
-﻿# start.ps1 - Headless LocalOpsConsole launcher (UI Shutdown/Restart control the server)
+﻿# start.ps1 - LocalOpsConsole launcher (hidden window by default; UI Shutdown/Restart control the server)
+# Note: "hidden window" is not the same as appliance/API-only mode — use -NoBrowser / -Appliance for that.
 [CmdletBinding()]
 param(
-    [switch]$ShowConsole
+    [switch]$ShowConsole,
+    [switch]$NoBrowser,
+    [switch]$Appliance
 )
 
 $ErrorActionPreference = "Continue"
 $Root = $PSScriptRoot
 $script:LocStartShowConsole = [bool]$ShowConsole
+$script:LocStartNoBrowser = [bool]$NoBrowser -or [bool]$Appliance
+$script:LocStartAppliance = [bool]$Appliance
 
 function Write-LocStartHost {
     param([string]$Message, [string]$Color = "Gray")
@@ -125,7 +130,9 @@ if (-not $isAdmin) {
     $psi = New-Object System.Diagnostics.ProcessStartInfo
     $psi.FileName = "powershell.exe"
     $showArg = if ($script:LocStartShowConsole) { " -ShowConsole" } else { "" }
-    $psi.Arguments = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$PSCommandPath`"$showArg"
+    $noBrowserArg = if ($script:LocStartNoBrowser) { " -NoBrowser" } else { "" }
+    $applianceArg = if ($script:LocStartAppliance) { " -Appliance" } else { "" }
+    $psi.Arguments = "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$PSCommandPath`"$showArg$noBrowserArg$applianceArg"
     $psi.WorkingDirectory = $Root
     $psi.Verb = "runas"
     $psi.UseShellExecute = $true
@@ -134,7 +141,7 @@ if (-not $isAdmin) {
         if (-not $elev) {
             Invoke-LocStartFailureVisible -Message "Elevation failed to start."
         }
-        # Detach: elevated process continues headlessly; this (often visible bat) exits.
+        # Detach: elevated process continues with a hidden window; this (often visible bat) exits.
         exit 0
     }
     catch {
@@ -186,8 +193,13 @@ Write-LocStartProgress -Percent 15 -Label "Probing existing server..." -NewLine
         $existing = Invoke-WebRequest -Uri $healthUrl -UseBasicParsing -TimeoutSec 5
         if ($existing.StatusCode -eq 200) {
         Write-LocStartProgress -Percent 100 -Label "Server already running" -NewLine
-        Write-LocStartHost "Server already running on port $Port - opening UI." "Yellow"
-        Start-Process $Url
+        if ($script:LocStartNoBrowser) {
+            Write-LocStartHost "Server already running on port $Port (no browser)." "Yellow"
+        }
+        else {
+            Write-LocStartHost "Server already running on port $Port - opening UI." "Yellow"
+            Start-Process $Url
+        }
         exit 0
     }
 }
@@ -249,7 +261,7 @@ Remove-Item $errLog, $outLog -ErrorAction SilentlyContinue
 
 Write-LocStartProgress -Percent 40 -Label "Starting server process..." -NewLine
 
-$argString = @(
+$argParts = @(
     "-NoProfile",
     "-ExecutionPolicy Bypass",
     "-WindowStyle Hidden",
@@ -258,7 +270,14 @@ $argString = @(
     "-ModulesPath `"$modulesPath`"",
     "-DashboardPath `"$dashboardPath`"",
     "-RootPath `"$Root`""
-) -join " "
+)
+# Appliance: pass -NoStatic and -ProductMode without rewriting settings.json
+if ($script:LocStartAppliance) {
+    $argParts += "-NoStatic"
+    $argParts += "-ProductMode"
+    $argParts += "appliance"
+}
+$argString = $argParts -join " "
 
 $serverProc = Start-Process -FilePath "powershell.exe" -ArgumentList $argString `
     -PassThru -WindowStyle Hidden `
@@ -335,8 +354,13 @@ if (-not $ready) {
         -Detail ($detail -join [Environment]::NewLine)
 }
 
-Write-LocStartProgress -Percent 100 -Label "Opening UI..." -NewLine
+Write-LocStartProgress -Percent 100 -Label $(if ($script:LocStartNoBrowser) { "Server ready" } else { "Opening UI..." }) -NewLine
 try { Save-LocServerPid -ProcessId ([int]$serverProc.Id) } catch { Write-Debug $_.Exception.Message }
-Start-Process $Url
-Write-LocStartHost ("Interface live at: {0} (server PID {1}). Use Shutdown/Restart in the UI." -f $Url, $serverProc.Id) "Green"
+if (-not $script:LocStartNoBrowser) {
+    Start-Process $Url
+    Write-LocStartHost ("Interface live at: {0} (server PID {1}). Use Shutdown/Restart in the UI." -f $Url, $serverProc.Id) "Green"
+}
+else {
+    Write-LocStartHost ("API live at: {0}api/v1/health (server PID {1}). No browser opened." -f $Url, $serverProc.Id) "Green"
+}
 exit 0
