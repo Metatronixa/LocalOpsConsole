@@ -8,7 +8,7 @@ foreach ($p in $paths) {
             Remove-Item $_.FullName -Recurse -Force -ErrorAction Stop
             $removed++
         }
-        catch { }
+        catch { Write-Debug $_.Exception.Message }
     }
 }
 Write-Output "Removed $removed temp items (best-effort)."

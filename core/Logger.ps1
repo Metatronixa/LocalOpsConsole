@@ -53,7 +53,7 @@ function Write-LocLog {
         try {
             Add-Content -Path $logFile -Value $line -Encoding UTF8 -ErrorAction SilentlyContinue
         }
-        catch { }
+        catch { Write-Debug $_.Exception.Message }
     }
 
     # Do not emit to pipeline (avoids contaminating action results)

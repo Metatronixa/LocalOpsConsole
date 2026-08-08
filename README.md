@@ -1,14 +1,14 @@
 # LocalOpsConsole
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-0f766e?style=flat-square)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/Metatronixa/LocalOpsConsole?color=14b8a6&style=flat-square&label=release)](https://github.com/Metatronixa/LocalOpsConsole/releases/latest)
 [![Platform](https://img.shields.io/badge/platform-Windows-0078D4?style=flat-square&logo=windows&logoColor=white)](https://github.com/Metatronixa/LocalOpsConsole)
 [![PowerShell](https://img.shields.io/badge/PowerShell-5.1+-5391FE?style=flat-square&logo=powershell&logoColor=white)](https://github.com/Metatronixa/LocalOpsConsole)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-059669?style=flat-square)](CONTRIBUTING.md)
 
-**Local-first Windows Operations Platform** (v2.1.8) for IT professionals, MSPs, and power users — diagnostics, Event Intelligence, incidents, security baseline, and safe remediation.
+**Local-first Windows Operations Platform** (v2.2.0) for IT professionals, MSPs, and power users — diagnostics, Event Intelligence, Threat Operations, incidents, security baseline, fleet agent, and safe remediation.
 
 PowerShell HttpListener API + offline SPA. Plugin modules via `module.json`. **Overview** answers “Is this computer healthy?” using health score, security posture, and active incidents — not raw Event Viewer dumps.
+
+Official builds are **licensed commercial distribution**. Source on GitHub is for development and review; obtain a license and package via [Get Access](https://www.opsconsole.co.za/get-access.html).
 
 <p align="center">
   <img src="https://www.opsconsole.co.za/assets/img/screenshot-overview.png" alt="LocalOpsConsole — Overview health, security, and incidents" width="860" />
@@ -25,28 +25,13 @@ PowerShell HttpListener API + offline SPA. Plugin modules via `module.json`. **O
 </p>
 <p align="center"><em>Live telemetry — CPU, RAM, disk, network, GPU</em></p>
 
-<p align="center"><a href="https://www.opsconsole.co.za/screenshots.html">More screenshots by category →</a></p>
+<p align="center"><a href="https://www.opsconsole.co.za/screenshots.html">More screenshots by category →</a> · <a href="https://www.opsconsole.co.za/get-access.html">Get Access →</a></p>
 
-## Why free?
+## Get Access
 
-Intentionally MIT so techs and small teams can operate Windows endpoints without buying another cloud agent. Use it, fork it, improve it. The architecture is ready for future commercial offerings without abandoning local-first defaults.
+LocalOpsConsole is a **paid product**. Contact [bradford.lotriet@gmail.com](mailto:bradford.lotriet@gmail.com) or visit [Get Access](https://www.opsconsole.co.za/get-access.html) for licensing and delivery of official builds.
 
-## Quick start
-
-### Option A — Download a release
-
-1. Grab the latest ZIP from [GitHub Releases](https://github.com/Metatronixa/LocalOpsConsole/releases/latest).
-2. Extract to a writable folder.
-3. Double-click **`start.bat`** (requests UAC so remediations work).
-
-### Option B — Bootstrap script
-
-```powershell
-iwr https://raw.githubusercontent.com/Metatronixa/LocalOpsConsole/main/scripts/Install-LocalOpsConsole.ps1 -OutFile "$env:TEMP\Install-LOC.ps1"
-powershell -ExecutionPolicy Bypass -File "$env:TEMP\Install-LOC.ps1" -Launch
-```
-
-### Option C — From source
+Developers contributing or reviewing the codebase:
 
 ```powershell
 git clone https://github.com/Metatronixa/LocalOpsConsole.git
@@ -54,7 +39,7 @@ cd LocalOpsConsole
 .\start.bat
 ```
 
-Opens `http://localhost:8787/` on **Overview**.
+Accept UAC once. The launcher starts **headless** (no leftover console); the browser opens `http://localhost:8787/` on **Overview**. Use **Restart** / **Shutdown** in the UI to control the server.
 
 ## Features
 
@@ -62,14 +47,17 @@ Opens `http://localhost:8787/` on **Overview**.
 |------|----------------|
 | **Overview** | Health + security scores and active incidents at a glance |
 | **Event Intelligence** | Watchers, JSON rules, correlation, incidents, notifications, timeline |
+| **Threat Operations** | Security event stream, filters, ScriptBlock decode, agent telemetry |
 | **Security Baseline** | Defender, Firewall, BitLocker, TPM, Secure Boot, … on This PC or a fleet agent |
 | **Integrity gate** | Manifest + SHA-256 + elevation + path jail before module execution |
 | **Automation** | Opt-in Hub playbooks (local / fleet / both + Run now) |
 | **Computers (fleet)** | Optional LocalOps Agent — heartbeat, commands, scripts, repair, self-update |
 | **Software catalog** | Winget, local installers on the console disk (HMAC download), or HTTPS URL |
 | **Network Map** | Gateway clusters of agents + LAN neighbors; Map or List |
+| **Infrastructure modules** | Active Directory, DNS, DHCP, Group Policy, Hyper-V, Certificates, Server Operations |
 | **Internet Health** | DNS, latency, connectivity, repairs |
 | **Services / Storage / Printers / Updates** | Inventory, monitoring, remediation, reporting |
+| **Headless ops** | Hidden launcher; UI Restart (no second UAC) and Shutdown |
 | **Access** | Standard users: diagnostics · Elevated: remediations |
 
 ## Documentation
@@ -83,22 +71,22 @@ Opens `http://localhost:8787/` on **Overview**.
 | [ROADMAP.md](ROADMAP.md) | Public roadmap |
 | [SECURITY.md](SECURITY.md) | Security policy |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to contribute |
-| [LICENSE](LICENSE) | MIT |
+| [LICENSE](LICENSE) | MIT (source); official builds are licensed commercially |
 
 ## Architecture
 
 - `api/` — HttpListener + thin `/api/v1` router
-- `core/` — Engine bootstrap, Security/Integrity/Permission managers, Event Intelligence, Fleet, ModuleLoader, TaskRunner
+- `core/` — Engine bootstrap, Security/Integrity/Permission managers, Event Intelligence, Threat telemetry, Fleet, ModuleLoader, TaskRunner
 - `rules/` — detection + optional automation JSON
 - `modules/` — plugin packs (`module.json` + diagnostics/actions)
-- `dashboard/` — offline SPA (Overview, Incidents, Security Center, …)
+- `dashboard/` — offline SPA (Overview, Incidents, Security Center, Threat Operations, …)
 - `notifications/` — channel plugins
 - `website/` — local marketing site + update feed (not tracked on GitHub; hosted at opsconsole.co.za)
 - `data/integrity/` — module hash store (generated on build)
 
 ## API (summary)
 
-`GET /api/v1/health` · `modules` · `telemetry` · `settings` · `integrity/status` · `automation/status` · `incidents` · `alerts` · `health-score` · `security-score` · `{module}/diagnostics|actions/{name}` · `fleet/*`
+`GET /api/v1/health` · `modules` · `telemetry` · `settings` · `integrity/status` · `automation/status` · `incidents` · `alerts` · `health-score` · `security-score` · `{module}/diagnostics|actions/{name}` · `fleet/*` · `POST /shutdown` · `POST /restart`
 
 ## Build
 
@@ -119,9 +107,9 @@ Privileged actions are listed in each module’s `requiresAdmin`. Automation is 
 
 ## Updates
 
-Default `updateUrl` is `https://www.opsconsole.co.za/uploads/update.json`. Override in `settings.json` if you host your own feed. Updates are never silent — the operator must confirm.
+Licensed operators receive builds through the update feed (`updateUrl`, default `https://www.opsconsole.co.za/uploads/update.json`). Updates are never silent — the operator must confirm.
 
-Bump SemVer in `VERSION`, then build. Attach the ZIP to a GitHub Release for public downloads.
+Bump SemVer in `VERSION`, then build and publish the licensed package / feed.
 
 ```powershell
 .\tools\smoke-api.ps1   # after start.bat — API smoke test
@@ -129,4 +117,5 @@ Bump SemVer in `VERSION`, then build. Attach the ZIP to a GitHub Release for pub
 
 ## License
 
-MIT — Copyright 2026 Bradford Lotriet. Free for personal and commercial use.
+Source repository: MIT — Copyright 2026 Bradford Lotriet.  
+**Official product builds and support are licensed commercially** — see [Get Access](https://www.opsconsole.co.za/get-access.html).

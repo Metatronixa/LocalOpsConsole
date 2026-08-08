@@ -11,7 +11,7 @@ function Import-LocServiceProfiles {
             try {
                 $profiles += (Get-Content $_.FullName -Raw -Encoding UTF8 | ConvertFrom-Json)
             }
-            catch { }
+            catch { Write-Debug $_.Exception.Message }
         }
     }
     $script:LocServiceProfiles = $profiles
@@ -56,7 +56,7 @@ function Invoke-LocHealthCheckPass {
             if ($e) { $events += $e }
         }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     # RAM
     try {
@@ -69,7 +69,7 @@ function Invoke-LocHealthCheckPass {
             if ($e) { $events += $e }
         }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     # Disk
     try {
@@ -93,31 +93,31 @@ function Invoke-LocHealthCheckPass {
             }
         }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     # Services from profiles
-    foreach ($profile in @($script:LocServiceProfiles)) {
+    foreach ($healthProfile in @($script:LocServiceProfiles)) {
         try {
-            $svcName = [string]$profile.service
+            $svcName = [string]$healthProfile.service
             $svc = Get-Service -Name $svcName -ErrorAction SilentlyContinue
             if (-not $svc) {
-                if ($profile.mustBeRunning) {
-                    $sev = if ($profile.critical) { "Critical" } else { "Warning" }
+                if ($healthProfile.mustBeRunning) {
+                    $sev = if ($healthProfile.critical) { "Critical" } else { "Warning" }
                     $e = Emit-LocHealthEvent -Source "Services" -EventID 9100 -Severity $sev -Category "services" `
                         -Message ("Service missing: {0}" -f $svcName) -Data @{ service = $svcName; healthMetric = "serviceMissing" }
                     if ($e) { $events += $e }
                 }
                 continue
             }
-            if ($profile.mustBeRunning -and $svc.Status -ne "Running") {
-                $sev = if ($profile.critical) { "Critical" } else { "Warning" }
+            if ($healthProfile.mustBeRunning -and $svc.Status -ne "Running") {
+                $sev = if ($healthProfile.critical) { "Critical" } else { "Warning" }
                 $e = Emit-LocHealthEvent -Source "Services" -EventID 9101 -Severity $sev -Category "services" `
                     -Message ("Service not running: {0} ({1})" -f $svcName, $svc.Status) `
-                    -Data @{ service = $svcName; status = [string]$svc.Status; healthMetric = "serviceDown"; restartOnFailure = [bool]$profile.restartOnFailure; notify = [bool]$profile.notify }
+                    -Data @{ service = $svcName; status = [string]$svc.Status; healthMetric = "serviceDown"; restartOnFailure = [bool]$healthProfile.restartOnFailure; notify = [bool]$healthProfile.notify }
                 if ($e) { $events += $e }
             }
         }
-        catch { }
+        catch { Write-Debug $_.Exception.Message }
     }
 
     # Defender
@@ -136,7 +136,7 @@ function Invoke-LocHealthCheckPass {
             }
         }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     # Firewall profiles
     try {
@@ -149,7 +149,7 @@ function Invoke-LocHealthCheckPass {
             if ($e) { $events += $e }
         }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     # Network adapter up?
     try {
@@ -160,7 +160,7 @@ function Invoke-LocHealthCheckPass {
             if ($e) { $events += $e }
         }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     # RustDesk
     try {
@@ -171,7 +171,7 @@ function Invoke-LocHealthCheckPass {
             if ($e) { $events += $e }
         }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     # SyncMe path configured but missing
     try {
@@ -182,7 +182,7 @@ function Invoke-LocHealthCheckPass {
             if ($e) { $events += $e }
         }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     # Certificates expiring within 14 days (LocalMachine\My)
     try {
@@ -197,7 +197,7 @@ function Invoke-LocHealthCheckPass {
             if ($e) { $events += $e }
         }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     # SMART best-effort via MSStorageDriver (often unavailable)
     try {
@@ -210,7 +210,7 @@ function Invoke-LocHealthCheckPass {
             }
         }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     return $events
 }
@@ -225,7 +225,7 @@ function Get-LocHealthScorePayload {
         if ($tel.Cpu -and $tel.Cpu.UsagePct) { $cpu = [double]$tel.Cpu.UsagePct }
         elseif ($tel.Cpu -and $tel.Cpu.Usage) { $cpu = [double]$tel.Cpu.Usage }
         elseif ($tel.Cpu -and $tel.Cpu.Percent) { $cpu = [double]$tel.Cpu.Percent }
-    } catch { }
+    } catch { Write-Debug $_.Exception.Message }
     if ($null -ne $cpu -and $cpu -ge 95) {
         [void]$checks.Add([PSCustomObject]@{ Name = "CPU"; Status = "Warning"; Detail = ("{0:N0}%" -f $cpu) })
         $score -= 10
@@ -239,7 +239,7 @@ function Get-LocHealthScorePayload {
         if ($tel.Memory -and $tel.Memory.UsedPct) { $mem = [double]$tel.Memory.UsedPct }
         elseif ($tel.Memory -and $tel.Memory.Usage) { $mem = [double]$tel.Memory.Usage }
         elseif ($tel.Memory -and $tel.Memory.Percent) { $mem = [double]$tel.Memory.Percent }
-    } catch { }
+    } catch { Write-Debug $_.Exception.Message }
     if ($null -ne $mem -and $mem -ge 95) {
         [void]$checks.Add([PSCustomObject]@{ Name = "RAM"; Status = "Warning"; Detail = ("{0:N0}%" -f $mem) })
         $score -= 10
@@ -262,7 +262,7 @@ function Get-LocHealthScorePayload {
             $fp = 100.0 - [double]$tel.Disk.UsedPct
             if ($fp -le 10) { $diskOk = $false; $diskDetail = ("low free {0:N0}%" -f $fp) }
         }
-    } catch { }
+    } catch { Write-Debug $_.Exception.Message }
     if ($diskOk) {
         [void]$checks.Add([PSCustomObject]@{ Name = "Disk"; Status = "Healthy"; Detail = $diskDetail })
     }

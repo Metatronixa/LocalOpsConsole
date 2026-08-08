@@ -22,7 +22,7 @@ try {
                 })
             }
         }
-        catch { }
+        catch { Write-Debug $_.Exception.Message }
     }
 
     $sorted = @($events | Sort-Object { $_.TimeCreated } -Descending | Select-Object -First 15)

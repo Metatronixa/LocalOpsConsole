@@ -16,7 +16,7 @@ try {
             }
         }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     return New-ApiResult -Success $true -Message "Connection info" -Data ([PSCustomObject]@{
         Connected    = $true

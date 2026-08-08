@@ -18,14 +18,14 @@ try {
             if ($_.PSObject.Properties.Name -contains "TotalPages") { $pages = [int]$_.TotalPages }
             elseif ($_.PSObject.Properties.Name -contains "PagesPrinted") { $pages = [int]$_.PagesPrinted }
         }
-        catch { }
+        catch { Write-Debug $_.Exception.Message }
 
         $owner = ""
         try {
             if ($_.PSObject.Properties.Name -contains "UserName") { $owner = [string]$_.UserName }
             elseif ($_.PSObject.Properties.Name -contains "SubmittedBy") { $owner = [string]$_.SubmittedBy }
         }
-        catch { }
+        catch { Write-Debug $_.Exception.Message }
 
         [PSCustomObject]@{
             PrinterName = [string]$_.PrinterName

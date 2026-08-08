@@ -1,0 +1,45 @@
+{
+  "version": "1.0.0",
+  "capabilities": [
+    {
+      "id": "AD_DS",
+      "displayName": "Active Directory Domain Services",
+      "detect": ["DomainJoined", "ADModule", "ADDSRole"]
+    },
+    {
+      "id": "DNS",
+      "displayName": "DNS Server",
+      "detect": ["DnsServerRole", "DnsServerModule"]
+    },
+    {
+      "id": "DHCP",
+      "displayName": "DHCP Server",
+      "detect": ["DhcpServerRole", "DhcpServerModule"]
+    },
+    {
+      "id": "GPO",
+      "displayName": "Group Policy",
+      "detect": ["DomainJoined", "GroupPolicyModule"]
+    },
+    {
+      "id": "Hyper-V",
+      "displayName": "Hyper-V",
+      "detect": ["HyperVRole", "HyperVModule"]
+    },
+    {
+      "id": "Certificates",
+      "displayName": "Certificate Services / local stores",
+      "detect": ["Always"]
+    },
+    {
+      "id": "FileServer",
+      "displayName": "File Server / SMB shares",
+      "detect": ["FileServerRole", "AlwaysLocal"]
+    },
+    {
+      "id": "ServerOperations",
+      "displayName": "General Windows Server operations",
+      "detect": ["Always"]
+    }
+  ]
+}

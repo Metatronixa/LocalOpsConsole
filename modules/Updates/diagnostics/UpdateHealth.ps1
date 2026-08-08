@@ -1,4 +1,4 @@
-# Updates/diagnostics/UpdateHealth.ps1
+﻿# Updates/diagnostics/UpdateHealth.ps1
 try {
     $pendingReboot = $false
     $rebootReasons = @()

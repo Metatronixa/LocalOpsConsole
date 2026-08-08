@@ -332,10 +332,12 @@ async function applyUpdate() {
 }
 
 async function shutdownConsole() {
-    if (!confirm('Shut down LocalOpsConsole? The server and launcher window will close.')) return;
+    if (!confirm('Shut down LocalOpsConsole? The server will stop. Use start.bat (or Restart) to bring it back.')) return;
     const btn = document.getElementById('btn-shutdown');
+    const btnR = document.getElementById('btn-restart');
     const engineEl = document.getElementById('engine-status');
     if (btn) btn.disabled = true;
+    if (btnR) btnR.disabled = true;
     if (engineEl) engineEl.innerText = 'SHUTTING DOWN…';
     LiveConsole.log('Shutting down server…', 'WARN');
     try {
@@ -348,6 +350,57 @@ async function shutdownConsole() {
     LiveConsole.log('Server stopped. You can close this tab.', 'INFO');
 }
 
+async function restartConsole() {
+    if (!confirm('Restart LocalOpsConsole? The UI will reconnect when the server is back.')) return;
+    const btn = document.getElementById('btn-shutdown');
+    const btnR = document.getElementById('btn-restart');
+    const engineEl = document.getElementById('engine-status');
+    if (btn) btn.disabled = true;
+    if (btnR) btnR.disabled = true;
+    if (engineEl) engineEl.innerText = 'RESTARTING…';
+    LiveConsole.log('Restarting server…', 'WARN');
+    let scheduleOk = false;
+    try {
+        const res = await API.request('restart', 'POST', {}, 8000);
+        scheduleOk = !!(res && res.Success);
+        if (res && res.Success === false) {
+            LiveConsole.log(res.Message || 'Restart request failed', 'ERROR');
+            if (engineEl) engineEl.innerText = 'ONLINE';
+            if (btn) btn.disabled = false;
+            if (btnR) btnR.disabled = false;
+            return;
+        }
+    } catch (e) {
+        // Listener often drops mid-response after schedule — treat as scheduled
+        scheduleOk = true;
+    }
+
+    const started = Date.now();
+    const maxMs = 90000;
+    while (Date.now() - started < maxMs) {
+        await new Promise(r => setTimeout(r, 1500));
+        try {
+            const h = await API.request('health', 'GET', null, 5000);
+            if (h && h.Success) {
+                LiveConsole.log('Server is back — reloading…', 'SUCCESS');
+                location.reload();
+                return;
+            }
+        } catch (_) { /* still down */ }
+        if (engineEl) engineEl.innerText = 'RECONNECTING…';
+    }
+    if (engineEl) {
+        engineEl.innerText = 'OFFLINE';
+        engineEl.classList.add('text-rose-400');
+    }
+    const hint = scheduleOk
+        ? 'Server did not return. Run start.bat as Administrator to bring it back.'
+        : 'Restart could not be scheduled. Run start.bat as Administrator.';
+    LiveConsole.log(hint, 'ERROR');
+    if (btn) btn.disabled = false;
+    if (btnR) btnR.disabled = false;
+}
+
 function renderSidebar(modules) {
     const nav = document.getElementById('sidebar-nav');
     nav.innerHTML = '';
@@ -358,7 +411,7 @@ function renderSidebar(modules) {
         if (id === 'overview') return 'Overview';
         if (['incidents'].includes(id)) return 'Incidents';
         if (['healthcenter'].includes(id)) return 'Health';
-        if (['securitycenter', 'security', 'securitybaseline', 'eventlog'].includes(id)) return 'Security';
+        if (['securitycenter', 'security', 'securitybaseline', 'eventlog', 'threatoperations'].includes(id)) return 'Security';
         if (['alerts', 'timeline'].includes(id)) return 'Monitoring';
         if (['automation'].includes(id)) return 'Automation';
         if (['settings', 'locsettings'].includes(id)) return 'Settings';
@@ -366,7 +419,8 @@ function renderSidebar(modules) {
         if (['system'].includes(id)) return 'Performance';
         if (['devices', 'users', 'graphics', 'storage', 'startup', 'power'].includes(id)) return 'Inventory';
         if (['services', 'tools', 'updates', 'configuration', 'audio', 'printers', 'syncme',
-            'network', 'vpn', 'internetslow', 'remote', 'remotesupport', 'fleet', 'networkmap'].includes(id)) {
+            'network', 'vpn', 'internetslow', 'remote', 'remotesupport', 'fleet', 'networkmap',
+            'activedirectory', 'dns', 'dhcp', 'grouppolicy', 'hyperv', 'certificates', 'serveroperations'].includes(id)) {
             return 'Operations';
         }
         return 'Operations';
@@ -401,9 +455,9 @@ function renderSidebar(modules) {
 
         const body = document.createElement('div');
         body.className = 'space-y-0.5';
-        // Collapse secondary sections by default; keep primary ops sections open.
-        const preferOpen = ['Overview', 'Incidents', 'Operations', 'Security', 'Health', 'Inventory'].includes(domain);
-        body.style.display = preferOpen ? '' : 'none';
+        // All section menus start collapsed; user expands via header click.
+        body.style.display = 'none';
+        body.dataset.navSection = domain;
 
         header.onclick = () => {
             const currentlyHidden = body.style.display === 'none';

@@ -13,7 +13,7 @@ $InstallDir = "C:\Program Files\LocalOpsAgent"
 $ConfigDir = "C:\ProgramData\LocalOpsAgent"
 $LogDir = Join-Path $ConfigDir "logs"
 $TaskName = "LocalOpsAgent"
-$AgentVersion = "2.2.0"
+$AgentVersion = "2.3.0"
 
 $scriptRoot = $PSScriptRoot
 if (-not $scriptRoot) { $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path }
@@ -26,7 +26,19 @@ foreach ($d in @($InstallDir, $ConfigDir, $LogDir)) {
     }
 }
 
-Copy-Item -Path (Join-Path $scriptRoot "LocalOpsAgent.ps1") -Destination (Join-Path $InstallDir "LocalOpsAgent.ps1") -Force
+$runtime = @(
+    'LocalOpsAgent.ps1', 'AgentCommon.ps1', 'CapabilityDetector.ps1', 'AgentTelemetry.ps1',
+    'CommandDispatcher.ps1', 'AgentCommands.Core.ps1', 'AgentCommands.Local.ps1',
+    'AgentCommands.Net.ps1', 'AgentCommands.Software.ps1', 'AgentCommands.Maint.ps1',
+    'AgentCommands.Security.ps1'
+)
+foreach ($name in $runtime) {
+    $src = Join-Path $scriptRoot $name
+    if (-not (Test-Path -LiteralPath $src)) {
+        throw "Missing agent file required for install: $name"
+    }
+    Copy-Item -Path $src -Destination (Join-Path $InstallDir $name) -Force
+}
 
 $baseUrl = $ServerUrl.TrimEnd("/")
 $config = [ordered]@{

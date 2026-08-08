@@ -21,11 +21,11 @@ try {
         $isPermanent = ([string]$Permanent).ToLower() -in @("1", "true", "yes", "y")
     }
 
-    $args = @()
-    if ($isPermanent) { $args += "-p" }
-    $args += @("add", $Destination, $Mask, $Gateway)
+    $cmdArgs = @()
+    if ($isPermanent) { $cmdArgs += "-p" }
+    $cmdArgs += @("add", $Destination, $Mask, $Gateway)
 
-    $r = Invoke-ToolCommand -FilePath "route.exe" -ArgumentList $args -TimeoutSec 20
+    $r = Invoke-ToolCommand -FilePath "route.exe" -ArgumentList $cmdArgs -TimeoutSec 20
     $ok = ($r.ExitCode -eq 0)
     return New-ApiResult -Success $ok -Message $(if ($ok) { "Route added" } else { "Route add failed (exit $($r.ExitCode))" }) -Data ([PSCustomObject]@{
         Destination = $Destination

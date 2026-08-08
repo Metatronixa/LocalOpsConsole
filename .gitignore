@@ -29,6 +29,9 @@ data/storage/*.jsonl
 data/syncme/*.json
 data/automation/*.json
 data/integrity/module-hashes.json
+data/threat/*.json
+data/threat/*.jsonl
+data/runtime/*.pid
 !data/.gitkeep
 !data/fleet/.gitkeep
 !data/events/.gitkeep
@@ -37,5 +40,7 @@ data/integrity/module-hashes.json
 !data/syncme/.gitkeep
 !data/automation/.gitkeep
 !data/integrity/.gitkeep
+!data/threat/.gitkeep
+!data/runtime/.gitkeep
 # Marketing site + update feed stay local / hosted on opsconsole.co.za — not on GitHub
 website/

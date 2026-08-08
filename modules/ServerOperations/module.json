@@ -1,0 +1,16 @@
+﻿{
+  "id": "serveroperations",
+  "name": "Server Operations",
+  "version": "1.0.0",
+  "icon": "server",
+  "description": "Server Operations infrastructure module",
+  "order": 46,
+  "tier": 2,
+  "profiles": ["systems_administrator", "power_user"],
+  "depends": [],
+  "capabilities": ["ServerOperations"],
+  "diagnostics": ["Get-FileShareHealth", "Get-ServerServiceHealth", "Get-LocalDiskHealth"],
+  "actions": ["Restart-NamedService"],
+  "requiresAdmin": ["Restart-NamedService"],
+  "cacheSeconds": {}
+}

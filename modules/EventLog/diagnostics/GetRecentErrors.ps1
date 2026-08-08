@@ -26,9 +26,7 @@ try {
                 } -MaxEvents $perLog -ErrorAction Stop)
             foreach ($e in $batch) { [void]$events.Add($e) }
         }
-        catch {
-            # Access denied / log missing — continue
-        }
+        catch { Write-Debug $_.Exception.Message }
     }
 
     $data = @($events | Sort-Object TimeCreated -Descending | Select-Object -First $MaxEvents | ForEach-Object {
@@ -38,7 +36,7 @@ try {
                     $msg = $_.Message.Substring(0, [Math]::Min(200, $_.Message.Length))
                 }
             }
-            catch { }
+            catch { Write-Debug $_.Exception.Message }
             [PSCustomObject]@{
                 TimeCreated = $_.TimeCreated.ToString("yyyy-MM-dd HH:mm:ss")
                 LogName     = $_.LogName

@@ -33,7 +33,7 @@ $stage = Join-Path $env:TEMP $stageName
 if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
 New-Item -ItemType Directory -Path $stage | Out-Null
 
-$include = @("api", "core", "modules", "dashboard", "scripts", "rules", "notifications", "config", "VERSION", "version.json", "settings.json", "start.ps1", "start.bat", "README.md", "build.ps1", "docs", "ROADMAP.md")
+$include = @("api", "core", "modules", "dashboard", "scripts", "rules", "notifications", "config", "VERSION", "version.json", "settings.json", "start.ps1", "start.bat", "start-silent.vbs", "README.md", "build.ps1", "docs", "ROADMAP.md", "CHANGELOG.md")
 foreach ($item in $include) {
     $src = Join-Path $Root $item
     if (-not (Test-Path $src)) { continue }

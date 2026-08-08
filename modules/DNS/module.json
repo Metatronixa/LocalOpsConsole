@@ -1,0 +1,16 @@
+﻿{
+  "id": "dns",
+  "name": "DNS",
+  "version": "1.0.0",
+  "icon": "server",
+  "description": "DNS infrastructure module",
+  "order": 41,
+  "tier": 2,
+  "profiles": ["systems_administrator", "power_user"],
+  "depends": [],
+  "capabilities": ["DNS"],
+  "diagnostics": ["Get-DnsServerHealth", "Get-DnsZones", "Query-DnsRecord"],
+  "actions": ["Clear-DnsServerCache"],
+  "requiresAdmin": ["Clear-DnsServerCache"],
+  "cacheSeconds": {}
+}

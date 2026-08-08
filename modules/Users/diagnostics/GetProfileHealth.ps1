@@ -1,4 +1,4 @@
-try {
+﻿try {
     $profiles = @()
     Get-CimInstance Win32_UserProfile -ErrorAction Stop | Where-Object { -not $_.Special } | ForEach-Object {
         $path = $_.LocalPath

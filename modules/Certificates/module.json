@@ -1,0 +1,16 @@
+﻿{
+  "id": "certificates",
+  "name": "Certificates",
+  "version": "1.0.0",
+  "icon": "shield",
+  "description": "Certificate store health and expiry",
+  "order": 45,
+  "tier": 2,
+  "profiles": ["systems_administrator", "power_user"],
+  "depends": [],
+  "capabilities": ["Certificates"],
+  "diagnostics": ["Get-CertificateStoreHealth", "Get-ExpiringCertificates"],
+  "actions": [],
+  "requiresAdmin": [],
+  "cacheSeconds": {}
+}

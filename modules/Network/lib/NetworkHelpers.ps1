@@ -1,4 +1,4 @@
-# Network helpers — hosts file + WINS/NetBIOS
+﻿# Network helpers — hosts file + WINS/NetBIOS
 
 function Get-LocHostsFilePath {
     return (Join-Path $env:SystemRoot "System32\drivers\etc\hosts")

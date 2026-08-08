@@ -1,5 +1,30 @@
 # Changelog
 
+## 2.2.0 — 2026-08-08
+
+### Features
+
+- **Headless launcher**: `start.bat` / `start-silent.vbs` start PowerShell and the API with no leftover console windows. Failures open a short visible error console. Admin elevation once at start.
+- **UI Restart + Shutdown**: Restart schedules a headless `api/server.ps1` relaunch (no second UAC), then reconnects the browser. Shutdown stops the server cleanly.
+- **First-start readiness**: Event Intelligence defers heavy Defender/firewall health probes so `/api` stays responsive on cold boot; `/health` stays cheap.
+- **Threat Operations**: Security event stream with filters, ScriptBlock decoding, agent telemetry ingest (`POST /api/v1/fleet/threat-telemetry`).
+- **Header redesign**: Brand | telemetry chips | ops controls — logo no longer clipped by Restart/Shutdown.
+
+### Product / docs
+
+- Licensed commercial distribution positioning (Get Access on opsconsole.co.za). Public free-download CTAs removed from marketing.
+- User guide, README, roadmap, and module docs updated for headless ops, Restart, Threat Operations, and licensed obtainment.
+- Website: testimonials removed; features expanded; screenshots refreshed for 2.2.0.
+
+### Verify
+
+```powershell
+.\tools\smoke-bind.ps1
+.\tools\smoke-fleet-commands.ps1
+.\tools\smoke-api.ps1
+.\tools\smoke-fleet-commands.ps1 -Live
+```
+
 ## 2.1.8 — 2026-08-07
 
 ### Features

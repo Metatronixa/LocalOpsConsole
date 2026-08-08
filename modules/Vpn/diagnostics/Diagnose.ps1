@@ -1,4 +1,4 @@
-try {
+﻿try {
     $hints = [System.Collections.Generic.List[string]]::new()
     $vpn = @(Get-VpnConnection -ErrorAction SilentlyContinue)
     $connected = @($vpn | Where-Object { $_.ConnectionStatus -eq "Connected" })
@@ -28,7 +28,7 @@ try {
         UpAdapters       = $adapters.Count
         DefaultGateway   = if ($gw) { $gw.NextHop } else { $null }
         GatewayReachable = [bool]$pingGw
-        DnsServers       = @($dns | ForEach-Object { $_.ServerAddresses }) 
+        DnsServers       = @($dns | ForEach-Object { $_.ServerAddresses })
         Hints            = @($hints)
     })
 }

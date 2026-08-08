@@ -296,7 +296,7 @@ try {
     try {
         $avs = @(Get-CimInstance -Namespace root/SecurityCenter2 -ClassName AntiVirusProduct -ErrorAction Stop)
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
     if ($avs.Count -gt 0) {
         $names = ($avs | ForEach-Object { $_.displayName } | Select-Object -Unique) -join "; "
         Add-BaselineCheck -Name "Security Software" -Status "Pass" -Detail $names -Weight 4

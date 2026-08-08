@@ -49,7 +49,7 @@ try {
             }
         }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     if ($adapters.Count -eq 0) {
         return New-ApiResult -Success $true -Message "No IP-enabled adapters found" -Data @()

@@ -1,4 +1,4 @@
-# InternetIsSlow.ps1
+﻿# InternetIsSlow.ps1
 # Engine: consolidated “Internet is Slow” troubleshooting report (Tier 3).
 
 try {

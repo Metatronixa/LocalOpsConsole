@@ -24,7 +24,7 @@ function Get-LocSecurityScorePayload {
                 if ($mp.QuickScanEndTime) { $lastScan = ([datetime]$mp.QuickScanEndTime).ToString("yyyy-MM-dd HH:mm") }
                 elseif ($mp.FullScanEndTime) { $lastScan = ([datetime]$mp.FullScanEndTime).ToString("yyyy-MM-dd HH:mm") }
             }
-            catch { }
+            catch { Write-Debug $_.Exception.Message }
         }
         else {
             [void]$checks.Add([PSCustomObject]@{ Name = "Defender"; Status = "Warning"; Detail = "Status unavailable" })
@@ -63,7 +63,6 @@ function Get-LocSecurityScorePayload {
         $blStatus = $null
         $osDrive = $env:SystemDrive
         if (-not $osDrive) { $osDrive = "C:" }
-        $blKey = "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\BitLocker"
         # Prefer Protection Status via manage-bde is slow; use Win32_EncryptableVolume only if quick
         if (Test-IsAdmin) {
             $bl = @(Get-BitLockerVolume -MountPoint $osDrive -ErrorAction SilentlyContinue)

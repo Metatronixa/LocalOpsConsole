@@ -1,4 +1,4 @@
-﻿# core/TaskRunner.ps1 - Lightweight telemetry (must never block the HTTP loop)
+# core/TaskRunner.ps1 - Lightweight telemetry (must never block the HTTP loop)
 
 $script:LocTaskRunnerEnabled = $false
 $script:LocTelemetryLastUpdate = $null
@@ -83,7 +83,7 @@ function Test-LocPendingReboot {
         $val = Get-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager" -Name PendingFileRenameOperations -ErrorAction SilentlyContinue
         if ($val -and $val.PendingFileRenameOperations) { return $true }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
     return $false
 }
 
@@ -218,7 +218,7 @@ function Update-LocTelemetry {
             }
             if ($dio) { $script:LocDiskIoPrev = $dio }
         }
-        catch { }
+        catch { Write-Debug $_.Exception.Message }
         $script:LocTelemetry.DiskIo = [PSCustomObject]@{
             ReadMBps  = $readMBps
             WriteMBps = $writeMBps
@@ -244,7 +244,7 @@ function Update-LocTelemetry {
             }
             if ($counters) { $script:LocNetPrev = $counters }
         }
-        catch { }
+        catch { Write-Debug $_.Exception.Message }
 
         try {
             $nic = Get-CimInstance -ClassName Win32_NetworkAdapterConfiguration -Filter "IPEnabled=TRUE" -ErrorAction Stop |
@@ -315,7 +315,7 @@ function Update-LocTelemetry {
                         } |
                         Select-Object -First 1 -ExpandProperty Name)
                 }
-                catch { }
+                catch { Write-Debug $_.Exception.Message }
                 $script:LocTelemetry.Vpn = [PSCustomObject]@{
                     Connected        = $true
                     Name             = [string]$v.Name

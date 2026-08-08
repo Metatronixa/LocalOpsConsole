@@ -18,13 +18,13 @@ function Test-RemoteHostOnline {
                     return $true
                 }
             }
-            catch { }
+            catch { Write-Debug $_.Exception.Message }
         }
         else {
-            try { $tcp.Close() } catch { }
+            try { $tcp.Close() } catch { Write-Debug $_.Exception.Message }
         }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
     return $false
 }
 
@@ -85,7 +85,7 @@ function Invoke-LocNetViewShares {
     $p.StartInfo = $psi
     [void]$p.Start()
     if (-not $p.WaitForExit($TimeoutMs)) {
-        try { $p.Kill() } catch { }
+        try { $p.Kill() } catch { Write-Debug $_.Exception.Message }
         throw "net view timed out after $([math]::Round($TimeoutMs/1000))s on $ComputerName"
     }
     $out = $p.StandardOutput.ReadToEnd()

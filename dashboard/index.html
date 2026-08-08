@@ -60,31 +60,37 @@
         </div>
     </div>
 
-    <header class="h-14 border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md flex items-center justify-between px-6 shrink-0 z-20">
-        <div class="flex items-center gap-3">
-            <div class="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
-                <i data-lucide="shield-alert" class="w-5 h-5"></i>
+    <header class="loc-app-header border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md shrink-0 z-20">
+        <div class="loc-app-header-inner">
+            <div class="loc-app-brand shrink-0">
+                <div class="p-2 rounded-lg bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+                    <i data-lucide="shield-alert" class="w-5 h-5"></i>
+                </div>
+                <div class="min-w-0">
+                    <h1 class="font-bold text-sm tracking-wide leading-tight">LOCALOPS<em class="text-cyan-400 not-italic">CONSOLE</em> <span id="app-version" class="text-slate-500 font-mono">v2.2.0</span></h1>
+                    <p class="text-[11px] text-slate-400 font-mono truncate">OPERATIONS PLATFORM · <span id="host-name">LOCAL-PC</span></p>
+                </div>
             </div>
-            <div>
-                <h1 class="font-bold text-sm tracking-wide">LOCALOPS<em class="text-cyan-400 not-italic">CONSOLE</em> <span id="app-version" class="text-slate-500 font-mono">v2.1.8</span></h1>
-                <p class="text-[11px] text-slate-400 font-mono">OPERATIONS PLATFORM · <span id="host-name">LOCAL-PC</span></p>
-            </div>
-        </div>
 
-        <div class="flex items-center gap-4 text-xs font-mono">
-            <div class="text-slate-400">CPU <span id="telemetry-cpu" class="text-cyan-400">--%</span></div>
-            <div class="text-slate-400">RAM <span id="telemetry-mem" class="text-emerald-400">--%</span></div>
-            <div class="text-slate-400">DISK <span id="telemetry-disk" class="text-amber-400">--%</span></div>
-            <div class="text-slate-400">NET <span id="telemetry-net" class="text-sky-400">--</span></div>
-            <div class="text-slate-400 max-w-[9rem] truncate" title="GPU">GPU <span id="telemetry-gpu" class="text-violet-300">--</span></div>
-            <div id="telemetry-bat-wrap" class="text-slate-400 hidden">BAT <span id="telemetry-bat" class="text-lime-400">--%</span></div>
-            <div id="telemetry-vpn-wrap" class="text-slate-400 hidden max-w-[8rem] truncate">VPN <span id="telemetry-vpn" class="text-teal-300">--</span></div>
-            <div id="admin-badge" class="badge badge-muted" title="STANDARD USER can run diagnostics; remediations need elevation">Checking Elevation...</div>
-            <a href="/user-guide.html" target="_blank" rel="noopener" class="action-btn cyan text-[11px] px-2 py-1" title="Open the operator User Guide">Help</a>
-            <button type="button" id="btn-shutdown" onclick="shutdownConsole()" class="action-btn amber text-[11px] px-2 py-1" title="Stop the LocalOpsConsole server">Shutdown</button>
-            <div class="flex items-center gap-2 text-slate-400">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span id="engine-status">ENGINE ONLINE</span>
+            <div class="loc-app-telemetry font-mono text-[11px]">
+                <div class="loc-telem-chip text-slate-400">CPU <span id="telemetry-cpu" class="text-cyan-400">--%</span></div>
+                <div class="loc-telem-chip text-slate-400">RAM <span id="telemetry-mem" class="text-emerald-400">--%</span></div>
+                <div class="loc-telem-chip text-slate-400">DISK <span id="telemetry-disk" class="text-amber-400">--%</span></div>
+                <div class="loc-telem-chip text-slate-400">NET <span id="telemetry-net" class="text-sky-400">--</span></div>
+                <div class="loc-telem-chip text-slate-400 max-w-[10rem] truncate" title="GPU">GPU <span id="telemetry-gpu" class="text-violet-300">--</span></div>
+                <div id="telemetry-bat-wrap" class="loc-telem-chip text-slate-400 hidden">BAT <span id="telemetry-bat" class="text-lime-400">--%</span></div>
+                <div id="telemetry-vpn-wrap" class="loc-telem-chip text-slate-400 hidden max-w-[9rem] truncate">VPN <span id="telemetry-vpn" class="text-teal-300">--</span></div>
+            </div>
+
+            <div class="loc-app-ops shrink-0">
+                <div id="admin-badge" class="badge badge-muted" title="STANDARD USER can run diagnostics; remediations need elevation">Checking Elevation...</div>
+                <div class="flex items-center gap-2 text-xs font-mono text-slate-400">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span id="engine-status">ENGINE ONLINE</span>
+                </div>
+                <a href="/user-guide.html" target="_blank" rel="noopener" class="action-btn cyan text-[11px] px-2 py-1" title="Open the operator User Guide">Help</a>
+                <button type="button" id="btn-restart" onclick="restartConsole()" class="action-btn slate text-[11px] px-2 py-1" title="Restart LocalOpsConsole server">Restart</button>
+                <button type="button" id="btn-shutdown" onclick="shutdownConsole()" class="action-btn amber text-[11px] px-2 py-1" title="Stop the LocalOpsConsole server">Shutdown</button>
             </div>
         </div>
     </header>
@@ -129,6 +135,12 @@
     <script src="assets/js/router.js"></script>
     <script src="assets/js/sparkline.js"></script>
     <script src="assets/js/app.js"></script>
+    <script src="assets/js/threat/threat-utils.js"></script>
+    <script src="assets/js/threat/threat-metrics.js"></script>
+    <script src="assets/js/threat/threat-filters.js"></script>
+    <script src="assets/js/threat/threat-stream.js"></script>
+    <script src="assets/js/threat/threat-detail.js"></script>
+    <script src="assets/js/threat/threat-scriptviewer.js"></script>
     <script src="modules/system.js"></script>
     <script src="modules/network.js"></script>
     <script src="modules/storage.js"></script>
@@ -147,6 +159,7 @@
     <script src="modules/eventlog.js"></script>
     <script src="modules/alerts.js"></script>
     <script src="modules/securitycenter.js"></script>
+    <script src="modules/threatoperations.js"></script>
     <script src="modules/healthcenter.js"></script>
     <script src="modules/incidents.js"></script>
     <script src="modules/eventtimeline.js"></script>
@@ -155,6 +168,8 @@
     <script src="modules/securitybaseline.js"></script>
 </body>
 </html>
+
+
 
 
 

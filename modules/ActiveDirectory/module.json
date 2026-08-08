@@ -1,0 +1,16 @@
+﻿{
+  "id": "activedirectory",
+  "name": "Active Directory",
+  "version": "1.0.0",
+  "icon": "server",
+  "description": "Active Directory infrastructure module",
+  "order": 40,
+  "tier": 2,
+  "profiles": ["systems_administrator", "power_user"],
+  "depends": [],
+  "capabilities": ["AD_DS"],
+  "diagnostics": ["Get-ADDomainHealth", "Get-ADUserStatus", "Get-ADLockoutSource", "Get-ADReplicationStatus", "Get-FSMOStatus"],
+  "actions": ["Unlock-ADUser", "Reset-ADUserPassword", "Set-ADGroupMember"],
+  "requiresAdmin": ["Unlock-ADUser", "Reset-ADUserPassword", "Set-ADGroupMember"],
+  "cacheSeconds": {}
+}

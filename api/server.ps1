@@ -29,6 +29,23 @@ $coreFiles = @(Get-LocCoreEngineFiles -RootPath $RootPath)
 foreach ($coreFile in $coreFiles) {
     . $coreFile
 }
+
+# Split routers must load before the thin router facade
+$routerDir = Join-Path $PSScriptRoot "routers"
+foreach ($name in @(
+        "Builtins.ps1"
+        "BuiltinsOps.ps1"
+        "EventIntel.ps1"
+        "ThreatRouter.ps1"
+        "FleetRouter.ps1"
+        "FleetRouterPackages.ps1"
+    )) {
+    $routerPath = Join-Path $routerDir $name
+    if (-not (Test-Path -LiteralPath $routerPath)) {
+        throw "Missing API router script: $routerPath"
+    }
+    . $routerPath
+}
 . (Join-Path $PSScriptRoot "router.ps1")
 
 Initialize-LocSettings -RootPath $RootPath
@@ -69,6 +86,10 @@ foreach ($prefix in $prefixes) {
 }
 $script:LocHttpListener = $listener
 $script:LocShutdownRequested = $false
+$script:LocServerPort = $Port
+$script:LocModulesPath = $ModulesPath
+$script:LocDashboardPath = $DashboardPath
+$script:LocRootPath = $RootPath
 
 function Request-LocShutdown {
     $script:LocShutdownRequested = $true
@@ -77,7 +98,43 @@ function Request-LocShutdown {
             $script:LocHttpListener.Stop()
         }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
+}
+
+function Request-LocServerRelaunch {
+    # Schedule hidden api/server.ps1 after port frees. Caller should then Request-LocShutdown.
+    $root = if ($script:LocRootPath) { [string]$script:LocRootPath } else { Get-LocRoot }
+    $port = if ($script:LocServerPort -gt 0) { [int]$script:LocServerPort } else { 8787 }
+    $modulesPath = if ($script:LocModulesPath) { [string]$script:LocModulesPath } else { Join-Path $root "modules" }
+    $dashboardPath = if ($script:LocDashboardPath) { [string]$script:LocDashboardPath } else { Join-Path $root "dashboard" }
+    $serverPs1 = Join-Path $root "api\server.ps1"
+    if (-not (Test-Path -LiteralPath $serverPs1)) {
+        throw "api/server.ps1 not found under $root"
+    }
+
+    $cmd = @"
+`$ErrorActionPreference = 'Continue'
+`$port = $port
+`$deadline = (Get-Date).AddSeconds(30)
+while ((Get-Date) -lt `$deadline) {
+    `$busy = `$false
+    try {
+        `$busy = [bool](Get-NetTCPConnection -LocalPort `$port -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1)
+    } catch { `$busy = `$false }
+    if (-not `$busy) { break }
+    Start-Sleep -Milliseconds 400
+}
+`$arg = '-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$serverPs1`" -Port $port -ModulesPath `"$modulesPath`" -DashboardPath `"$dashboardPath`" -RootPath `"$root`"'
+`$psi = New-Object System.Diagnostics.ProcessStartInfo
+`$psi.FileName = 'powershell.exe'
+`$psi.Arguments = `$arg
+`$psi.WorkingDirectory = '$root'
+`$psi.UseShellExecute = `$true
+`$psi.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
+[void][Diagnostics.Process]::Start(`$psi)
+"@
+    $encoded = [Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($cmd))
+    Start-Process -FilePath "powershell.exe" -ArgumentList "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -EncodedCommand $encoded" -WindowStyle Hidden | Out-Null
 }
 
 try {
@@ -184,7 +241,7 @@ finally {
         if ($listener.IsListening) { $listener.Stop() }
         $listener.Close()
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
     Write-LocLog -Module "CORE" -Action "Server" -Level "INFO" -Message "Server stopped"
     if ($script:LocShutdownRequested) {
         [Environment]::Exit(0)

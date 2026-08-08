@@ -1,5 +1,6 @@
 # Install-LocalOpsConsole.ps1
-# Downloads the latest LocalOpsConsole release (free / MIT), verifies SHA-256 when available, extracts, optionally launches.
+# Installs a LocalOpsConsole build from a licensed update manifest (SHA-256 when present), extracts, optionally launches.
+# Public free downloads are not offered — obtain access via https://www.opsconsole.co.za/get-access.html
 [CmdletBinding()]
 param(
     [string]$ManifestUrl = "https://www.opsconsole.co.za/uploads/update.json",
@@ -13,7 +14,7 @@ if ([string]::IsNullOrWhiteSpace($InstallPath)) {
     $InstallPath = Join-Path $env:LOCALAPPDATA "LocalOpsConsole"
 }
 
-Write-Host "LocalOpsConsole installer (free / MIT)" -ForegroundColor Cyan
+Write-Host "LocalOpsConsole installer (licensed build)" -ForegroundColor Cyan
 Write-Host "Manifest: $ManifestUrl"
 
 $manifestJson = Invoke-RestMethod -Uri $ManifestUrl -UseBasicParsing

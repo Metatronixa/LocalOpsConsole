@@ -86,34 +86,36 @@ function Get-LocRuleHitCount {
 
 function Test-LocEventMatchesRule {
     param(
-        [Parameter(Mandatory)][object]$Event,
+        [Parameter(Mandatory)]
+        [Alias('Event')]
+        [object]$LocEvent,
         [Parameter(Mandatory)][object]$Rule
     )
 
     if ($Rule.enabled -eq $false) { return $false }
 
     if ($null -ne $Rule.eventId -and [int]$Rule.eventId -ne 0) {
-        if ([int]$Event.EventID -ne [int]$Rule.eventId) { return $false }
+        if ([int]$LocEvent.EventID -ne [int]$Rule.eventId) { return $false }
     }
 
     if ($Rule.source) {
         $src = [string]$Rule.source
-        if ($src -ne "*" -and [string]$Event.Source -notmatch [regex]::Escape($src) -and [string]$Event.Source -ne $src) {
+        if ($src -ne "*" -and [string]$LocEvent.Source -notmatch [regex]::Escape($src) -and [string]$LocEvent.Source -ne $src) {
             # allow case-insensitive exact or contains
-            if ([string]$Event.Source -notlike "*$src*" -and [string]$Event.Source -ne $src) {
-                if ([string]$Event.Source.ToLower() -ne $src.ToLower()) { return $false }
+            if ([string]$LocEvent.Source -notlike "*$src*" -and [string]$LocEvent.Source -ne $src) {
+                if ([string]$LocEvent.Source.ToLower() -ne $src.ToLower()) { return $false }
             }
         }
     }
 
     if ($Rule.category -and $Rule.matchCategory) {
-        if ([string]$Event.Category -ne [string]$Rule.category) { return $false }
+        if ([string]$LocEvent.Category -ne [string]$Rule.category) { return $false }
     }
 
     if ($Rule.messageContains) {
         $needle = [string]$Rule.messageContains
         if (-not [string]::IsNullOrWhiteSpace($needle)) {
-            $msg = [string]$Event.Message
+            $msg = [string]$LocEvent.Message
             if ($msg -notmatch [regex]::Escape($needle) -and $msg -notlike "*$needle*") {
                 return $false
             }
@@ -122,7 +124,7 @@ function Test-LocEventMatchesRule {
 
     if ($Rule.healthMetric) {
         $metric = [string]$Rule.healthMetric
-        $data = $Event.Data
+        $data = $LocEvent.Data
         if (-not $data) { return $false }
         $val = $null
         if ($data -is [hashtable]) {
@@ -143,13 +145,17 @@ function Test-LocEventMatchesRule {
 }
 
 function Evaluate-LocEventRules {
-    param([Parameter(Mandatory)][object]$Event)
+    param(
+        [Parameter(Mandatory)]
+        [Alias('Event')]
+        [object]$LocEvent
+    )
 
     Test-LocRulesReload
     $hits = @()
 
     foreach ($rule in @($script:LocRules)) {
-        if (-not (Test-LocEventMatchesRule -Event $Event -Rule $rule)) { continue }
+        if (-not (Test-LocEventMatchesRule -Event $LocEvent -Rule $rule)) { continue }
 
         $threshold = if ($null -ne $rule.threshold) { [int]$rule.threshold } else { 1 }
         $window = if ($null -ne $rule.windowSeconds) { [int]$rule.windowSeconds } else { 300 }
@@ -162,7 +168,7 @@ function Evaluate-LocEventRules {
                 Rule       = $rule
                 HitCount   = $count
                 WindowSecs = $window
-                Event      = $Event
+                Event      = $LocEvent
             }
         }
     }

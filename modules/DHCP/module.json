@@ -1,0 +1,16 @@
+﻿{
+  "id": "dhcp",
+  "name": "DHCP",
+  "version": "1.0.0",
+  "icon": "server",
+  "description": "DHCP infrastructure module",
+  "order": 42,
+  "tier": 2,
+  "profiles": ["systems_administrator", "power_user"],
+  "depends": [],
+  "capabilities": ["DHCP"],
+  "diagnostics": ["Get-DhcpServerHealth", "Get-DhcpScopes"],
+  "actions": [],
+  "requiresAdmin": [],
+  "cacheSeconds": {}
+}

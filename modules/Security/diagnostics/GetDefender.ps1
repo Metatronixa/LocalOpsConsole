@@ -1,4 +1,4 @@
-# Security/diagnostics/GetDefender.ps1 — prefer fast CIM; avoid long WMI hangs
+﻿# Security/diagnostics/GetDefender.ps1 — prefer fast CIM; avoid long WMI hangs
 try {
     $status = $null
     try {

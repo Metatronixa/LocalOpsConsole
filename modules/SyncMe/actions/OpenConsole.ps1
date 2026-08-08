@@ -13,7 +13,7 @@ try {
     $listening = $false
     try {
         if (Get-NetTCPConnection -LocalPort 17845 -State Listen -ErrorAction SilentlyContinue) { $listening = $true }
-    } catch {}
+    } catch { Write-Debug $_.Exception.Message }
 
     if (-not $listening) {
         if (Test-Path $bat) {

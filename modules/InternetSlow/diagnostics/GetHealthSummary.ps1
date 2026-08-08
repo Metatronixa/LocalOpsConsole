@@ -1,4 +1,4 @@
-# GetHealthSummary.ps1 — fast health snapshot (<3s)
+﻿# GetHealthSummary.ps1 — fast health snapshot (<3s)
 try {
     $started = Get-Date
     $checks = @()

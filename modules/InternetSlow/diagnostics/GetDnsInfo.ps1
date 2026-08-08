@@ -11,13 +11,13 @@ try {
                 }
             })
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     $suffix = $null
     try {
         $suffix = (Get-DnsClient -ErrorAction SilentlyContinue | Select-Object -ExpandProperty ConnectionSpecificSuffix -First 1)
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     $hostsPath = $env:SystemRoot + "\System32\drivers\etc\hosts"
     $hostsExists = Test-Path -LiteralPath $hostsPath
@@ -27,7 +27,7 @@ try {
             $lines = Get-Content -LiteralPath $hostsPath -ErrorAction SilentlyContinue
             $entryCount = @($lines | Where-Object { $_ -and $_ -notmatch '^\s*#' -and $_ -match '\S+\s+\S+' }).Count
         }
-        catch { }
+        catch { Write-Debug $_.Exception.Message }
     }
 
     return New-ApiResult -Success $true -Message "DNS configuration" -Data ([PSCustomObject]@{

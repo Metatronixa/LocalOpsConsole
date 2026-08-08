@@ -42,6 +42,12 @@ const Router = {
             btn.classList.toggle('active', btn.dataset.module === (mod ? mod.id : moduleId));
         });
 
+        // Expand only the section that contains the active module; leave others collapsed.
+        document.querySelectorAll('#sidebar-nav [data-nav-section]').forEach((body) => {
+            const hasActive = !!body.querySelector('button.active');
+            body.style.display = hasActive ? '' : 'none';
+        });
+
         if (!mod) {
             viewport.innerHTML = `<div class="p-6 text-slate-400">Module not found.</div>`;
             return;
@@ -67,6 +73,7 @@ const Router = {
             overview: typeof OverviewView !== 'undefined' ? OverviewView : null,
             alerts: typeof AlertsView !== 'undefined' ? AlertsView : null,
             securitycenter: typeof SecurityCenterView !== 'undefined' ? SecurityCenterView : null,
+            threatoperations: typeof ThreatOperationsView !== 'undefined' ? ThreatOperationsView : null,
             healthcenter: typeof HealthCenterView !== 'undefined' ? HealthCenterView : null,
             incidents: typeof IncidentsView !== 'undefined' ? IncidentsView : null,
             timeline: typeof EventTimelineView !== 'undefined' ? EventTimelineView : null,

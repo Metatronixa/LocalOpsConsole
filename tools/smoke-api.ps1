@@ -32,7 +32,7 @@ function Test-Api {
         $r = Invoke-WebRequest @params
         $code = [int]$r.StatusCode
         $json = $null
-        try { $json = $r.Content | ConvertFrom-Json } catch { }
+        try { $json = $r.Content | ConvertFrom-Json } catch { Write-Debug $_.Exception.Message }
         $ok = $ExpectStatus -contains $code
         if ($ok -and ($ExpectStatus -contains 200) -and $json -and ($json.PSObject.Properties.Name -contains "Success")) {
             $ok = [bool]$json.Success
@@ -53,7 +53,7 @@ function Test-Api {
     catch {
         $code = 0
         if ($_.Exception.Response) {
-            try { $code = [int]$_.Exception.Response.StatusCode } catch { }
+            try { $code = [int]$_.Exception.Response.StatusCode } catch { Write-Debug $_.Exception.Message }
         }
         if (($ExpectStatus -contains $code) -and ($code -ne 0)) {
             Write-Host "PASS  $Name ($code expected)" -ForegroundColor Green

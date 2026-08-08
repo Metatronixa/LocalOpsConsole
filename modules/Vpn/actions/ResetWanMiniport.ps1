@@ -10,7 +10,7 @@ try {
             Enable-NetAdapter -Name $a.Name -Confirm:$false -ErrorAction Stop
             $reset += $a.Name
         }
-        catch { }
+        catch { Write-Debug $_.Exception.Message }
     }
     return New-ApiResult -Success $true -Message ("Reset {0} WAN Miniport adapter(s)" -f $reset.Count) -Data ([PSCustomObject]@{ Reset = @($reset) })
 }

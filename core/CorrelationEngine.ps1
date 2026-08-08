@@ -95,8 +95,10 @@ function Test-LocCorrelationChains {
 function Resolve-LocCorrelationKey {
     param(
         [object]$Rule,
-        [object]$Event
+        [Alias('Event')]
+        [object]$LocEvent
     )
+    $null = $LocEvent
     if ($Rule.correlationKey) { return [string]$Rule.correlationKey }
     $title = if ($Rule.incident) { [string]$Rule.incident } else { [string]$Rule.id }
     return "$($Rule.id)|$title"

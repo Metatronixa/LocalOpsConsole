@@ -1,4 +1,4 @@
-# Services/diagnostics/FailureHistory.ps1
+﻿# Services/diagnostics/FailureHistory.ps1
 param([string]$Name = "", [int]$Hours = 72)
 
 try {

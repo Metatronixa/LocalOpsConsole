@@ -132,7 +132,7 @@ function Test-LocModuleIntegrity {
                 $rel = $full.Substring($root.Length).TrimStart('\').Replace('\', '/')
             }
         }
-        catch { }
+        catch { Write-Debug $_.Exception.Message }
 
         $expected = $null
         if ($modEntry.files) {
@@ -200,7 +200,7 @@ function New-LocIntegrityStore {
                 files          = $files
             }
         }
-        catch { }
+        catch { Write-Debug $_.Exception.Message }
     }
 
     $store = [ordered]@{

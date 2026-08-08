@@ -128,9 +128,9 @@ function ConvertTo-LocFleetAgentSummary {
     }
     catch {
         $fallbackId = ""
-        try { $fallbackId = [string]$Agent.Id } catch { }
+        try { $fallbackId = [string]$Agent.Id } catch { Write-Debug $_.Exception.Message }
         $fallbackName = ""
-        try { $fallbackName = [string]$Agent.ComputerName } catch { }
+        try { $fallbackName = [string]$Agent.ComputerName } catch { Write-Debug $_.Exception.Message }
         Write-LocLog -Module "FLEET" -Action "AgentSummary" -Level "ERROR" -Message "Summary failed for ${fallbackId}: $($_.Exception.Message)"
         return [PSCustomObject]@{
             Id             = $fallbackId
@@ -318,7 +318,7 @@ function Get-LocLanDiscoveryRows {
             }
         }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     try {
         Import-Module NetTCPIP -ErrorAction SilentlyContinue | Out-Null
@@ -339,7 +339,7 @@ function Get-LocLanDiscoveryRows {
                 }
             }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
     return @($rows)
 }
 
@@ -506,7 +506,7 @@ function Get-LocFleetTopology {
     $hubIds = @{}
 
     $consoleIp = $null
-    try { $consoleIp = Get-LocPreferredLanIPv4 } catch { }
+    try { $consoleIp = Get-LocPreferredLanIPv4 } catch { Write-Debug $_.Exception.Message }
     $consoleGw = $null
     try {
         $gw = Get-NetRoute -AddressFamily IPv4 -ErrorAction SilentlyContinue |
@@ -515,7 +515,7 @@ function Get-LocFleetTopology {
             Select-Object -First 1
         if ($gw) { $consoleGw = [string]$gw.NextHop }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     $ensureHub = {
         param([string]$GatewayIp, [hashtable]$HubMap, [System.Collections.ArrayList]$NodeList)
@@ -918,9 +918,9 @@ function Cancel-LocFleetCommand {
         [string]$Reason = "Cancelled by operator"
     )
 
+    $null = $AgentId
     $now = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
-    $found = $false
-    $updated = $null
+    $state = @{ found = $false; updated = $null }
 
     Invoke-LocFleetFileLock -Name "commands" -Action {
         $store = Read-LocFleetJson -FileName "commands.json" -Default @{ commands = @() }
@@ -933,8 +933,8 @@ function Cancel-LocFleetCommand {
             if ($AgentId -and [string]$c.AgentId -ne $AgentId) { continue }
             $status = [string]$c.Status
             if ($status -notin @('Pending', 'Running')) {
-                $updated = $c
-                $found = $true
+                $state.updated = $c
+                $state.found = $true
                 break
             }
             $c.Status = "Failed"
@@ -948,25 +948,25 @@ function Cancel-LocFleetCommand {
                 LogLines   = @()
             }
             $list[$i] = $c
-            $updated = $c
-            $found = $true
+            $state.updated = $c
+            $state.found = $true
             break
         }
 
         Write-LocFleetJson -FileName "commands.json" -Data @{ commands = $list }
     }
 
-    if (-not $found) {
+    if (-not $state.found) {
         return New-ApiResult -Success $false -Message "Command not found" -StatusCode 404
     }
 
-    Add-LocFleetAudit -Action "CommandCancelled" -AgentId ([string]$updated.AgentId) -Detail @{
+    Add-LocFleetAudit -Action "CommandCancelled" -AgentId ([string]$state.updated.AgentId) -Detail @{
         CommandId = $CommandId
-        Type      = [string]$updated.Type
+        Type      = [string]$state.updated.Type
         Reason    = $Reason
     }
     Write-LocLog -Module "FLEET" -Action "CancelCommand" -Level "WARN" -Message "Cancelled $CommandId ($Reason)"
-    return New-ApiResult -Success $true -Message "Command cancelled" -Data $updated
+    return New-ApiResult -Success $true -Message "Command cancelled" -Data $state.updated
 }
 
 function Cancel-LocFleetStuckCommands {
@@ -1135,7 +1135,8 @@ function Complete-LocFleetCommand {
     )
 
     $now = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
-    $found = $false
+    $logLines = @($LogLines)
+    $state = @{ found = $false }
 
     Invoke-LocFleetFileLock -Name "commands" -Action {
         $store = Read-LocFleetJson -FileName "commands.json" -Default @{ commands = @() }
@@ -1153,10 +1154,10 @@ function Complete-LocFleetCommand {
                     Data       = $Data
                     ExitCode   = $ExitCode
                     DurationMs = $DurationMs
-                    LogLines   = @($LogLines)
+                    LogLines   = $logLines
                 }
                 $list[$i] = $c
-                $found = $true
+                $state.found = $true
 
                 if ($c.Type -eq "CollectInventory" -and $Success -and $Data) {
                     Update-LocFleetAgentInventory -AgentId $AgentId -Inventory $Data
@@ -1168,7 +1169,7 @@ function Complete-LocFleetCommand {
         Write-LocFleetJson -FileName "commands.json" -Data @{ commands = $list }
     }
 
-    if (-not $found) {
+    if (-not $state.found) {
         return New-ApiResult -Success $false -Message "Command not found" -StatusCode 404
     }
 
@@ -1179,10 +1180,10 @@ function Complete-LocFleetCommand {
             $match = @($all | Where-Object { [string]$_.Id -eq $CommandId } | Select-Object -First 1)
             if ($match) { $cmdType = [string]$match[0].Type }
         }
-        catch { }
+        catch { Write-Debug $_.Exception.Message }
         if ($cmdType -eq 'GetResourceOffenders') {
-            try { Update-LocFleetAgentLastOffender -AgentId $AgentId -Offender $Data } catch { }
-            try { Enrich-LocFleetSpikeFromOffenders -AgentId $AgentId -Data $Data } catch { }
+            try { Update-LocFleetAgentLastOffender -AgentId $AgentId -Offender $Data } catch { Write-Debug $_.Exception.Message }
+            try { Enrich-LocFleetSpikeFromOffenders -AgentId $AgentId -Data $Data } catch { Write-Debug $_.Exception.Message }
         }
     }
 
@@ -1203,6 +1204,8 @@ function Update-LocFleetAgentLastOffender {
         [Parameter(Mandatory)] $Offender
     )
 
+    $targetAgentId = $AgentId
+    $offenderPayload = $Offender
     Invoke-LocFleetFileLock -Name "agents" -Action {
         $data = Read-LocFleetJson -FileName "agents.json" -Default @{ agents = @{} }
         $agentsHash = @{}
@@ -1211,27 +1214,27 @@ function Update-LocFleetAgentLastOffender {
         }
         elseif ($data.agents -is [hashtable]) { $agentsHash = @{} + $data.agents }
 
-        if ($agentsHash.ContainsKey($AgentId)) {
-            $rec = $agentsHash[$AgentId]
+        if ($agentsHash.ContainsKey($targetAgentId)) {
+            $rec = $agentsHash[$targetAgentId]
             $top = $null
             try {
-                if ($Offender.TopProcesses) {
-                    $list = @($Offender.TopProcesses)
+                if ($offenderPayload.TopProcesses) {
+                    $list = @($offenderPayload.TopProcesses)
                     if ($list.Count -gt 0) { $top = $list[0] }
                 }
             }
-            catch { }
+            catch { Write-Debug $_.Exception.Message }
             $payload = [ordered]@{
                 CapturedAt   = (Get-Date).ToString('yyyy-MM-dd HH:mm:ss')
                 TopProcess   = $top
-                RelatedService = $(if ($Offender.RelatedService) { $Offender.RelatedService } else { $null })
-                Summary      = $(if ($Offender.Summary) { [string]$Offender.Summary } else { '' })
+                RelatedService = $(if ($offenderPayload.RelatedService) { $offenderPayload.RelatedService } else { $null })
+                Summary      = $(if ($offenderPayload.Summary) { [string]$offenderPayload.Summary } else { '' })
             }
             if ($rec -is [PSCustomObject]) {
                 $rec | Add-Member -NotePropertyName LastOffender -NotePropertyValue $payload -Force
             }
             else { $rec.LastOffender = $payload }
-            $agentsHash[$AgentId] = $rec
+            $agentsHash[$targetAgentId] = $rec
             Write-LocFleetJson -FileName "agents.json" -Data @{ agents = $agentsHash }
         }
     }
@@ -1243,6 +1246,8 @@ function Update-LocFleetAgentInventory {
         [Parameter(Mandatory)] $Inventory
     )
 
+    $targetAgentId = $AgentId
+    $inventoryPayload = $Inventory
     Invoke-LocFleetFileLock -Name "agents" -Action {
         $data = Read-LocFleetJson -FileName "agents.json" -Default @{ agents = @{} }
         $agentsHash = @{}
@@ -1251,13 +1256,13 @@ function Update-LocFleetAgentInventory {
         }
         elseif ($data.agents -is [hashtable]) { $agentsHash = @{} + $data.agents }
 
-        if ($agentsHash.ContainsKey($AgentId)) {
-            $rec = $agentsHash[$AgentId]
+        if ($agentsHash.ContainsKey($targetAgentId)) {
+            $rec = $agentsHash[$targetAgentId]
             if ($rec -is [PSCustomObject]) {
-                $rec | Add-Member -NotePropertyName Inventory -NotePropertyValue $Inventory -Force
+                $rec | Add-Member -NotePropertyName Inventory -NotePropertyValue $inventoryPayload -Force
             }
-            else { $rec.Inventory = $Inventory }
-            $agentsHash[$AgentId] = $rec
+            else { $rec.Inventory = $inventoryPayload }
+            $agentsHash[$targetAgentId] = $rec
             Write-LocFleetJson -FileName "agents.json" -Data @{ agents = $agentsHash }
         }
     }
@@ -1387,7 +1392,7 @@ function Evaluate-LocHeartbeatAlerts {
                         try {
                             if (((Get-Date) - [datetime]$c.CompletedAt).TotalSeconds -lt 300) { $busy = $true; break }
                         }
-                        catch { }
+                        catch { Write-Debug $_.Exception.Message }
                     }
                 }
                 if (-not $busy) {
@@ -1395,7 +1400,7 @@ function Evaluate-LocHeartbeatAlerts {
                 }
             }
         }
-        catch { }
+        catch { Write-Debug $_.Exception.Message }
     }
 }
 
@@ -1411,7 +1416,7 @@ function Test-LocFleetAlertRecently {
         try {
             if (((Get-Date) - [datetime]$a.CreatedAt).TotalSeconds -lt $WindowSec) { return $true }
         }
-        catch { }
+        catch { Write-Debug $_.Exception.Message }
     }
     return $false
 }
@@ -1479,7 +1484,7 @@ function Enrich-LocFleetSpikeFromOffenders {
             $svcName = [string]$(if ($Data.RelatedService.Name) { $Data.RelatedService.Name } else { $Data.RelatedService })
         }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     $msg = "{0}: top offender {1}" -f $pcName, $(if ($topName) { $topName } else { 'unknown' })
     if ($null -ne $topPid) { $msg += " (PID $topPid)" }
@@ -1546,7 +1551,7 @@ function Get-LocFleetPolicyPacks {
                     }
                 }
             }
-            catch { }
+            catch { Write-Debug $_.Exception.Message }
         }
     }
     return New-ApiResult -Success $true -Message "Policy packs" -Data @($list)
@@ -1580,16 +1585,16 @@ function Get-LocFleetPackageSource {
     try {
         if ($null -ne $Package.Source) { $src = [string]$Package.Source }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
     if (-not [string]::IsNullOrWhiteSpace($src)) {
         return $src.Trim().ToLowerInvariant()
     }
     $winget = ''
     $fileName = ''
     $url = ''
-    try { if ($null -ne $Package.WingetId) { $winget = [string]$Package.WingetId } } catch { }
-    try { if ($null -ne $Package.FileName) { $fileName = [string]$Package.FileName } } catch { }
-    try { if ($null -ne $Package.Url) { $url = [string]$Package.Url } } catch { }
+    try { if ($null -ne $Package.WingetId) { $winget = [string]$Package.WingetId } } catch { Write-Debug $_.Exception.Message }
+    try { if ($null -ne $Package.FileName) { $fileName = [string]$Package.FileName } } catch { Write-Debug $_.Exception.Message }
+    try { if ($null -ne $Package.Url) { $url = [string]$Package.Url } } catch { Write-Debug $_.Exception.Message }
     if (-not [string]::IsNullOrWhiteSpace($winget)) { return 'winget' }
     if (-not [string]::IsNullOrWhiteSpace($fileName)) { return 'local' }
     if (-not [string]::IsNullOrWhiteSpace($url)) { return 'url' }
@@ -1775,7 +1780,7 @@ function Remove-LocFleetPackage {
     if ($DeleteFiles) {
         $pkgDir = Join-Path (Get-LocFleetSoftwareDir) $pkgId
         if (Test-Path -LiteralPath $pkgDir) {
-            try { Remove-Item -LiteralPath $pkgDir -Recurse -Force -ErrorAction Stop } catch { }
+            try { Remove-Item -LiteralPath $pkgDir -Recurse -Force -ErrorAction Stop } catch { Write-Debug $_.Exception.Message }
         }
     }
 
@@ -1864,7 +1869,7 @@ function Revoke-LocAgent {
     try {
         Cancel-LocFleetStuckCommands -AgentId $AgentId -Reason "Agent removed"
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     Add-LocFleetAudit -Action "AgentRevoked" -AgentId $AgentId
     return New-ApiResult -Success $true -Message "Agent removed" -Data @{ AgentId = $AgentId }
@@ -1907,7 +1912,7 @@ function Get-LocPreferredLanIPv4 {
         } | Select-Object -First 1
         if ($ipv4) { return [string]$ipv4 }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
     return ""
 }
 
@@ -2029,10 +2034,11 @@ function Get-LocFleetScriptContent {
 function Register-LocFleetEvent {
     param(
         [Parameter(Mandatory)] [string]$AgentId,
-        [object]$Event = $null
+        [Alias('Event')]
+        [object]$LocEvent = $null
     )
 
-    Add-LocFleetAudit -Action "AgentEvent" -AgentId $AgentId -Detail $Event
+    Add-LocFleetAudit -Action "AgentEvent" -AgentId $AgentId -Detail $LocEvent
     return New-ApiResult -Success $true -Message "Event recorded" -Data @{}
 }
 

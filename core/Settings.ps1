@@ -51,7 +51,7 @@ function Get-LocRoot {
   Map settings.bindHost to HttpListener prefix hostnames.
 .NOTES
   Concrete LAN IPs also include localhost so start.ps1 / the local UI keep working.
-  0.0.0.0 / * / + map to HTTP.sys strong wildcard '+'.
+  0.0.0.0 / * / + map to HTTP.sys strong wildcard '+' only (covers all interfaces including loopback).
 #>
 function Resolve-LocHttpListenHosts {
     param([string]$BindHost = "localhost")

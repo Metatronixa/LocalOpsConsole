@@ -41,7 +41,7 @@
     <article class="docs-content">
       <div class="page-hero" style="padding-top:2rem">
         <h1>User Guide</h1>
-        <p>Complete operator manual for <strong>LocalOpsConsole v2.1.8</strong> — how every major surface works, and exactly what you must do to install, run, and manage Windows endpoints safely.</p>
+        <p>Complete operator manual for <strong>LocalOpsConsole v2.2.0</strong> — how every major surface works, and exactly what you must do to install, run, and manage Windows endpoints safely.</p>
       </div>
 
       <div class="callout">
@@ -60,10 +60,11 @@
 
       <h2 id="must-do">2. What you must do (checklist)</h2>
       <ol>
-        <li><strong>Install</strong> the console ZIP (or clone source) to a writable folder.</li>
-        <li><strong>Run <code>start.bat</code></strong> and accept UAC if you need remediations (diagnostics work without elevation; many fixes do not).</li>
-        <li><strong>Open the printed URL</strong> on the same PC (normally <code>http://localhost:8787/</code>).</li>
+        <li><strong>Obtain a licensed build</strong> via <a href="https://www.opsconsole.co.za/get-access.html">Get Access</a> (official packages are not free public downloads).</li>
+        <li><strong>Extract</strong> to a writable folder and run <code>start.bat</code> (accept UAC once for remediations).</li>
+        <li>The browser opens automatically at <code>http://localhost:8787/</code> — there is <strong>no leftover console window</strong> on success.</li>
         <li><strong>Confirm the elevation badge</strong> in the header — STANDARD USER vs elevated admin.</li>
+        <li>Use header <strong>Restart</strong> / <strong>Shutdown</strong> to control the server (not a console Ctrl+C).</li>
         <li>For <strong>other PCs</strong>: set <code>bindHost</code> to <code>0.0.0.0</code>, set <code>fleetPublicUrl</code> to your LAN/Tailscale URL, restart, then install the agent with that URL (never <code>localhost</code> on the remote PC).</li>
         <li>When an <strong>update banner</strong> appears, review notes and confirm — updates are never silent.</li>
         <li><strong>Do not</strong> expose the API to the public internet.</li>
@@ -71,34 +72,32 @@
 
       <h2 id="install">3. Install &amp; launch</h2>
 
-      <h3>3.1 Option A — GitHub Release ZIP</h3>
+      <h3>3.1 Licensed package</h3>
       <ol>
-        <li>Download <code>LocalOpsConsole-x.y.z.zip</code> from <a href="https://github.com/Metatronixa/LocalOpsConsole/releases/latest">GitHub Releases</a>.</li>
-        <li>Extract to e.g. <code>C:\Tools\LocalOpsConsole</code>.</li>
-        <li>Double-click <code>start.bat</code> (requests UAC).</li>
-        <li>Browser opens Overview at the printed URL.</li>
+        <li>Request access at <a href="https://www.opsconsole.co.za/get-access.html">opsconsole.co.za/get-access</a> (email <a href="mailto:bradford.lotriet@gmail.com">bradford.lotriet@gmail.com</a>).</li>
+        <li>Extract the delivered <code>LocalOpsConsole-x.y.z.zip</code> to e.g. <code>C:\Tools\LocalOpsConsole</code>.</li>
+        <li>Double-click <code>start.bat</code> (or <code>start-silent.vbs</code> for zero console flash — shortcuts / Startup folder).</li>
+        <li>Accept UAC. The browser opens Overview when the API is healthy.</li>
       </ol>
 
-      <h3>3.2 Option B — Bootstrap script</h3>
-      <pre>iwr https://raw.githubusercontent.com/Metatronixa/LocalOpsConsole/main/scripts/Install-LocalOpsConsole.ps1 -OutFile "$env:TEMP\Install-LOC.ps1"
-powershell -ExecutionPolicy Bypass -File "$env:TEMP\Install-LOC.ps1" -Launch</pre>
-
-      <h3>3.3 Option C — From source</h3>
+      <h3>3.2 Developers (source)</h3>
       <pre>git clone https://github.com/Metatronixa/LocalOpsConsole.git
 cd LocalOpsConsole
 .\start.bat</pre>
+      <p>Source is for development and review. Production operators should use licensed builds.</p>
 
-      <h3>3.4 What start.bat does</h3>
+      <h3>3.3 What start.bat does (headless)</h3>
       <ul>
-        <li>Starts the PowerShell API (<code>api\server.ps1</code>) with module loading, Event Intelligence pulse, and static dashboard serving</li>
-        <li>Prints the listen URL and opens the browser when possible</li>
-        <li>Elevation enables remediations that declare <code>requiresAdmin</code></li>
+        <li>Starts PowerShell <strong>hidden</strong>, elevates once if needed (also hidden), then starts <code>api\server.ps1</code> hidden</li>
+        <li>Waits for <code>/api/v1/health</code>, writes <code>data/runtime/server.pid</code>, opens the browser, and <strong>exits</strong> — no Wait-Process console stays open</li>
+        <li>On failure, opens a short visible PowerShell window with the error and “Press Enter”</li>
+        <li>For verbose progress: <code>powershell -File start.ps1 -ShowConsole</code></li>
       </ul>
       <div class="callout warn">
-        <strong>Failed to fetch</strong> on every tile means the server process is not running. Close stale windows and run <code>start.bat</code> again. Check <code>logs\YYYY-MM-DD.log</code>.
+        <strong>Failed to fetch</strong> on every tile means the server process is not running. Use <strong>start.bat</strong> again (or UI Restart if the tab is still up). Check <code>logs\YYYY-MM-DD.log</code>.
       </div>
 
-      <h3>3.5 URL cheat sheet</h3>
+      <h3>3.4 URL cheat sheet</h3>
       <table>
         <thead>
           <tr><th>Where you are</th><th>URL to use</th></tr>
@@ -114,18 +113,23 @@ cd LocalOpsConsole
       <h2 id="ui">4. UI tour</h2>
       <p>After splash, the shell has four zones:</p>
       <ol>
-        <li><strong>Header</strong> — brand + version, live telemetry (CPU, RAM, DISK, NET, GPU, BAT, VPN when present), elevation badge, Shutdown, engine status</li>
+        <li><strong>Header</strong> — brand + version (left), live telemetry chips (center), elevation badge + engine status + Help + <strong>Restart</strong> + <strong>Shutdown</strong> (right)</li>
         <li><strong>Sidebar</strong> — platform sections and modules (filtered by profile)</li>
         <li><strong>Main pane</strong> — the active module view</li>
         <li><strong>Live console</strong> — streaming output from diagnostics/actions as they run</li>
       </ol>
       <p>Optional chrome:</p>
       <ul>
-        <li><strong>Update banner</strong> — when a newer build is available via <code>updateUrl</code></li>
+        <li><strong>Update banner</strong> — when a newer licensed build is available via <code>updateUrl</code></li>
         <li><strong>Alerts</strong> — notification center access from monitoring surfaces</li>
         <li><strong>Help</strong> — opens this User Guide inside the app (<code>/user-guide.html</code>)</li>
       </ul>
-      <p>Click <strong>Shutdown</strong> to stop the server process cleanly from the UI.</p>
+      <h3>Restart &amp; Shutdown</h3>
+      <ul>
+        <li><strong>Restart</strong> — schedules a headless relaunch of the API (inherits elevation; no second UAC), stops the listener, then the UI polls <code>/health</code> and reloads when the server is back.</li>
+        <li><strong>Shutdown</strong> — stops the server cleanly. Use <code>start.bat</code> to bring it back.</li>
+      </ul>
+      <p>There is no launcher console to Ctrl+C after a successful start — the UI is the control surface.</p>
 
       <h2 id="profiles">5. Profiles</h2>
       <p>Profiles filter which modules appear in the sidebar so Helpdesk staff are not flooded with every admin tool.</p>
@@ -152,7 +156,7 @@ cd LocalOpsConsole
         <tbody>
           <tr><td>Overview</td><td>Health at a glance</td><td>Read scores + incidents; drill into failing areas</td></tr>
           <tr><td>Operations</td><td>Day-to-day tools</td><td>Services, updates, printers, fleet, SyncMe, network, …</td></tr>
-          <tr><td>Security</td><td>Posture &amp; tooling</td><td>Security Center, Baseline audit, Defender/Firewall, Event Log</td></tr>
+          <tr><td>Security</td><td>Posture &amp; tooling</td><td>Security Center, Baseline, Threat Operations, Defender/Firewall, Event Log</td></tr>
           <tr><td>Health</td><td>Health Center checks</td><td>Run health diagnostics</td></tr>
           <tr><td>Performance</td><td>Live system view</td><td>Watch CPU/RAM/disk/network telemetry</td></tr>
           <tr><td>Inventory</td><td>What is on the box</td><td>Devices, users, graphics, storage, startup, power</td></tr>
@@ -188,7 +192,7 @@ cd LocalOpsConsole
       <h3>Notification Center &amp; Event Timeline</h3>
       <p>Alerts and a timeline of observed events. Use Timeline for forensics; Incidents for “what should I act on?”</p>
 
-      <h2 id="security">9. Security Baseline, Security tools, Event Log</h2>
+      <h2 id="security">9. Security Baseline, Threat Operations, Event Log</h2>
       <h3>Security Baseline</h3>
       <ol>
         <li>Open <strong>Security → Security Baseline</strong></li>
@@ -198,6 +202,17 @@ cd LocalOpsConsole
       </ol>
       <p>This PC uses the full module audit. Fleet queues <code>AuditSecurityBaseline</code> (agent 2.2.0+). Apply hardening-basic stays on <strong>Computers → Policy</strong>. You can open this page with an agent preselected from the drawer.</p>
       <p>Controls typically cover Defender, Firewall, BitLocker, TPM, Secure Boot, and related posture checks (fleet audit is a compact set of those controls).</p>
+
+      <h3>Threat Operations</h3>
+      <p>Open <strong>Security → Threat Operations</strong> for a live security event stream:</p>
+      <ul>
+        <li>Filter by severity, host, and keyword</li>
+        <li>Inspect ScriptBlock / encoded command payloads (decoded when possible)</li>
+        <li>Fleet agents can forward security telemetry via HMAC to <code>POST /api/v1/fleet/threat-telemetry</code></li>
+        <li>Events are stored under <code>data/threat/</code> (JSONL + retention), not a cloud SIEM</li>
+      </ul>
+      <p>See also <code>docs/modules/ThreatOperations.md</code>.</p>
+
       <h3>Security module &amp; Event Log</h3>
       <p>Dedicated views paint the UI first, then load data asynchronously with <strong>bounded</strong> WinEvent queries. “Access denied” on the Security channel without elevation is normal.</p>
       <h3>Integrity gate</h3>
@@ -214,6 +229,9 @@ cd LocalOpsConsole
 
       <h2 id="operations">10. Operations modules</h2>
       <p>Each module follows the same pattern: open the sidebar entry → run a <strong>diagnostic</strong> (inspect) or <strong>action</strong> (change) → watch the live console. Admin-required actions stay locked until elevated.</p>
+
+      <h3>Active Directory, DNS, DHCP, Group Policy, Hyper-V, Certificates, Server Operations</h3>
+      <p>Infrastructure modules for domain health, name resolution, scopes, GPO refresh/health, Hyper-V hosts/VMs, certificate stores, and local server service/disk/share checks. Availability depends on Windows roles/features and elevation.</p>
 
       <h3>System (Performance)</h3>
       <p>Live telemetry for CPU, memory, disk, network, GPU. Use when investigating spikes on the console PC itself.</p>
@@ -398,12 +416,12 @@ cd LocalOpsConsole
 
       <h2 id="updates">16. In-app updates</h2>
       <ol>
-        <li>On launch (and periodically), the app fetches <code>updateUrl</code> (default opsconsole.co.za feed).</li>
+        <li>On launch (and periodically), the app fetches <code>updateUrl</code> (default opsconsole.co.za feed for licensed operators).</li>
         <li>If <code>latest</code> is newer than the running version, the banner appears.</li>
         <li>You choose <strong>Update now</strong> or <strong>Later</strong> — never silent.</li>
         <li>The feed includes SHA-256 for the ZIP; verify downloads.</li>
       </ol>
-      <p>Maintainers: bump <code>VERSION</code>, run <code>.\build.ps1 -PublishWebsite</code>, attach ZIPs to a GitHub Release, deploy <code>website/uploads/update.json</code>.</p>
+      <p>Maintainers: bump <code>VERSION</code>, run <code>.\build.ps1 -PublishWebsite</code>, publish the licensed package to the private/customer channel, deploy <code>website/uploads/update.json</code> with the matching SHA. Do not advertise public free downloads.</p>
 
       <h2 id="access">17. Access model &amp; elevation</h2>
       <table>
@@ -423,8 +441,9 @@ cd LocalOpsConsole
           <tr><th>Symptom</th><th>What to do</th></tr>
         </thead>
         <tbody>
-          <tr><td>Failed to fetch everywhere</td><td>Server not running — <code>start.bat</code>; check port 8787; read <code>logs\</code></td></tr>
-          <tr><td>UI opens but remediations fail</td><td>Elevation badge STANDARD — restart elevated</td></tr>
+          <tr><td>Failed to fetch everywhere</td><td>Server not running — <code>start.bat</code> or UI Restart; check port 8787; read <code>logs\</code></td></tr>
+          <tr><td>Restart stuck on RECONNECTING</td><td>Wait for health; if timeout, run <code>start.bat</code> elevated. Restart does not show a second UAC.</td></tr>
+          <tr><td>UI opens but remediations fail</td><td>Elevation badge STANDARD — restart elevated via <code>start.bat</code></td></tr>
           <tr><td>HttpListener URL conflict</td><td>Free port; <code>netsh http show urlacl</code>; prefer <code>bindHost: 0.0.0.0</code></td></tr>
           <tr><td>Agents never Online</td><td>Wrong ServerUrl (not localhost); firewall; enroll token; task LocalOpsAgent running</td></tr>
           <tr><td>Commands stuck Pending</td><td>Clear stuck Running command; wait 45m timeout; check agent logs under ProgramData</td></tr>

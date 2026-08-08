@@ -1,4 +1,4 @@
-# core/PermissionManager.ps1 - Elevation and capability validation
+﻿# core/PermissionManager.ps1 - Elevation and capability validation
 
 function Test-LocActionRequiresAdmin {
     param(

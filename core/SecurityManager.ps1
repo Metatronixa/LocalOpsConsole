@@ -1,4 +1,4 @@
-# core/SecurityManager.ps1 - Pre-execution security gate for modules
+﻿# core/SecurityManager.ps1 - Pre-execution security gate for modules
 
 function Invoke-LocSecurityGate {
     param(
@@ -9,6 +9,7 @@ function Invoke-LocSecurityGate {
         [hashtable]$Params = @{}
     )
 
+    $null = $Kind
     $gate = [PSCustomObject]@{
         Ok         = $true
         Message    = "OK"

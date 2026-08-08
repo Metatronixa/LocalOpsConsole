@@ -43,7 +43,7 @@ try {
                 }
             }
         }
-        catch { }
+        catch { Write-Debug $_.Exception.Message }
     }
 
     # Recent SMB connections (PCs you already talk to)
@@ -62,7 +62,7 @@ try {
             }
         }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     $rows = @($rows | Sort-Object Name -Unique)
     return New-ApiResult -Success $true -Message ("{0} host(s) discovered" -f $rows.Count) -Data $rows

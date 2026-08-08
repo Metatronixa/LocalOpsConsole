@@ -1,4 +1,4 @@
-# RunAutomaticDiagnosis.ps1 — sequenced light checks
+﻿# RunAutomaticDiagnosis.ps1 — sequenced light checks
 try {
     $checks = @()
     $adapter = Get-LocActiveAdapterInfo

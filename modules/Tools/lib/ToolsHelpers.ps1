@@ -21,12 +21,12 @@ function Invoke-ToolCommand {
     $errTask = $p.StandardError.ReadToEndAsync()
 
     if (-not $p.WaitForExit($TimeoutSec * 1000)) {
-        try { $p.Kill() } catch {}
-        try { [void]$p.WaitForExit(3000) } catch {}
+        try { $p.Kill() } catch { Write-Debug $_.Exception.Message }
+        try { [void]$p.WaitForExit(3000) } catch { Write-Debug $_.Exception.Message }
         $partialOut = ""
         $partialErr = ""
-        try { if ($outTask.IsCompleted) { $partialOut = $outTask.Result } } catch {}
-        try { if ($errTask.IsCompleted) { $partialErr = $errTask.Result } } catch {}
+        try { if ($outTask.IsCompleted) { $partialOut = $outTask.Result } } catch { Write-Debug $_.Exception.Message }
+        try { if ($errTask.IsCompleted) { $partialErr = $errTask.Result } } catch { Write-Debug $_.Exception.Message }
         return [PSCustomObject]@{
             ExitCode = -1
             Output   = ("Timed out after ${TimeoutSec}s`n" + $partialOut + "`n" + $partialErr).Trim()

@@ -1,0 +1,29 @@
+{
+  "id": "account-lockout",
+  "name": "Account Lockout Resolution",
+  "module": "activedirectory",
+  "description": "Detect lockout source, explain, unlock when approved",
+  "steps": [
+    {
+      "id": "Get-ADLockoutSource",
+      "module": "activedirectory",
+      "action": "Get-ADLockoutSource",
+      "kind": "diagnostics",
+      "riskLevel": "READ"
+    },
+    {
+      "id": "Get-ADUserStatus",
+      "module": "activedirectory",
+      "action": "Get-ADUserStatus",
+      "kind": "diagnostics",
+      "riskLevel": "READ"
+    },
+    {
+      "id": "Unlock-ADUser",
+      "module": "activedirectory",
+      "action": "Unlock-ADUser",
+      "kind": "actions",
+      "riskLevel": "LOW"
+    }
+  ]
+}

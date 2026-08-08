@@ -88,7 +88,7 @@ function Invoke-LocTcpConnect {
         return [PSCustomObject]@{ Host = $HostName; Port = $Port; Success = $false; ElapsedMs = 0; Message = $_.Exception.Message }
     }
     finally {
-        if ($client) { try { $client.Close() } catch {} }
+        if ($client) { try { $client.Close() } catch { Write-Debug $_.Exception.Message } }
     }
 }
 
@@ -143,9 +143,8 @@ function Invoke-LocDnsResolve {
             return [PSCustomObject]@{ HostName = $HostName; Success = [bool]$addr; Address = $addr; TimedOut = [bool]$r.TimedOut }
         }
         $job = Start-Job -ScriptBlock {
-            param($h)
-            Resolve-DnsName -Name $h -DnsOnly -ErrorAction Stop | Select-Object -First 1 -ExpandProperty IPAddress
-        } -ArgumentList $HostName
+            Resolve-DnsName -Name $using:HostName -DnsOnly -ErrorAction Stop | Select-Object -First 1 -ExpandProperty IPAddress
+        }
         if (-not (Wait-Job $job -Timeout $TimeoutSec)) {
             Stop-Job $job -ErrorAction SilentlyContinue
             Remove-Job $job -Force -ErrorAction SilentlyContinue
@@ -193,7 +192,7 @@ function Get-LocActiveAdapterInfo {
                 $mediaConnected = ($na.NetConnectionStatus -eq 2)
             }
         }
-        catch { }
+        catch { Write-Debug $_.Exception.Message }
 
         $mtu = $null
         $dhcp = [bool]$cfg.DHCPEnabled

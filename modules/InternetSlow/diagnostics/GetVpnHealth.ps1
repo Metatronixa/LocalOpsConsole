@@ -1,4 +1,4 @@
-# GetVpnHealth.ps1 — never expose passwords
+﻿# GetVpnHealth.ps1 — never expose passwords
 try {
     $connections = @()
     $vpn = Get-VpnConnection -ErrorAction SilentlyContinue

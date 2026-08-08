@@ -1,4 +1,4 @@
-# RunSpeedTest.ps1 — opt-in download + upload speed test (hard timeout)
+﻿# RunSpeedTest.ps1 — opt-in download + upload speed test (hard timeout)
 try {
     $urls = @(
         "https://speed.cloudflare.com/__down?bytes=2000000",

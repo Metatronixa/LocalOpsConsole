@@ -64,7 +64,7 @@ function Convert-LocEventRecordToNormalized {
     if (-not $Record) { return $null }
 
     $eventId = 0
-    try { $eventId = [int]$Record.Id } catch { }
+    try { $eventId = [int]$Record.Id } catch { Write-Debug $_.Exception.Message }
     if (Test-LocNoisyEventId -SourceName $SourceName -EventId $eventId) { return $null }
 
     $msg = ""
@@ -74,7 +74,7 @@ function Convert-LocEventRecordToNormalized {
     if ($msg.Length -gt 400) { $msg = $msg.Substring(0, 400) }
 
     $ts = Get-Date
-    try { $ts = [datetime]$Record.TimeCreated } catch { }
+    try { $ts = [datetime]$Record.TimeCreated } catch { Write-Debug $_.Exception.Message }
 
     $data = @{}
     try {
@@ -89,7 +89,7 @@ function Convert-LocEventRecordToNormalized {
             }
         }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     return New-LocNormalizedEvent -Source $SourceName -EventID $eventId -Severity (Convert-LocWinEventSeverity -Record $Record) `
         -Category $Category -Message $msg -Data $data -Timestamp $ts
@@ -142,16 +142,16 @@ function Start-LocWatchManager {
 
             $action = {
                 try {
-                    $args = $Event.SourceEventArgs
-                    if (-not $args -or -not $args.EventRecord) { return }
+                    $sourceArgs = $Event.SourceEventArgs
+                    if (-not $sourceArgs -or -not $sourceArgs.EventRecord) { return }
                     $payload = [PSCustomObject]@{
                         SourceName = $Event.MessageData.SourceName
                         Category   = $Event.MessageData.Category
-                        Record     = $args.EventRecord
+                        Record     = $sourceArgs.EventRecord
                     }
                     [void]$Event.MessageData.Queue.Enqueue($payload)
                 }
-                catch { }
+                catch { Write-Debug $_.Exception.Message }
             }
 
             $msgData = New-Object PSObject -Property @{
@@ -178,8 +178,8 @@ function Start-LocWatchManager {
 
 function Stop-LocWatchManager {
     foreach ($w in @($script:LocWatchers)) {
-        try { $w.Enabled = $false } catch { }
-        try { $w.Dispose() } catch { }
+        try { $w.Enabled = $false } catch { Write-Debug $_.Exception.Message }
+        try { $w.Dispose() } catch { Write-Debug $_.Exception.Message }
     }
     $script:LocWatchers.Clear()
 
@@ -188,7 +188,7 @@ function Stop-LocWatchManager {
             Unregister-Event -SourceIdentifier $j.Name -ErrorAction SilentlyContinue
             Remove-Job -Id $j.Id -Force -ErrorAction SilentlyContinue
         }
-        catch { }
+        catch { Write-Debug $_.Exception.Message }
     }
     $script:LocWatcherJobs.Clear()
     $script:LocWatcherStatus.Clear()
@@ -215,10 +215,10 @@ function Drain-LocWatcherQueue {
     while ($n -lt $Max -and $script:LocEventQueue.TryDequeue([ref]$item)) {
         try {
             $norm = Convert-LocEventRecordToNormalized -Record $item.Record -SourceName $item.SourceName -Category $item.Category
-            try { $item.Record.Dispose() } catch { }
+            try { $item.Record.Dispose() } catch { Write-Debug $_.Exception.Message }
             if ($norm) { $out += $norm }
         }
-        catch { }
+        catch { Write-Debug $_.Exception.Message }
         $n++
     }
     return $out

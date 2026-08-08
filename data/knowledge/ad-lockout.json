@@ -1,0 +1,23 @@
+{
+  "id": "ad-lockout",
+  "module": "activedirectory",
+  "match": { "symptom": "(?i)lockout|locked out" },
+  "diagnose": {
+    "checks": ["Get-ADLockoutSource", "Get-ADUserStatus"],
+    "message": "Correlate bad password events and lockout source host"
+  },
+  "explain": "Account lockouts usually come from stale credentials on a device, mapped drive, mobile client, or scheduled task.",
+  "recommend": [
+    "Identify source workstation via Get-ADLockoutSource",
+    "Clear cached credentials on the source host",
+    "Unlock the user after confirming the source"
+  ],
+  "repair": {
+    "playbookId": "account-lockout",
+    "actions": ["Unlock-ADUser"]
+  },
+  "verify": {
+    "diagnostics": ["Get-ADUserStatus"],
+    "expect": "LockedOut=false"
+  }
+}

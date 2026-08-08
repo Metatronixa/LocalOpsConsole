@@ -5,11 +5,15 @@ $script:LocEventRing = [System.Collections.ArrayList]::Synchronized([System.Coll
 $script:LocEventIntelTimer = $null
 $script:LocEventIntelLastIngest = $null
 $script:LocEventIntelLastHealth = $null
+$script:LocEventIntelStartedAt = $null
 $script:LocEventRingMax = 300
 
 function Add-LocEventRing {
-    param([object]$Event)
-    [void]$script:LocEventRing.Insert(0, $Event)
+    param(
+        [Alias('Event')]
+        [object]$LocEvent
+    )
+    [void]$script:LocEventRing.Insert(0, $LocEvent)
     while ($script:LocEventRing.Count -gt $script:LocEventRingMax) {
         $script:LocEventRing.RemoveAt($script:LocEventRing.Count - 1)
     }
@@ -31,16 +35,20 @@ function Persist-LocEventRing {
     try {
         Save-LocRecentEvents -Events @($script:LocEventRing) -MaxKeep $script:LocEventRingMax
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 }
 
 function Invoke-LocEventIngest {
-    param([Parameter(Mandatory)][object]$Event)
+    param(
+        [Parameter(Mandatory)]
+        [Alias('Event')]
+        [object]$LocEvent
+    )
 
-    Add-LocEventRing -Event $Event
+    Add-LocEventRing -Event $LocEvent
     $script:LocEventIntelLastIngest = Get-Date
 
-    $hits = Evaluate-LocEventRules -Event $Event
+    $hits = Evaluate-LocEventRules -Event $LocEvent
     foreach ($hit in $hits) {
         try {
             Process-LocRuleHit -Hit $hit | Out-Null
@@ -70,9 +78,13 @@ function Invoke-LocEventIntelTick {
         $s = Get-LocSettings
         if ($s.taskIntervalSeconds) { $interval = [int]$s.taskIntervalSeconds }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     if (-not $script:LocEventIntelLastHealth -or ($now - $script:LocEventIntelLastHealth).TotalSeconds -ge $interval) {
+        # Skip heavy Defender/firewall while accept loop is still warming
+        $started = $script:LocEventIntelStartedAt
+        if ($started -and ($now - $started).TotalSeconds -lt 60) { return }
+
         $script:LocEventIntelLastHealth = $now
         try {
             Test-LocRulesReload
@@ -102,25 +114,61 @@ function Start-LocEventIntelligence {
             [void]$script:LocEventRing.Add($e)
         }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     Start-LocWatchManager
     $script:LocEventIntelRunning = $true
     $script:LocEventIntelLastTick = Get-Date
+    $script:LocEventIntelStartedAt = Get-Date
+    # Defer first heavy health pass so cold Get-MpComputerStatus cannot block /api on boot
+    $script:LocEventIntelLastHealth = Get-Date
 
     Write-LocLog -Module "EVENTINTEL" -Action "Start" -Level "SUCCESS" -Message "Event Intelligence engine started"
     Add-LocEventAudit -Action "EngineStart" -Detail "Event Intelligence started"
 }
 
 function Pulse-LocEventIntelligence {
-    # Called from the HTTP accept loop idle wait — same runspace as core functions
+    # Called from the HTTP accept loop idle wait — keep this path cheap (drain only on pulse)
     if (-not $script:LocEventIntelRunning) { return }
     $now = Get-Date
     if ($script:LocEventIntelLastTick -and ($now - $script:LocEventIntelLastTick).TotalMilliseconds -lt 1500) {
         return
     }
     $script:LocEventIntelLastTick = $now
-    try { Invoke-LocEventIntelTick } catch { }
+    try {
+        # Drain watchers only here; defer Defender/firewall health until warm-up elapsed
+        $drained = Drain-LocWatcherQueue -Max 80
+        foreach ($ev in $drained) {
+            Invoke-LocEventIngest -Event $ev
+        }
+
+        $warmSec = 60
+        $started = $script:LocEventIntelStartedAt
+        if ($started -and ($now - $started).TotalSeconds -lt $warmSec) { return }
+
+        $interval = 30
+        try {
+            $s = Get-LocSettings
+            if ($s.taskIntervalSeconds) { $interval = [int]$s.taskIntervalSeconds }
+        }
+        catch { Write-Debug $_.Exception.Message }
+
+        if (-not $script:LocEventIntelLastHealth -or ($now - $script:LocEventIntelLastHealth).TotalSeconds -ge $interval) {
+            $script:LocEventIntelLastHealth = $now
+            try {
+                Test-LocRulesReload
+                $healthEvents = Invoke-LocHealthCheckPass
+                foreach ($he in $healthEvents) {
+                    Invoke-LocEventIngest -Event $he
+                }
+            }
+            catch {
+                Write-LocLog -Module "EVENTINTEL" -Action "Health" -Level "WARN" -Message $_.Exception.Message
+            }
+            Persist-LocEventRing
+        }
+    }
+    catch { Write-Debug $_.Exception.Message }
 }
 
 function Stop-LocEventIntelligence {

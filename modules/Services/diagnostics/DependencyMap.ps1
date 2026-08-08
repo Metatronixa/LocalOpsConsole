@@ -15,7 +15,7 @@ try {
                     $j = Get-Content $_.FullName -Raw | ConvertFrom-Json
                     if ($j.service) { $profileNames += [string]$j.service }
                 }
-                catch { }
+                catch { Write-Debug $_.Exception.Message }
             }
         }
         if ($profileNames.Count -eq 0) { $profileNames = @("Spooler", "WinDefend", "wuauserv", "EventLog", "mpssvc", "Dnscache") }
@@ -27,8 +27,8 @@ try {
         $cim = Get-CimInstance Win32_Service -Filter ("Name='{0}'" -f $svc.Name.Replace("'", "''")) -ErrorAction SilentlyContinue
         $deps = @()
         $dependents = @()
-        try { $deps = @($svc.ServicesDependedOn | ForEach-Object { $_.Name }) } catch { }
-        try { $dependents = @($svc.DependentServices | ForEach-Object { $_.Name }) } catch { }
+        try { $deps = @($svc.ServicesDependedOn | ForEach-Object { $_.Name }) } catch { Write-Debug $_.Exception.Message }
+        try { $dependents = @($svc.DependentServices | ForEach-Object { $_.Name }) } catch { Write-Debug $_.Exception.Message }
         $map += [PSCustomObject]@{
             Name              = $svc.Name
             DisplayName       = $svc.DisplayName

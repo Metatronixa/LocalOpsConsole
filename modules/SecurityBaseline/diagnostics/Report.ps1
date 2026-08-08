@@ -1,4 +1,4 @@
-# modules/SecurityBaseline/diagnostics/Report.ps1
+﻿# modules/SecurityBaseline/diagnostics/Report.ps1
 # Thin wrapper — same audit payload shaped for reporting/export
 
 $auditPath = Join-Path $PSScriptRoot "Audit.ps1"

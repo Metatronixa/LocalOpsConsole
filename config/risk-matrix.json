@@ -1,0 +1,50 @@
+{
+  "version": "1.0.0",
+  "tiers": {
+    "READ": {
+      "description": "View-only diagnostics",
+      "approval": "none",
+      "requiresAdmin": false
+    },
+    "SAFE": {
+      "description": "Reversible local ops with negligible blast radius",
+      "approval": "none",
+      "requiresAdmin": false
+    },
+    "LOW": {
+      "description": "Limited state change",
+      "approval": "confirm",
+      "requiresAdmin": false
+    },
+    "MODERATE": {
+      "description": "Credential or service impact",
+      "approval": "impact",
+      "requiresAdmin": true
+    },
+    "HIGH": {
+      "description": "Privileged directory or membership change",
+      "approval": "admin_challenge",
+      "requiresAdmin": true,
+      "auditRequired": true
+    },
+    "CRITICAL": {
+      "description": "Destructive or irreversible directory ops",
+      "approval": "multi_stage",
+      "requiresAdmin": true,
+      "auditRequired": true,
+      "elevationRecheck": true
+    }
+  },
+  "defaults": {
+    "diagnostics": "READ",
+    "actions": "LOW"
+  },
+  "actions": {
+    "Unlock-ADUser": { "riskLevel": "LOW", "requiresAdmin": true },
+    "Reset-ADUserPassword": { "riskLevel": "MODERATE", "requiresAdmin": true },
+    "Set-ADGroupMember": { "riskLevel": "HIGH", "requiresAdmin": true, "auditRequired": true },
+    "FlushDns": { "riskLevel": "SAFE" },
+    "GPUpdate": { "riskLevel": "LOW" },
+    "RestartService": { "riskLevel": "MODERATE", "requiresAdmin": true }
+  }
+}

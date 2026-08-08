@@ -23,7 +23,7 @@ function Test-LocRequestIsLoopback {
             return [System.Net.IPAddress]::IsLoopback($addr)
         }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
     # Do not trust Host: alone — require a real loopback remote endpoint.
     return $false
 }

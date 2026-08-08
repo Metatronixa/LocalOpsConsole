@@ -9,7 +9,7 @@ try {
         $c = Get-NetTCPConnection -LocalPort 17845 -State Listen -ErrorAction SilentlyContinue
         if ($c) { $listening = $true }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     $reg = $null
     if (Get-Command Get-LocSyncMeRegistration -ErrorAction SilentlyContinue) {

@@ -1,4 +1,4 @@
-# RunConnectivityTest.ps1 — single connectivity test (<3s)
+﻿# RunConnectivityTest.ps1 — single connectivity test (<3s)
 param(
     [ValidateSet("GatewayPing", "GoogleDns", "CloudflareDns", "Microsoft", "GitHub", "DnsResolve", "Https", "Tcp443", "Tcp80", "ProxyDetect", "Ntp")]
     [string]$Test = "GatewayPing"

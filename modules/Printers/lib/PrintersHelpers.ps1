@@ -7,7 +7,7 @@ function Get-LocDefaultPrinterName {
         $wmi = Get-CimInstance -ClassName Win32_Printer -Filter "Default='True'" -ErrorAction SilentlyContinue | Select-Object -First 1
         if ($wmi) { return [string]$wmi.Name }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
     return ""
 }
 
@@ -123,7 +123,7 @@ function Get-LocSpoolerRecoveryInfo {
             }
         }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
     return $recovery
 }
 
@@ -162,7 +162,7 @@ function Invoke-LocPrinterNetworkProbe {
         [int]$MaxTotalMs = 8000
     )
     $deadline = [datetime]::UtcNow.AddMilliseconds($MaxTotalMs)
-    $remaining = { param([int]$budget) [math]::Max(500, [int](($deadline - [datetime]::UtcNow).TotalMilliseconds)) }
+    $remaining = { param([int]$budget) $null = $budget; [math]::Max(500, [int](($deadline - [datetime]::UtcNow).TotalMilliseconds)) }
 
     $result = [ordered]@{
         Host          = $HostName
@@ -179,7 +179,7 @@ function Invoke-LocPrinterNetworkProbe {
 
     # Ping (2 probes, short timeout)
     try {
-        $pingMs = & $remaining 2500
+        $null = & $remaining 2500
         $pings = @(Test-Connection -ComputerName $HostName -Count 2 -ErrorAction SilentlyContinue)
         $ok = @($pings | Where-Object { $_.StatusCode -eq 0 -or $_.ResponseTime -ge 0 })
         $loss = if ($pings.Count -gt 0) { [math]::Round((($pings.Count - $ok.Count) / $pings.Count) * 100, 0) } else { 100 }
@@ -284,7 +284,7 @@ function Get-LocPrinterDriverInfo {
             }
         }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     if (-not $info.Version) {
         try {
@@ -297,7 +297,7 @@ function Get-LocPrinterDriverInfo {
                 }
             }
         }
-        catch { }
+        catch { Write-Debug $_.Exception.Message }
     }
 
     return $info
@@ -323,6 +323,6 @@ function Get-LocPrinterLastError {
             }
         }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
     return $null
 }

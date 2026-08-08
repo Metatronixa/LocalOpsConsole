@@ -21,7 +21,7 @@ try {
                 }
             $events += @($batch)
         }
-        catch { }
+        catch { Write-Debug $_.Exception.Message }
     }
 
     $data = @($events |

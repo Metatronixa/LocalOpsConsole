@@ -6,7 +6,7 @@ try {
     $profiles = @()
     if (Test-Path $cfgDir) {
         Get-ChildItem $cfgDir -Filter "*.json" | ForEach-Object {
-            try { $profiles += (Get-Content $_.FullName -Raw | ConvertFrom-Json) } catch { }
+            try { $profiles += (Get-Content $_.FullName -Raw | ConvertFrom-Json) } catch { Write-Debug $_.Exception.Message }
         }
     }
 

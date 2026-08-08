@@ -1,4 +1,4 @@
-# Configuration helpers — catalog load + registry / provider get/set
+﻿# Configuration helpers — catalog load + registry / provider get/set
 
 function Get-LocConfigCatalogPath {
     return Join-Path $PSScriptRoot "settings-catalog.json"
@@ -179,7 +179,6 @@ function Set-LocConfigSettingValue {
         }
         "powercfgSleepAc" {
             $minutes = [int]$Value
-            $sec = $minutes * 60
             & powercfg.exe /change standby-timeout-ac $minutes 2>&1 | Out-Null
             return Get-LocConfigSettingValue -Def $Def
         }

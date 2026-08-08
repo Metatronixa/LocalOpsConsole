@@ -15,13 +15,13 @@ try {
         $wmi = Get-CimInstance -ClassName Win32_Printer -Filter "Name='$($PrinterName.Replace("'","''"))'" -ErrorAction SilentlyContinue
         if ($wmi -and $null -ne $wmi.Local) { $local = [bool]$wmi.Local }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     $printProcessor = ""
     try {
         if ($wmi -and $wmi.PrintProcessor) { $printProcessor = [string]$wmi.PrintProcessor }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     return New-ApiResult -Success $true -Message "Printer detail: $PrinterName" -Data ([PSCustomObject]@{
         Name           = [string]$printer.Name

@@ -36,7 +36,7 @@ function Get-RustDeskCandidatePaths {
             $paths.Add([System.IO.Path]::GetFullPath([string]$appPath.'(default)'))
         }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
 
     $uninstallRoots = @(
         'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*',
@@ -57,7 +57,7 @@ function Get-RustDeskCandidatePaths {
                 }
             }
         }
-        catch { }
+        catch { Write-Debug $_.Exception.Message }
     }
 
     return @($paths | Select-Object -Unique)
@@ -77,7 +77,7 @@ function Get-RustDeskVersion {
         if ($vi.ProductVersion) { return [string]$vi.ProductVersion.Trim() }
         if ($vi.FileVersion) { return [string]$vi.FileVersion.Trim() }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
     return $null
 }
 
@@ -99,7 +99,7 @@ function Get-RustDeskUninstallInfo {
                 }
             }
         }
-        catch { }
+        catch { Write-Debug $_.Exception.Message }
     }
     return $found
 }
@@ -161,7 +161,7 @@ function Read-RustDeskIdFromConfig {
                 return $Matches[1].Trim()
             }
         }
-        catch { }
+        catch { Write-Debug $_.Exception.Message }
     }
     return $null
 }
@@ -187,16 +187,16 @@ function Get-RustDeskIdFromCli {
     try {
         [void]$proc.Start()
         if (-not $proc.WaitForExit($TimeoutSeconds * 1000)) {
-            try { $proc.Kill() } catch { }
+            try { $proc.Kill() } catch { Write-Debug $_.Exception.Message }
             return $null
         }
         $out = $proc.StandardOutput.ReadToEnd().Trim()
         if ($out -match '\d{6,12}') { return $Matches[0] }
     }
-    catch { }
+    catch { Write-Debug $_.Exception.Message }
     finally {
         if ($proc -and -not $proc.HasExited) {
-            try { $proc.Kill() } catch { }
+            try { $proc.Kill() } catch { Write-Debug $_.Exception.Message }
         }
         if ($proc) { $proc.Dispose() }
     }

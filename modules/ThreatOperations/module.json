@@ -1,0 +1,24 @@
+{
+  "id": "threatoperations",
+  "name": "Threat Analysis",
+  "version": "1.0.0",
+  "icon": "shield-alert",
+  "description": "Security threat telemetry stream, ScriptBlock inspection, and playbook hints",
+  "order": 72,
+  "tier": 6,
+  "profiles": ["desktop_support", "systems_administrator", "power_user"],
+  "depends": [],
+  "diagnostics": [
+    "Get-ThreatSummaryMetrics",
+    "Get-ThreatEventStream",
+    "Get-ScriptBlockDetail"
+  ],
+  "actions": [],
+  "requiresAdmin": [],
+  "cacheSeconds": {
+    "Get-ThreatSummaryMetrics": 15,
+    "Get-ThreatEventStream": 10,
+    "Get-ScriptBlockDetail": 5
+  },
+  "capabilities": ["diagnostics", "monitoring", "SECURITY_TELEMETRY"]
+}

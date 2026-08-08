@@ -1,0 +1,16 @@
+﻿{
+  "id": "grouppolicy",
+  "name": "Group Policy",
+  "version": "1.0.0",
+  "icon": "server",
+  "description": "Group Policy infrastructure module",
+  "order": 43,
+  "tier": 2,
+  "profiles": ["systems_administrator", "power_user"],
+  "depends": [],
+  "capabilities": ["GPO"],
+  "diagnostics": ["Get-GpoHealth", "Get-GpResultSummary"],
+  "actions": ["Invoke-GPUpdate"],
+  "requiresAdmin": ["Invoke-GPUpdate"],
+  "cacheSeconds": {}
+}

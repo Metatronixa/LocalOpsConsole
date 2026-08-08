@@ -1,0 +1,16 @@
+﻿{
+  "id": "hyperv",
+  "name": "Hyper-V",
+  "version": "1.0.0",
+  "icon": "server",
+  "description": "Hyper-V infrastructure module",
+  "order": 44,
+  "tier": 2,
+  "profiles": ["systems_administrator", "power_user"],
+  "depends": [],
+  "capabilities": ["Hyper-V"],
+  "diagnostics": ["Get-HyperVHostHealth", "Get-HyperVVmList"],
+  "actions": ["Restart-HyperVVm"],
+  "requiresAdmin": ["Restart-HyperVVm"],
+  "cacheSeconds": {}
+}

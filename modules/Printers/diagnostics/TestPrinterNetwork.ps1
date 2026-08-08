@@ -1,10 +1,17 @@
 param(
-    [string]$Host = "",
+    [Alias('Host')]
+    [string]$TargetHost = "",
     [string]$PrinterName = ""
 )
 
 try {
-    $hostParam = if ($PSBoundParameters.ContainsKey('Host')) { [string]$PSBoundParameters['Host'] } else { "" }
+    $hostParam = if (-not [string]::IsNullOrWhiteSpace($TargetHost)) {
+        [string]$TargetHost
+    }
+    elseif ($PSBoundParameters.ContainsKey('Host')) {
+        [string]$PSBoundParameters['Host']
+    }
+    else { "" }
     $target = Resolve-LocPrinterNetworkTarget -TargetHost $hostParam -PrinterName $PrinterName
     if (-not $target -or [string]::IsNullOrWhiteSpace($target.Host)) {
         return New-ApiResult -Success $false -Message "Host or TCP/IP PrinterName required" -Data ([PSCustomObject]@{

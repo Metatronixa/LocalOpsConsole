@@ -1,4 +1,4 @@
-# EventLog/diagnostics/GetLogSummary.ps1 — capped counts (never unbounded Measure-Object)
+﻿# EventLog/diagnostics/GetLogSummary.ps1 — capped counts (never unbounded Measure-Object)
 param(
     [int]$Hours = 24,
     [int]$SampleMax = 200

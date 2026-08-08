@@ -1,9 +1,12 @@
 try {
     function Invoke-LocNbtstat {
-        param([string]$Args)
+        param(
+            [Alias('Args')]
+            [string]$ArgumentString
+        )
         $psi = New-Object System.Diagnostics.ProcessStartInfo
         $psi.FileName = "nbtstat.exe"
-        $psi.Arguments = $Args
+        $psi.Arguments = $ArgumentString
         $psi.RedirectStandardOutput = $true
         $psi.RedirectStandardError = $true
         $psi.UseShellExecute = $false
@@ -12,7 +15,7 @@ try {
         $p.StartInfo = $psi
         [void]$p.Start()
         if (-not $p.WaitForExit(8000)) {
-            try { $p.Kill() } catch { }
+            try { $p.Kill() } catch { Write-Debug $_.Exception.Message }
             return [PSCustomObject]@{ TimedOut = $true; StdOut = ""; StdErr = "Timed out after 8s" }
         }
         $out = $p.StandardOutput.ReadToEnd()
